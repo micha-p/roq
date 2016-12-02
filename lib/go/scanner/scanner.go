@@ -33,7 +33,6 @@ type Scanner struct {
 	dir  string       // directory portion of file.Name()
 	src  []byte       // source
 	err  ErrorHandler // error reporting; or nil
-	mode Mode         // scanning mode
 
 	// scanning state
 	ch         rune // current character
@@ -83,15 +82,6 @@ func (s *Scanner) next() {
 	}
 }
 
-// A mode value is a set of flags (or 0).
-// They control scanner behavior.
-//
-type Mode uint
-
-const (
-	ScanComments    Mode = 1 << iota // return comments as COMMENT tokens
-	dontInsertSemis                  // do not automatically insert semicolons - for testing only
-)
 
 // Init prepares the scanner s to tokenize the text src by setting the
 // scanner at the beginning of src. The scanner uses the file set file
@@ -108,7 +98,7 @@ const (
 // Note that Init may call err if there is an error in the first character
 // of the file.
 //
-func (s *Scanner) Init(file *token.File, src []byte, err ErrorHandler, mode Mode) {
+func (s *Scanner) Init(file *token.File, src []byte, err ErrorHandler) {
 	// Explicitly initialize all fields since a scanner may be reused.
 	if file.Size() != len(src) {
 		panic(fmt.Sprintf("file size (%d) does not match src len (%d)", file.Size(), len(src)))
@@ -117,7 +107,6 @@ func (s *Scanner) Init(file *token.File, src []byte, err ErrorHandler, mode Mode
 	s.dir, _ = filepath.Split(file.Name())
 	s.src = src
 	s.err = err
-	s.mode = mode
 
 	s.ch = ' '
 	s.offset = 0
@@ -745,9 +734,6 @@ scanAgain:
 			lit = string(ch)
 		}
 	}
-	if s.mode&dontInsertSemis == 0 {
-		s.insertSemi = insertSemi
-	}
-
+	s.insertSemi = insertSemi
 	return
 }

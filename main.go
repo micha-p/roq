@@ -26,7 +26,7 @@ func main() {
 
 		var s scanner.Scanner
 		file := fset.AddFile(*filePtr, fset.Base(), len(src)) // register input "file"
-		s.Init(file, src, nil /* no error handler */, scanner.ScanComments)
+		s.Init(file, src, nil /* no error handler */)
 
 
 		// Repeated calls to Scan yield the token sequence found in the input
