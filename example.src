@@ -27,9 +27,5 @@ func ExampleParseFile() {
 		fmt.Println(s.Path.Value)
 	}
 
-	// output:
-	//
-	// "fmt"
-	// "lib/go/parser"
-	// "lib/go/token"
+	# r comment
 }

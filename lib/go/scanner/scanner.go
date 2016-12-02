@@ -164,9 +164,11 @@ func (s *Scanner) interpretLineComment(text []byte) {
 	}
 }
 
+
+
 func (s *Scanner) scanComment() string {
-	// initial '/' already consumed; s.ch == '/' || s.ch == '*'
-	offs := s.offset - 1 // position of initial '/'
+	// initial char already consumed; s.ch == '/' || s.ch == '*' || or R comment
+	offs := s.offset - 1 // position of initial char
 	hasCR := false
 
 	if s.ch == '/' {
@@ -183,22 +185,36 @@ func (s *Scanner) scanComment() string {
 			s.interpretLineComment(s.src[offs:s.offset])
 		}
 		goto exit
-	}
-
-	/*-style comment */
-	s.next()
-	for s.ch >= 0 {
-		ch := s.ch
-		if ch == '\r' {
-			hasCR = true
-		}
+	} else if s.ch == '*' {
+		/*-style comment */
 		s.next()
-		if ch == '*' && s.ch == '/' {
+		for s.ch >= 0 {
+			ch := s.ch
+			if ch == '\r' {
+				hasCR = true
+			}
 			s.next()
-			goto exit
+			if ch == '*' && s.ch == '/' {
+				s.next()
+				goto exit
+			}
 		}
+	} else {
+		// R comment
+		s.next()
+		for s.ch != '\n' && s.ch >= 0 {
+			if s.ch == '\r' {
+				hasCR = true
+			}
+			s.next()
+		}
+		if offs == s.lineOffset {
+			// comment starts at the beginning of the current line
+			s.interpretLineComment(s.src[offs:s.offset])
+		}
+		goto exit
 	}
-
+	
 	s.error(offs, "comment not terminated")
 
 exit:
@@ -695,6 +711,11 @@ scanAgain:
 			}
 		case '*':
 			tok = s.switch2(token.MUL, token.MUL_ASSIGN)
+		case '#':  // R comments
+			s.insertSemi = false // newline consumed
+			comment := s.scanComment()
+			tok = token.COMMENT
+			lit = comment
 		case '/':
 			if s.ch == '/' || s.ch == '*' {
 				// comment
