@@ -166,64 +166,45 @@ func (s *Scanner) interpretLineComment(text []byte) {
 
 
 
-func (s *Scanner) scanComment() string {
+func (s *Scanner) skipComment() {
 	// initial char already consumed; s.ch == '/' || s.ch == '*' || or R comment
 	offs := s.offset - 1 // position of initial char
-	hasCR := false
 
 	if s.ch == '/' {
 		//-style comment
 		s.next()
 		for s.ch != '\n' && s.ch >= 0 {
-			if s.ch == '\r' {
-				hasCR = true
-			}
 			s.next()
 		}
 		if offs == s.lineOffset {
 			// comment starts at the beginning of the current line
 			s.interpretLineComment(s.src[offs:s.offset])
 		}
-		goto exit
+		return
 	} else if s.ch == '*' {
 		/*-style comment */
 		s.next()
 		for s.ch >= 0 {
 			ch := s.ch
-			if ch == '\r' {
-				hasCR = true
-			}
 			s.next()
 			if ch == '*' && s.ch == '/' {
 				s.next()
-				goto exit
+				return
 			}
 		}
 	} else {
 		// R comment
 		s.next()
 		for s.ch != '\n' && s.ch >= 0 {
-			if s.ch == '\r' {
-				hasCR = true
-			}
 			s.next()
 		}
 		if offs == s.lineOffset {
 			// comment starts at the beginning of the current line
 			s.interpretLineComment(s.src[offs:s.offset])
 		}
-		goto exit
+		return
 	}
-	
 	s.error(offs, "comment not terminated")
-
-exit:
-	lit := s.src[offs:s.offset]
-	if hasCR {
-		lit = stripCR(lit)
-	}
-
-	return string(lit)
 }
 
 func (s *Scanner) findLineEnd() bool {
@@ -712,10 +693,9 @@ scanAgain:
 		case '*':
 			tok = s.switch2(token.MUL, token.MUL_ASSIGN)
 		case '#':  // R comments
+			s.skipComment()
 			s.insertSemi = false // newline consumed
-			comment := s.scanComment()
-			tok = token.COMMENT
-			lit = comment
+			goto scanAgain
 		case '/':
 			if s.ch == '/' || s.ch == '*' {
 				// comment
@@ -727,14 +707,10 @@ scanAgain:
 					s.insertSemi = false // newline consumed
 					return pos, token.SEMICOLON, "\n"
 				}
-				comment := s.scanComment()
-				if s.mode&ScanComments == 0 {
-					// skip comment
-					s.insertSemi = false // newline consumed
-					goto scanAgain
-				}
-				tok = token.COMMENT
-				lit = comment
+				s.skipComment()
+				// skip comment
+				s.insertSemi = false // newline consumed
+				goto scanAgain
 			} else {
 				tok = s.switch2(token.QUO, token.QUO_ASSIGN)
 			}

@@ -2,13 +2,18 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+
+/* both R and go comments */
+
 package parser_test
 
+/*
 import (
 	"fmt"
 	"lib/go/parser"
 	"lib/go/token"
 )
+*/
 
 func ExampleParseFile() {
 	fset := token.NewFileSet() // positions are relative to fset
