@@ -2,9 +2,12 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package token defines constants representing the lexical tokens of the Go
-// programming language and basic operations on tokens (printing, predicates).
-//
+
+/* 10.3.1 Constants
+ * There are five types of constants: integer, logical, numeric, complex and string.
+ * In addition, there are four special constants, NULL, NA, Inf, and NaN.
+ * */
+
 package token
 
 import "strconv"
@@ -27,7 +30,23 @@ const (
 	FLOAT  // 123.45
 	IMAG   // 123.45i
 	CHAR   // 'a'
-	STRING // "abc"
+//	STRING // "abc"
+	
+	// R Literals
+	IDENTIFIER
+	NUMERIC
+	INTEGER
+	DOUBLE
+	LOGICAL
+	TRUE
+	FALSE
+	COMPLEX // wont be implemented in version 1
+	STRING
+
+	NULL //	SPECIAL
+	NA   // Single dot is treated as missing value
+	NAN
+	INF
 	literal_end
 
 	operator_beg
@@ -87,11 +106,14 @@ const (
 	RBRACE    // }
 	SEMICOLON // ;
 	COLON     // :
+	
+	
 	operator_end
+
 
 	keyword_beg
 	// Keywords
-	BREAK
+//	BREAK
 	CASE
 	CHAN
 	CONST
@@ -99,14 +121,14 @@ const (
 
 	DEFAULT
 	DEFER
-	ELSE
+//	ELSE
 	FALLTHROUGH
-	FOR
+//	FOR
 
 	FUNC
 	GO
 	GOTO
-	IF
+//	IF
 	IMPORT
 
 	INTERFACE
@@ -120,6 +142,17 @@ const (
 	SWITCH
 	TYPE
 	VAR
+	
+	//R keywords
+	IF
+	ELSE
+	REPEAT
+	WHILE
+	FUNCTION
+	FOR
+	IN
+	NEXT
+	BREAK
 	keyword_end
 )
 
@@ -134,8 +167,23 @@ var tokens = [...]string{
 	FLOAT:  "FLOAT",
 	IMAG:   "IMAG",
 	CHAR:   "CHAR",
-	STRING: "STRING",
+//	STRING: "STRING",
 
+	// R Literals
+	IDENTIFIER:	"IDENTIFIER",
+	NUMERIC:	"NUMERIC",
+	INTEGER:	"INTEGER",
+	DOUBLE:		"DOUBLE",
+	TRUE:		"TRUE",
+	FALSE:		"FALSE",
+	COMPLEX:	"COMPLEX",
+	STRING: 	"STRING",
+
+	NULL:		"NULL", //	SPECIAL
+	NA:			"NA",   // Single dot is treated as missing value
+	NAN:		"NAN",
+	INF:		"INF",
+	
 	ADD: "+",
 	SUB: "-",
 	MUL: "*",
@@ -192,7 +240,7 @@ var tokens = [...]string{
 	SEMICOLON: ";",
 	COLON:     ":",
 
-	BREAK:    "break",
+//	BREAK:    "break",
 	CASE:     "case",
 	CHAN:     "chan",
 	CONST:    "const",
@@ -200,14 +248,14 @@ var tokens = [...]string{
 
 	DEFAULT:     "default",
 	DEFER:       "defer",
-	ELSE:        "else",
+//	ELSE:        "else",
 	FALLTHROUGH: "fallthrough",
-	FOR:         "for",
+//	FOR:         "for",
 
 	FUNC:   "func",
 	GO:     "go",
 	GOTO:   "goto",
-	IF:     "if",
+//	IF:     "if",
 	IMPORT: "import",
 
 	INTERFACE: "interface",
@@ -221,6 +269,20 @@ var tokens = [...]string{
 	SWITCH: "switch",
 	TYPE:   "type",
 	VAR:    "var",
+
+	//R keywords
+	IF:			"if",
+	ELSE:		"else",
+	REPEAT:		"repeat",
+	WHILE:		"while",
+	FUNCTION:	"function",
+	FOR:		"for",
+	IN:			"in",
+	NEXT:		"next",
+	BREAK:		"break",
+
+
+
 }
 
 // String returns the string corresponding to the token tok.
