@@ -6,9 +6,9 @@ import (
 	//	"log"
 	//s	"strings"
 //	"os"
-	"go/parser"
-	"go/token"
-	"go/ast"
+	"lib/go/parser"
+	"lib/go/token"
+	"lib/go/ast"
 )
 
 func main() {
