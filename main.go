@@ -16,7 +16,7 @@ func main() {
 
 	// Parse the file containing this very example
 	// but stop after processing the imports.
-	f, err := parser.ParseFile(fset, "lib/go/parser/example_test.go", nil, parser.ImportsOnly)
+	f, err := parser.ParseFile(fset, "example.src", nil,0)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -24,6 +24,8 @@ func main() {
 
 // Print the AST.
 	ast.Print(fset, f)
+
+
 
 /*
 	// Print the imports from the file's AST.
