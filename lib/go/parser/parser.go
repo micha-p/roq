@@ -237,7 +237,7 @@ func un(p *parser) {
 }
 
 // Advance to the next token.
-func (p *parser) next0() {
+func (p *parser) next() {
 	// Because of one-token look-ahead, print the previous token
 	// when tracing as it provides a more readable output. The
 	// very first token (!p.pos.IsValid()) is not initialized
@@ -257,99 +257,6 @@ func (p *parser) next0() {
 	p.pos, p.tok, p.lit = p.scanner.Scan()
 }
 
-// Consume a comment and return it and the line on which it ends.
-func (p *parser) consumeComment() (comment *ast.Comment, endline int) {
-	// /*-style comments may end on a different line than where they start.
-	// Scan the comment for '\n' chars and adjust endline accordingly.
-	endline = p.file.Line(p.pos)
-	if p.lit[1] == '*' {
-		// don't use range here - no need to decode Unicode code points
-		for i := 0; i < len(p.lit); i++ {
-			if p.lit[i] == '\n' {
-				endline++
-			}
-		}
-	}
-
-	if p.lit[1] == '#' {
-		comment = &ast.Comment{Slash: p.pos -1 , Text: p.lit}
-	} else {
-		comment = &ast.Comment{Slash: p.pos, Text: p.lit}
-	}
-    p.next0()
-	return
-}
-
-// Consume a group of adjacent comments, add it to the parser's
-// comments list, and return it together with the line at which
-// the last comment in the group ends. A non-comment token or n
-// empty lines terminate a comment group.
-//
-func (p *parser) consumeCommentGroup(n int) (comments *ast.CommentGroup, endline int) {
-	var list []*ast.Comment
-	endline = p.file.Line(p.pos)
-	for p.tok == token.COMMENT && p.file.Line(p.pos) <= endline+n {
-		var comment *ast.Comment
-		comment, endline = p.consumeComment()
-		list = append(list, comment)
-	}
-
-	// add comment group to the comments list
-	comments = &ast.CommentGroup{List: list}
-	p.comments = append(p.comments, comments)
-
-	return
-}
-
-// Advance to the next non-comment token. In the process, collect
-// any comment groups encountered, and remember the last lead and
-// and line comments.
-//
-// A lead comment is a comment group that starts and ends in a
-// line without any other tokens and that is followed by a non-comment
-// token on the line immediately after the comment group.
-//
-// A line comment is a comment group that follows a non-comment
-// token on the same line, and that has no tokens after it on the line
-// where it ends.
-//
-// Lead and line comments may be considered documentation that is
-// stored in the AST.
-//
-func (p *parser) next() {
-	p.leadComment = nil
-	p.lineComment = nil
-	prev := p.pos
-	p.next0()
-
-	if p.tok == token.COMMENT {
-		var comment *ast.CommentGroup
-		var endline int
-
-		if p.file.Line(p.pos) == p.file.Line(prev) {
-			// The comment is on same line as the previous token; it
-			// cannot be a lead comment but may be a line comment.
-			comment, endline = p.consumeCommentGroup(0)
-			if p.file.Line(p.pos) != endline {
-				// The next token is on a different line, thus
-				// the last comment group is a line comment.
-				p.lineComment = comment
-			}
-		}
-
-		// consume successor comments, if any
-		endline = -1
-		for p.tok == token.COMMENT {
-			comment, endline = p.consumeCommentGroup(1)
-		}
-
-		if endline+1 == p.file.Line(p.pos) {
-			// The next token is following on the line immediately after the
-			// comment group, thus the last comment group is a lead comment.
-			p.leadComment = comment
-		}
-	}
-}
 
 // A bailout panic is raised to indicate early termination.
 type bailout struct{}
@@ -2460,7 +2367,7 @@ func (p *parser) parseFile() *ast.File {
 	}
 
 	// package clause
-	doc := p.leadComment
+ 	doc := p.leadComment
 	pos := p.expect(token.PACKAGE)
 	// Go spec: The package clause is not a declaration;
 	// the package name does not appear in any scope.

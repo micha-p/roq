@@ -45,4 +45,5 @@ func ExampleParseFile() {
 #                 
 //                  
 /* */                  
+r = 1 /*  */ +2
 }
