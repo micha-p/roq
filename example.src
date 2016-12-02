@@ -27,10 +27,22 @@ func ExampleParseFile() {
 	}
 	v = 23.45 + (2E02*3^4)
 
-	// Print the imports from the file's AST.
+	# Print the imports from the file's AST.
 	for _, s := range f.Imports {
 		fmt.Println(s.Path.Value)
 	}
 
 	# r comment
+	# r comment 2
+	
+	#
+	//
+	/**/
+ #
+//
+/* */
+
+#                 
+//                  
+/* */                  
 }

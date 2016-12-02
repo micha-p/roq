@@ -271,9 +271,12 @@ func (p *parser) consumeComment() (comment *ast.Comment, endline int) {
 		}
 	}
 
-	comment = &ast.Comment{Slash: p.pos, Text: p.lit}
-	p.next0()
-
+	if p.lit[1] == '#' {
+		comment = &ast.Comment{Slash: p.pos -1 , Text: p.lit}
+	} else {
+		comment = &ast.Comment{Slash: p.pos, Text: p.lit}
+	}
+    p.next0()
 	return
 }
 

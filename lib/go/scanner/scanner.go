@@ -9,11 +9,9 @@
 package scanner
 
 import (
-	"bytes"
 	"fmt"
 	"lib/go/token"
 	"path/filepath"
-	"strconv"
 	"unicode"
 	"unicode/utf8"
 )
@@ -143,69 +141,61 @@ func (s *Scanner) error(offs int, msg string) {
 
 var prefix = []byte("//line ")
 
-func (s *Scanner) interpretLineComment(text []byte) {
-	if bytes.HasPrefix(text, prefix) {
-		// get filename and line number, if any
-		if i := bytes.LastIndex(text, []byte{':'}); i > 0 {
-			if line, err := strconv.Atoi(string(text[i+1:])); err == nil && line > 0 {
-				// valid //line filename:line comment
-				filename := string(bytes.TrimSpace(text[len(prefix):i]))
-				if filename != "" {
-					filename = filepath.Clean(filename)
-					if !filepath.IsAbs(filename) {
-						// make filename relative to current directory
-						filename = filepath.Join(s.dir, filename)
-					}
-				}
-				// update scanner position
-				s.file.AddLineInfo(s.lineOffset+len(text)+1, filename, line) // +len(text)+1 since comment applies to next line
-			}
-		}
-	}
-}
-
-
-
-func (s *Scanner) skipComment() {
-	// initial char already consumed; s.ch == '/' || s.ch == '*' || or R comment
-	offs := s.offset - 1 // position of initial char
+func (s *Scanner) skipComment() string {
+	// initial char already consumed
+	// comment starts one behind current position
+	// so we go one char back
+	offs := s.offset - 1
+	hasCR := false
 
 	if s.ch == '/' {
 		//-style comment
 		s.next()
 		for s.ch != '\n' && s.ch >= 0 {
+			if s.ch == '\r' {
+				hasCR = true
+			}
 			s.next()
 		}
-		if offs == s.lineOffset {
-			// comment starts at the beginning of the current line
-			s.interpretLineComment(s.src[offs:s.offset])
-		}
-		return
+		goto exit
 	} else if s.ch == '*' {
 		/*-style comment */
 		s.next()
 		for s.ch >= 0 {
 			ch := s.ch
+			if ch == '\r' {
+				hasCR = true
+			}
 			s.next()
 			if ch == '*' && s.ch == '/' {
 				s.next()
-				return
+				goto exit
 			}
 		}
+	} else if s.ch == '\n' {
+		// empty R comment
+		goto exit
 	} else {
 		// R comment
 		s.next()
 		for s.ch != '\n' && s.ch >= 0 {
+			if s.ch == '\r' {
+				hasCR = true
+			}
 			s.next()
 		}
-		if offs == s.lineOffset {
-			// comment starts at the beginning of the current line
-			s.interpretLineComment(s.src[offs:s.offset])
-		}
-		return
+		goto exit
 	}
 	s.error(offs, "comment not terminated")
+
+exit:
+	lit := s.src[offs:s.offset]
+	if hasCR {
+		lit = stripCR(lit)
+	}
+	return string(lit)
 }
+
 
 func (s *Scanner) findLineEnd() bool {
 	// initial '/' already consumed
@@ -692,13 +682,20 @@ scanAgain:
 			}
 		case '*':
 			tok = s.switch2(token.MUL, token.MUL_ASSIGN)
-		case '#':  // R comments
+		case '#':  // R comment
+			if s.insertSemi && s.findLineEnd() {
+				// reset position to the beginning of the comment
+				s.ch = '#'
+				s.offset = s.file.Offset(pos)
+				s.rdOffset = s.offset
+				s.insertSemi = false // newline consumed
+				return pos, token.SEMICOLON, "\n"
+			}
 			s.skipComment()
-			s.insertSemi = false // newline consumed
 			goto scanAgain
 		case '/':
 			if s.ch == '/' || s.ch == '*' {
-				// comment
+				// go comment
 				if s.insertSemi && s.findLineEnd() {
 					// reset position to the beginning of the comment
 					s.ch = '/'
@@ -708,8 +705,6 @@ scanAgain:
 					return pos, token.SEMICOLON, "\n"
 				}
 				s.skipComment()
-				// skip comment
-				s.insertSemi = false // newline consumed
 				goto scanAgain
 			} else {
 				tok = s.switch2(token.QUO, token.QUO_ASSIGN)
