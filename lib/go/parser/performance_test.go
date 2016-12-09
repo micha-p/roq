@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-var src = readFile("parser.go")
+var src = readFile("/home/micha/GOWORKSPACES/go/parser/parser.go")
 
 func readFile(filename string) []byte {
 	data, err := ioutil.ReadFile(filename)
@@ -23,7 +23,7 @@ func readFile(filename string) []byte {
 func BenchmarkParse(b *testing.B) {
 	b.SetBytes(int64(len(src)))
 	for i := 0; i < b.N; i++ {
-		if _, err := ParseFile(token.NewFileSet(), "", src, ParseComments); err != nil {
+		if _, err := ParseFile(token.NewFileSet(), "", src, 0); err != nil {
 			b.Fatalf("benchmark failed due to parse error: %s", err)
 		}
 	}

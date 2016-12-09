@@ -238,6 +238,8 @@ func isDigit(ch rune) bool {
 	return '0' <= ch && ch <= '9' || ch >= utf8.RuneSelf && unicode.IsDigit(ch)
 }
 
+
+
 func (s *Scanner) scanIdentifier() string {
 	offs := s.offset
 	for isLetter(s.ch) || isDigit(s.ch) {
@@ -337,20 +339,42 @@ exit:
 	return tok, string(s.src[offs:s.offset])
 }
 
-// scanEscape parses an escape sequence where rune is the accepted
-// escaped quote. In case of a syntax error, it stops at the offending
-// character (without consuming it) and returns false. Otherwise
-// it returns true.
+/* String constants are delimited by a pair of single (‘'’) or double (‘"’) quotes and can contain all other printable characters. Quotes and other special characters within strings are specified using escape sequences:
+
+\'    single quote
+\"    double quote
+\n    newline
+\r    carriage return
+\t    tab character
+\b    backspace
+\a    bell
+\f    form feed
+\v    vertical tab
+\\    backslash itself
+\nnn    character with given octal code – sequences of one, two or three digits in the range 0 ... 7 are accepted.
+\xnn    character with given hex code – sequences of one or two hex digits (with entries 0 ... 9 A ... F a ... f).
+\unnnn \u{nnnn} (where multibyte locales are supported, otherwise an error). Unicode character with given hex code – sequences of up to four hex digits. The character needs to be valid in the current locale.
+\Unnnnnnnn \U{nnnnnnnn}(where multibyte locales are supported and not on Windows, otherwise an error). Unicode character with given hex code – sequences of up to eight hex digits.
+
+
+* A single quote may also be embedded directly in a double-quote delimited string and vice versa.
+* As from R 2.8.0, a ‘nul’ (\0) is not allowed in a character string, so using \0 in a string constant terminates the constant
+* (usually with a warning): further characters up to the closing quote are scanned but ignored. */
+
+
+
 func (s *Scanner) scanEscape(quote rune) bool {
 	offs := s.offset
-
 	var n int
 	var base, max uint32
 	switch s.ch {
-	case 'a', 'b', 'f', 'n', 'r', 't', 'v', '\\', quote:
+	case '0':
+		s.error(offs, "\\0 is not allowed in a character string")
+		return false
+	case '\'', '"', 'n', 'r', 't', 'b', 'a', 'f', 'v', '\\':
 		s.next()
 		return true
-	case '0', '1', '2', '3', '4', '5', '6', '7':
+	case '1', '2', '3', '4', '5', '6', '7':
 		n, base, max = 3, 8, 255
 	case 'x':
 		s.next()
@@ -394,62 +418,25 @@ func (s *Scanner) scanEscape(quote rune) bool {
 	return true
 }
 
-func (s *Scanner) scanRune() string {
-	// '\'' opening already consumed
-	offs := s.offset - 1
-
-	valid := true
-	n := 0
-	for {
-		ch := s.ch
-		if ch == '\n' || ch < 0 {
-			// only report error if we don't have one already
-			if valid {
-				s.error(offs, "rune literal not terminated")
-				valid = false
-			}
-			break
-		}
-		s.next()
-		if ch == '\'' {
-			break
-		}
-		n++
-		if ch == '\\' {
-			if !s.scanEscape('\'') {
-				valid = false
-			}
-			// continue to read to closing quote
-		}
-	}
-
-	if valid && n != 1 {
-		s.error(offs, "illegal rune literal")
-	}
-
-	return string(s.src[offs:s.offset])
-}
-
-func (s *Scanner) scanString() string {
-	// '"' opening already consumed
-	offs := s.offset - 1
+func (s *Scanner) scanString(terminator rune) string {
+	// opening quote already consumed
+	offs := s.offset
 
 	for {
 		ch := s.ch
-		if ch == '\n' || ch < 0 {
+		if ch == '\n' || ch == '\r' || ch < 0 {
 			s.error(offs, "string literal not terminated")
 			break
 		}
 		s.next()
-		if ch == '"' {
+		if ch == terminator {
 			break
 		}
 		if ch == '\\' {
-			s.scanEscape('"')
+			s.scanEscape(terminator)
 		}
 	}
-
-	return string(s.src[offs:s.offset])
+	return string(s.src[offs : s.offset])
 }
 
 func stripCR(b []byte) []byte {
@@ -462,34 +449,6 @@ func stripCR(b []byte) []byte {
 		}
 	}
 	return c[:i]
-}
-
-func (s *Scanner) scanRawString() string {
-	// '`' opening already consumed
-	offs := s.offset - 1
-
-	hasCR := false
-	for {
-		ch := s.ch
-		if ch < 0 {
-			s.error(offs, "raw string literal not terminated")
-			break
-		}
-		s.next()
-		if ch == '`' {
-			break
-		}
-		if ch == '\r' {
-			hasCR = true
-		}
-	}
-
-	lit := s.src[offs:s.offset]
-	if hasCR {
-		lit = stripCR(lit)
-	}
-
-	return string(lit)
 }
 
 func (s *Scanner) skipWhitespace() {
@@ -612,18 +571,10 @@ scanAgain:
 			// from s.skipWhitespace()
 			s.insertSemi = false // newline consumed
 			return pos, token.SEMICOLON, "\n"
-		case '"':
+		case '"', '\'':
 			insertSemi = true
 			tok = token.STRING
-			lit = s.scanString()
-		case '\'':
-			insertSemi = true
-			tok = token.CHAR
-			lit = s.scanRune()
-		case '`':
-			insertSemi = true
-			tok = token.STRING
-			lit = s.scanRawString()
+			lit = s.scanString(ch)
 		case ':':
 			tok = s.switch2(token.COLON, token.DEFINE)
 		case '.':

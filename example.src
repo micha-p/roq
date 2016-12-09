@@ -31,7 +31,12 @@ func ExampleParseFile() {
 	for _, s := range f.Imports {
 		fmt.Println(s.Path.Value)
 	}
-
+	s = "src
+	"
+	s = 'sr\0c'
+	s = "s\"r\'c"
+	s = 's\"r\'c'
+	
 	# r comment
 	# r comment 2
 	

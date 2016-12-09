@@ -162,12 +162,10 @@ var tokens = [...]string{
 	EOF:     "EOF",
 	COMMENT: "COMMENT",
 
-	IDENT:  "IDENT",
-	INT:    "INT",
-	FLOAT:  "FLOAT",
-	IMAG:   "IMAG",
-	CHAR:   "CHAR",
-//	STRING: "STRING",
+	IDENT: "IDENT",
+	INT:   "INT",
+	FLOAT: "FLOAT",
+	IMAG:  "IMAG",
 
 	// R Literals
 	IDENTIFIER:	"IDENTIFIER",
@@ -271,18 +269,15 @@ var tokens = [...]string{
 	VAR:    "var",
 
 	//R keywords
-	IF:			"if",
-	ELSE:		"else",
-	REPEAT:		"repeat",
-	WHILE:		"while",
-	FUNCTION:	"function",
-	FOR:		"for",
-	IN:			"in",
-	NEXT:		"next",
-	BREAK:		"break",
-
-
-
+	IF:       "if",
+	ELSE:     "else",
+	REPEAT:   "repeat",
+	WHILE:    "while",
+	FUNCTION: "function",
+	FOR:      "for",
+	IN:       "in",
+	NEXT:     "next",
+	BREAK:    "break",
 }
 
 // String returns the string corresponding to the token tok.
