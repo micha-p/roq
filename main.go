@@ -1,22 +1,21 @@
 package main
 
 import (
-	"fmt"
 	"flag"
+	"fmt"
 	"io/ioutil"
-//	"log"
-//	"strings"
-//	"os"
-	"lib/go/scanner"
-	"lib/go/parser"
-	"lib/go/token"
+	//	"log"
+	//	"strings"
+	//	"os"
 	"lib/go/ast"
+	"lib/go/parser"
+	"lib/go/scanner"
+	"lib/go/token"
 )
 
-func myerrorhandler (pos token.Position, msg string){
-	println("SCANNER ERROR",pos.Filename,pos.Line,pos.Column,msg)
+func myerrorhandler(pos token.Position, msg string) {
+	println("SCANNER ERROR", pos.Filename, pos.Line, pos.Column, msg)
 }
-
 
 func main() {
 	fset := token.NewFileSet() // positions are relative to fset
@@ -33,7 +32,6 @@ func main() {
 		file := fset.AddFile(*filePtr, fset.Base(), len(src)) // register input "file"
 		s.Init(file, src, myerrorhandler)
 
-
 		// Repeated calls to Scan yield the token sequence found in the input
 		for {
 			pos, tok, lit := s.Scan()
@@ -45,12 +43,12 @@ func main() {
 	} else {
 		// Parse the file containing this very example
 		// but stop after processing the imports.
-		f, err := parser.ParseFile(fset, *filePtr, nil,0)
+		f, err := parser.ParseFile(fset, *filePtr, nil, 0)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
-	
+
 		// Print the AST.
 		ast.Print(fset, f)
 	}

@@ -37,6 +37,7 @@ func ExampleParseFile() {
 	s = "s\"r\'c"
 	s = 's\"r\'c'
 	
+	
 	# r comment
 	# r comment 2
 	
@@ -51,4 +52,8 @@ func ExampleParseFile() {
 //                  
 /* */                  
 r = 1 /*  */ +2
+
+.a=.1 * a_2 + ..b * ._c + a...b
+
+[1...3]
 }

@@ -252,7 +252,6 @@ func (p *parser) next() {
 	p.pos, p.tok, p.lit = p.scanner.Scan()
 }
 
-
 // A bailout panic is raised to indicate early termination.
 type bailout struct{}
 
@@ -2348,7 +2347,7 @@ func (p *parser) parseFile() *ast.File {
 	}
 
 	// package clause
- 	doc := p.leadComment
+	doc := p.leadComment
 	pos := p.expect(token.PACKAGE)
 	// Go spec: The package clause is not a declaration;
 	// the package name does not appear in any scope.

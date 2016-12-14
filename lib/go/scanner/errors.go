@@ -6,8 +6,8 @@ package scanner
 
 import (
 	"fmt"
-	"lib/go/token"
 	"io"
+	"lib/go/token"
 	"sort"
 )
 

@@ -9,10 +9,10 @@ package parser
 import (
 	"bytes"
 	"errors"
-	"lib/go/ast"
-	"lib/go/token"
 	"io"
 	"io/ioutil"
+	"lib/go/ast"
+	"lib/go/token"
 	"os"
 	"path/filepath"
 	"strings"

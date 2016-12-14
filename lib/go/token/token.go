@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-
 /* 10.3.1 Constants
  * There are five types of constants: integer, logical, numeric, complex and string.
  * In addition, there are four special constants, NULL, NA, Inf, and NaN.
@@ -25,13 +24,13 @@ const (
 	literal_beg
 	// Identifiers and basic type literals
 	// (these tokens stand for classes of literals)
-	IDENT  // main
-	INT    // 12345
-	FLOAT  // 123.45
-	IMAG   // 123.45i
-	CHAR   // 'a'
-//	STRING // "abc"
-	
+	IDENT // main
+	INT   // 12345
+	FLOAT // 123.45
+	IMAG  // 123.45i
+	CHAR  // 'a'
+	//	STRING // "abc"
+
 	// R Literals
 	IDENTIFIER
 	NUMERIC
@@ -106,14 +105,12 @@ const (
 	RBRACE    // }
 	SEMICOLON // ;
 	COLON     // :
-	
-	
-	operator_end
 
+	operator_end
 
 	keyword_beg
 	// Keywords
-//	BREAK
+	//	BREAK
 	CASE
 	CHAN
 	CONST
@@ -121,14 +118,14 @@ const (
 
 	DEFAULT
 	DEFER
-//	ELSE
+	//	ELSE
 	FALLTHROUGH
-//	FOR
+	//	FOR
 
 	FUNC
 	GO
 	GOTO
-//	IF
+	//	IF
 	IMPORT
 
 	INTERFACE
@@ -142,7 +139,7 @@ const (
 	SWITCH
 	TYPE
 	VAR
-	
+
 	//R keywords
 	IF
 	ELSE
@@ -168,20 +165,20 @@ var tokens = [...]string{
 	IMAG:  "IMAG",
 
 	// R Literals
-	IDENTIFIER:	"IDENTIFIER",
-	NUMERIC:	"NUMERIC",
-	INTEGER:	"INTEGER",
-	DOUBLE:		"DOUBLE",
-	TRUE:		"TRUE",
-	FALSE:		"FALSE",
-	COMPLEX:	"COMPLEX",
-	STRING: 	"STRING",
+	IDENTIFIER: "IDENTIFIER",
+	NUMERIC:    "NUMERIC",
+	INTEGER:    "INTEGER",
+	DOUBLE:     "DOUBLE",
+	TRUE:       "TRUE",
+	FALSE:      "FALSE",
+	COMPLEX:    "COMPLEX",
+	STRING:     "STRING", // single or double quoted
 
-	NULL:		"NULL", //	SPECIAL
-	NA:			"NA",   // Single dot is treated as missing value
-	NAN:		"NAN",
-	INF:		"INF",
-	
+	NULL: "NULL", //	SPECIAL
+	NA:   "NA",   // Single dot is treated as missing value
+	NAN:  "NAN",
+	INF:  "INF",
+
 	ADD: "+",
 	SUB: "-",
 	MUL: "*",
@@ -238,22 +235,22 @@ var tokens = [...]string{
 	SEMICOLON: ";",
 	COLON:     ":",
 
-//	BREAK:    "break",
+	//	BREAK:    "break",
 	CASE:     "case",
 	CHAN:     "chan",
 	CONST:    "const",
 	CONTINUE: "continue",
 
-	DEFAULT:     "default",
-	DEFER:       "defer",
-//	ELSE:        "else",
+	DEFAULT: "default",
+	DEFER:   "defer",
+	//	ELSE:        "else",
 	FALLTHROUGH: "fallthrough",
-//	FOR:         "for",
+	//	FOR:         "for",
 
-	FUNC:   "func",
-	GO:     "go",
-	GOTO:   "goto",
-//	IF:     "if",
+	FUNC: "func",
+	GO:   "go",
+	GOTO: "goto",
+	//	IF:     "if",
 	IMPORT: "import",
 
 	INTERFACE: "interface",

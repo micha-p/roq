@@ -82,7 +82,6 @@ func (s *Scanner) next() {
 	}
 }
 
-
 // Init prepares the scanner s to tokenize the text src by setting the
 // scanner at the beginning of src. The scanner uses the file set file
 // for position information and it adds line information for each line.
@@ -185,7 +184,6 @@ exit:
 	return string(lit)
 }
 
-
 func (s *Scanner) findLineEnd() bool {
 	// initial '/' already consumed
 
@@ -238,11 +236,14 @@ func isDigit(ch rune) bool {
 	return '0' <= ch && ch <= '9' || ch >= utf8.RuneSelf && unicode.IsDigit(ch)
 }
 
-
+/* 10.3.2 Identifiers
+ *
+ * Identifiers consist of a sequence of letters, digits, the period (‘.’) and the underscore.
+ * They must not start with a digit or an underscore, or with a period followed by a digit. */
 
 func (s *Scanner) scanIdentifier() string {
 	offs := s.offset
-	for isLetter(s.ch) || isDigit(s.ch) {
+	for isLetter(s.ch) || isDigit(s.ch) || s.ch == '_' || s.ch == '.' {
 		s.next()
 	}
 	return string(s.src[offs:s.offset])
@@ -317,7 +318,13 @@ fraction:
 	if s.ch == '.' {
 		tok = token.FLOAT
 		s.next()
-		s.scanMantissa(10)
+		if s.ch == '.' {
+			tok = token.INT
+			s.rdOffset -= 1
+			s.offset -= 1
+		} else {
+			s.scanMantissa(10)
+		}
 	}
 
 exponent:
@@ -360,8 +367,6 @@ exit:
 * A single quote may also be embedded directly in a double-quote delimited string and vice versa.
 * As from R 2.8.0, a ‘nul’ (\0) is not allowed in a character string, so using \0 in a string constant terminates the constant
 * (usually with a warning): further characters up to the closing quote are scanned but ignored. */
-
-
 
 func (s *Scanner) scanEscape(quote rune) bool {
 	offs := s.offset
@@ -436,7 +441,7 @@ func (s *Scanner) scanString(terminator rune) string {
 			s.scanEscape(terminator)
 		}
 	}
-	return string(s.src[offs : s.offset])
+	return string(s.src[offs:s.offset])
 }
 
 func stripCR(b []byte) []byte {
@@ -586,7 +591,13 @@ scanAgain:
 				if s.ch == '.' {
 					s.next()
 					tok = token.ELLIPSIS
+				} else {
+					lit = ".." + s.scanIdentifier()
+					tok = token.IDENT
 				}
+			} else if isLetter(s.ch) || s.ch == '_' {
+				lit = "." + s.scanIdentifier()
+				tok = token.IDENT
 			} else {
 				tok = token.PERIOD
 			}
@@ -622,7 +633,7 @@ scanAgain:
 			}
 		case '*':
 			tok = s.switch2(token.MUL, token.MUL_ASSIGN)
-		case '#':  // R comment
+		case '#': // R comment
 			if s.insertSemi && s.findLineEnd() {
 				// reset position to the beginning of the comment
 				s.ch = '#'

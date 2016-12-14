@@ -5,8 +5,8 @@
 package scanner
 
 import (
-	"lib/go/token"
 	"io/ioutil"
+	"lib/go/token"
 	"os"
 	"path/filepath"
 	"runtime"
