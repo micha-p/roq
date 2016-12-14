@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+
 /* 10.3.1 Constants
  * There are five types of constants: integer, logical, numeric, complex and string.
  * In addition, there are four special constants, NULL, NA, Inf, and NaN.
