@@ -29,7 +29,7 @@ const (
 	INT   // 12345
 	FLOAT // 123.45
 	IMAG  // 123.45i
-	CHAR  // 'a'
+	//	CHAR   // 'a'
 	//	STRING // "abc"
 
 	// R Literals
@@ -111,7 +111,7 @@ const (
 
 	keyword_beg
 	// Keywords
-	//	BREAK
+//	BREAK
 	CASE
 	CHAN
 	CONST
@@ -119,14 +119,14 @@ const (
 
 	DEFAULT
 	DEFER
-	//	ELSE
+//	ELSE
 	FALLTHROUGH
-	//	FOR
+//	FOR
 
 	FUNC
 	GO
 	GOTO
-	//	IF
+//	IF
 	IMPORT
 
 	INTERFACE
@@ -175,7 +175,7 @@ var tokens = [...]string{
 	COMPLEX:    "COMPLEX",
 	STRING:     "STRING", // single or double quoted
 
-	NULL: "NULL", //	SPECIAL
+	NULL: "NULL", // SPECIAL
 	NA:   "NA",   // Single dot is treated as missing value
 	NAN:  "NAN",
 	INF:  "INF",

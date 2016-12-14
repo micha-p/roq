@@ -1,25 +1,9 @@
-// Copyright 2012 The Go Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
-
-/* both R and go comments */
 
 package parser_test
 
-/*
-import (
-	"fmt"
-	"lib/go/parser"
-	"lib/go/token"
-)
-*/
 
 func ExampleParseFile() {
-	fset := token.NewFileSet() // positions are relative to fset
-
-	// Parse the file containing this very example
-	// but stop after processing the imports.
+	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, "example_test.go", nil, parser.ImportsOnly)
 	if err != nil {
 		fmt.Println(err)
@@ -32,27 +16,22 @@ func ExampleParseFile() {
 		fmt.Println(s.Path.Value)
 	}
 	s = "src"
-	//s = 'sr\0c'
+	#s = 'sr\0c'
 	s = "s\"r\'c"
 	s = 's\"r\'c'
+	s = 's#c'
 	
 	
 	# r comment
 	# r comment 2
 	
 	#
-	//
-	/**/
  #
-//
-/* */
 
 #                 
-//                  
-/* */                  
-r = 1 /*  */ +2
+r = 1  +2
 
-.a=.1 * a_2 + ..b * ._c + a...b
+.a=23. + .1 * a_2 + ..b * ._c + a...b
 
-//a[1...3]
+#a[1...3]
 }

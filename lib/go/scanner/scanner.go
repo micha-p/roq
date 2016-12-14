@@ -82,6 +82,7 @@ func (s *Scanner) next() {
 	}
 }
 
+
 // Init prepares the scanner s to tokenize the text src by setting the
 // scanner at the beginning of src. The scanner uses the file set file
 // for position information and it adds line information for each line.
@@ -128,6 +129,10 @@ func (s *Scanner) error(offs int, msg string) {
 }
 
 var prefix = []byte("//line ")
+
+// 10.2 Comments
+// Comments in R are ignored by the parser. Any text from a # character to the end of the line is taken to be a comment, 
+// unless the # character is inside a quoted string.
 
 func (s *Scanner) skipComment() string {
 	// initial char already consumed
@@ -645,23 +650,14 @@ scanAgain:
 			s.skipComment()
 			goto scanAgain
 		case '/':
-			if s.ch == '/' || s.ch == '*' {
-				// go comment
-				if s.insertSemi && s.findLineEnd() {
-					// reset position to the beginning of the comment
-					s.ch = '/'
-					s.offset = s.file.Offset(pos)
-					s.rdOffset = s.offset + 1
-					s.insertSemi = false // newline consumed
-					return pos, token.SEMICOLON, "\n"
-				}
-				s.skipComment()
-				goto scanAgain
-			} else {
-				tok = s.switch2(token.QUO, token.QUO_ASSIGN)
-			}
+			tok = token.QUO
 		case '%':
-			tok = s.switch2(token.REM, token.REM_ASSIGN)
+			if s.ch == '%' {
+				s.next()
+				tok = token.REM
+			} else {
+				tok = token.ILLEGAL
+			}
 		case '^':
 			tok = s.switch2(token.XOR, token.XOR_ASSIGN)
 		case '<':

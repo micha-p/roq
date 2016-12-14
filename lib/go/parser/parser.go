@@ -1028,7 +1028,7 @@ func (p *parser) parseOperand(lhs bool) ast.Expr {
 		}
 		return x
 
-	case token.INT, token.FLOAT, token.IMAG, token.CHAR, token.STRING:
+	case token.INT, token.FLOAT, token.IMAG, token.STRING:
 		x := &ast.BasicLit{ValuePos: p.pos, Kind: p.tok, Value: p.lit}
 		p.next()
 		return x
@@ -2053,7 +2053,7 @@ func (p *parser) parseStmt() (s ast.Stmt) {
 		s = &ast.DeclStmt{Decl: p.parseDecl(syncStmt)}
 	case
 		// tokens that may start an expression
-		token.IDENT, token.INT, token.FLOAT, token.IMAG, token.CHAR, token.STRING, token.FUNC, token.LPAREN, // operands
+		token.IDENT, token.INT, token.FLOAT, token.IMAG, token.STRING, token.FUNC, token.LPAREN, // operands
 		token.LBRACK, token.STRUCT, token.MAP, token.CHAN, token.INTERFACE, // composite types
 		token.ADD, token.SUB, token.MUL, token.AND, token.XOR, token.ARROW, token.NOT: // unary operators
 		s, _ = p.parseSimpleStmt(labelOk)
