@@ -474,14 +474,6 @@ func (p *parser) parseLhsList() []ast.Expr {
 		// but doesn't enter scope until later:
 		// caller must call p.shortVarDecl(p.makeIdentList(list))
 		// at appropriate time.
-	case token.COLON:
-		// lhs of a label declaration or a communication clause of a select
-		// statement (parseLhsList is not called when parsing the case clause
-		// of a switch statement):
-		// - labels are declared by the caller of parseLhsList
-		// - for communication clauses, if there is a stand-alone identifier
-		//   followed by a colon, we have a syntax error; there is no need
-		//   to resolve the identifier in that case
 	default:
 		// identifiers must be declared elsewhere
 		for _, x := range list {
@@ -529,7 +521,7 @@ func (p *parser) parseTypeName() ast.Expr {
 	ident := p.parseIdent()
 	// don't resolve ident yet - it may be a parameter or field name
 
-	if p.tok == token.PERIOD {
+	if p.tok == token.NA /*TODO: CHECK*/ {
 		// ident is a package name
 		p.next()
 		p.resolve(ident)
@@ -1028,7 +1020,7 @@ func (p *parser) parseOperand(lhs bool) ast.Expr {
 		}
 		return x
 
-	case token.INT, token.FLOAT, token.IMAG, token.STRING:
+	case token.INT, token.FLOAT, token.IMAG, token.STRING, token.NA:
 		x := &ast.BasicLit{ValuePos: p.pos, Kind: p.tok, Value: p.lit}
 		p.next()
 		return x
@@ -1098,15 +1090,15 @@ func (p *parser) parseIndexOrSlice(x ast.Expr) ast.Expr {
 	p.exprLev++
 	var index [N]ast.Expr
 	var colons [N - 1]token.Pos
-	if p.tok != token.COLON {
+	/*if p.tok != token.COLON {
 		index[0] = p.parseRhs()
-	}
+	}*/
 	ncolons := 0
-	for p.tok == token.COLON && ncolons < len(colons) {
+	for /*p.tok == token.COLON &&*/ ncolons < len(colons) {
 		colons[ncolons] = p.pos
 		ncolons++
 		p.next()
-		if p.tok != token.COLON && p.tok != token.RBRACK && p.tok != token.EOF {
+		if /*p.tok != token.COLON &&*/ p.tok != token.RBRACK && p.tok != token.EOF {
 			index[ncolons] = p.parseRhs()
 		}
 	}
@@ -1188,16 +1180,16 @@ func (p *parser) parseValue(keyOk bool) ast.Expr {
 	// a separate field lookup.
 	x := p.checkExpr(p.parseExpr(keyOk))
 	if keyOk {
-		if p.tok == token.COLON {
+		/*if p.tok == token.COLON {
 			// Try to resolve the key but don't collect it
 			// as unresolved identifier if it fails so that
 			// we don't get (possibly false) errors about
 			// undeclared names.
 			p.tryResolve(x, false)
 		} else {
-			// not a key
+			// not a key */
 			p.resolve(x)
-		}
+		/*}*/
 	}
 
 	return x
@@ -1209,11 +1201,11 @@ func (p *parser) parseElement() ast.Expr {
 	}
 
 	x := p.parseValue(true)
-	if p.tok == token.COLON {
+	/*if p.tok == token.COLON {
 		colon := p.pos
 		p.next()
 		x = &ast.KeyValueExpr{Key: x, Colon: colon, Value: p.parseValue(false)}
-	}
+	}*/
 
 	return x
 }
@@ -1357,7 +1349,7 @@ func (p *parser) parsePrimaryExpr(lhs bool) ast.Expr {
 L:
 	for {
 		switch p.tok {
-		case token.PERIOD:
+		case token.NA: //TODO
 			p.next()
 			if lhs {
 				p.resolve(x)
@@ -1484,8 +1476,8 @@ func (p *parser) tokPrec() (token.Token, int) {
 func (p *parser) parseBinaryExpr(lhs bool, prec1 int) ast.Expr {
 	if p.trace {
 		defer un(trace(p, "BinaryExpr"))
+		
 	}
-
 	x := p.parseUnaryExpr(lhs)
 	for {
 		op, oprec := p.tokPrec()
@@ -1553,10 +1545,7 @@ func (p *parser) parseSimpleStmt(mode int) (ast.Stmt, bool) {
 
 	switch p.tok {
 	case
-		token.DEFINE, token.ASSIGN, token.ADD_ASSIGN,
-		token.SUB_ASSIGN, token.MUL_ASSIGN, token.QUO_ASSIGN,
-		token.REM_ASSIGN, token.AND_ASSIGN, token.OR_ASSIGN,
-		token.XOR_ASSIGN, token.SHL_ASSIGN, token.SHR_ASSIGN, token.AND_NOT_ASSIGN:
+		token.DEFINE, token.ASSIGN:
 		// assignment statement, possibly part of a range clause
 		pos, tok := p.pos, p.tok
 		p.next()
@@ -1583,26 +1572,6 @@ func (p *parser) parseSimpleStmt(mode int) (ast.Stmt, bool) {
 	}
 
 	switch p.tok {
-	case token.COLON:
-		// labeled statement
-		colon := p.pos
-		p.next()
-		if label, isIdent := x[0].(*ast.Ident); mode == labelOk && isIdent {
-			// Go spec: The scope of a label is the body of the function
-			// in which it is declared and excludes the body of any nested
-			// function.
-			stmt := &ast.LabeledStmt{Label: label, Colon: colon, Stmt: p.parseStmt()}
-			p.declare(stmt, nil, p.labelScope, ast.Lbl, label)
-			return stmt, false
-		}
-		// The label declaration typically starts at x[0].Pos(), but the label
-		// declaration may be erroneous due to a token after that position (and
-		// before the ':'). If SpuriousErrors is not set, the (only) error re-
-		// ported for the line is the illegal label error instead of the token
-		// before the ':' that caused the problem. Thus, use the (latest) colon
-		// position for error reporting.
-		p.error(colon, "illegal label declaration")
-		return &ast.BadStmt{From: x[0].Pos(), To: colon + 1}, false
 
 	case token.ARROW:
 		// send statement
@@ -1774,31 +1743,6 @@ func (p *parser) parseTypeList() (list []ast.Expr) {
 	return
 }
 
-func (p *parser) parseCaseClause(typeSwitch bool) *ast.CaseClause {
-	if p.trace {
-		defer un(trace(p, "CaseClause"))
-	}
-
-	pos := p.pos
-	var list []ast.Expr
-	if p.tok == token.CASE {
-		p.next()
-		if typeSwitch {
-			list = p.parseTypeList()
-		} else {
-			list = p.parseRhsList()
-		}
-	} else {
-		p.expect(token.DEFAULT)
-	}
-
-	colon := p.expect(token.COLON)
-	p.openScope()
-	body := p.parseStmtList()
-	p.closeScope()
-
-	return &ast.CaseClause{Case: pos, List: list, Colon: colon, Body: body}
-}
 
 func isTypeSwitchAssert(x ast.Expr) bool {
 	a, ok := x.(*ast.TypeAssertExpr)
@@ -1826,139 +1770,6 @@ func (p *parser) isTypeSwitchGuard(s ast.Stmt) bool {
 	return false
 }
 
-func (p *parser) parseSwitchStmt() ast.Stmt {
-	if p.trace {
-		defer un(trace(p, "SwitchStmt"))
-	}
-
-	pos := p.expect(token.SWITCH)
-	p.openScope()
-	defer p.closeScope()
-
-	var s1, s2 ast.Stmt
-	if p.tok != token.LBRACE {
-		prevLev := p.exprLev
-		p.exprLev = -1
-		if p.tok != token.SEMICOLON {
-			s2, _ = p.parseSimpleStmt(basic)
-		}
-		if p.tok == token.SEMICOLON {
-			p.next()
-			s1 = s2
-			s2 = nil
-			if p.tok != token.LBRACE {
-				// A TypeSwitchGuard may declare a variable in addition
-				// to the variable declared in the initial SimpleStmt.
-				// Introduce extra scope to avoid redeclaration errors:
-				//
-				//	switch t := 0; t := x.(T) { ... }
-				//
-				// (this code is not valid Go because the first t
-				// cannot be accessed and thus is never used, the extra
-				// scope is needed for the correct error message).
-				//
-				// If we don't have a type switch, s2 must be an expression.
-				// Having the extra nested but empty scope won't affect it.
-				p.openScope()
-				defer p.closeScope()
-				s2, _ = p.parseSimpleStmt(basic)
-			}
-		}
-		p.exprLev = prevLev
-	}
-
-	typeSwitch := p.isTypeSwitchGuard(s2)
-	lbrace := p.expect(token.LBRACE)
-	var list []ast.Stmt
-	for p.tok == token.CASE || p.tok == token.DEFAULT {
-		list = append(list, p.parseCaseClause(typeSwitch))
-	}
-	rbrace := p.expect(token.RBRACE)
-	p.expectSemi()
-	body := &ast.BlockStmt{Lbrace: lbrace, List: list, Rbrace: rbrace}
-
-	if typeSwitch {
-		return &ast.TypeSwitchStmt{Switch: pos, Init: s1, Assign: s2, Body: body}
-	}
-
-	return &ast.SwitchStmt{Switch: pos, Init: s1, Tag: p.makeExpr(s2, "switch expression"), Body: body}
-}
-
-func (p *parser) parseCommClause() *ast.CommClause {
-	if p.trace {
-		defer un(trace(p, "CommClause"))
-	}
-
-	p.openScope()
-	pos := p.pos
-	var comm ast.Stmt
-	if p.tok == token.CASE {
-		p.next()
-		lhs := p.parseLhsList()
-		if p.tok == token.ARROW {
-			// SendStmt
-			if len(lhs) > 1 {
-				p.errorExpected(lhs[0].Pos(), "1 expression")
-				// continue with first expression
-			}
-			arrow := p.pos
-			p.next()
-			rhs := p.parseRhs()
-			comm = &ast.SendStmt{Chan: lhs[0], Arrow: arrow, Value: rhs}
-		} else {
-			// RecvStmt
-			if tok := p.tok; tok == token.ASSIGN || tok == token.DEFINE {
-				// RecvStmt with assignment
-				if len(lhs) > 2 {
-					p.errorExpected(lhs[0].Pos(), "1 or 2 expressions")
-					// continue with first two expressions
-					lhs = lhs[0:2]
-				}
-				pos := p.pos
-				p.next()
-				rhs := p.parseRhs()
-				as := &ast.AssignStmt{Lhs: lhs, TokPos: pos, Tok: tok, Rhs: []ast.Expr{rhs}}
-				if tok == token.DEFINE {
-					p.shortVarDecl(as, lhs)
-				}
-				comm = as
-			} else {
-				// lhs must be single receive operation
-				if len(lhs) > 1 {
-					p.errorExpected(lhs[0].Pos(), "1 expression")
-					// continue with first expression
-				}
-				comm = &ast.ExprStmt{X: lhs[0]}
-			}
-		}
-	} else {
-		p.expect(token.DEFAULT)
-	}
-
-	colon := p.expect(token.COLON)
-	body := p.parseStmtList()
-	p.closeScope()
-
-	return &ast.CommClause{Case: pos, Comm: comm, Colon: colon, Body: body}
-}
-
-func (p *parser) parseSelectStmt() *ast.SelectStmt {
-	if p.trace {
-		defer un(trace(p, "SelectStmt"))
-	}
-
-	pos := p.expect(token.SELECT)
-	lbrace := p.expect(token.LBRACE)
-	var list []ast.Stmt
-	for p.tok == token.CASE || p.tok == token.DEFAULT {
-		list = append(list, p.parseCommClause())
-	}
-	rbrace := p.expect(token.RBRACE)
-	p.expectSemi()
-	body := &ast.BlockStmt{Lbrace: lbrace, List: list, Rbrace: rbrace}
-
-	return &ast.SelectStmt{Select: pos, Body: body}
-}
 
 func (p *parser) parseForStmt() ast.Stmt {
 	if p.trace {
@@ -2053,7 +1864,7 @@ func (p *parser) parseStmt() (s ast.Stmt) {
 		s = &ast.DeclStmt{Decl: p.parseDecl(syncStmt)}
 	case
 		// tokens that may start an expression
-		token.IDENT, token.INT, token.FLOAT, token.IMAG, token.STRING, token.FUNC, token.LPAREN, // operands
+		token.IDENT, token.INT, token.FLOAT, token.NA, token.IMAG, token.STRING, token.FUNC, token.LPAREN, // operands
 		token.LBRACK, token.STRUCT, token.MAP, token.CHAN, token.INTERFACE, // composite types
 		token.ADD, token.SUB, token.MUL, token.AND, token.XOR, token.ARROW, token.NOT: // unary operators
 		s, _ = p.parseSimpleStmt(labelOk)
@@ -2076,10 +1887,6 @@ func (p *parser) parseStmt() (s ast.Stmt) {
 		p.expectSemi()
 	case token.IF:
 		s = p.parseIfStmt()
-	case token.SWITCH:
-		s = p.parseSwitchStmt()
-	case token.SELECT:
-		s = p.parseSelectStmt()
 	case token.FOR:
 		s = p.parseForStmt()
 	case token.SEMICOLON:
@@ -2125,9 +1932,9 @@ func (p *parser) parseImportSpec(doc *ast.CommentGroup, _ token.Token, _ int) as
 
 	var ident *ast.Ident
 	switch p.tok {
-	case token.PERIOD:
+/*	case token.PERIOD:
 		ident = &ast.Ident{NamePos: p.pos, Name: "."}
-		p.next()
+		p.next()*/
 	case token.IDENT:
 		ident = p.parseIdent()
 	}

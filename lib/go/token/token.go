@@ -43,11 +43,53 @@ const (
 	COMPLEX // wont be implemented in version 1
 	STRING
 
-	NULL //	SPECIAL
 	NA   // Single dot is treated as missing value
 	NAN
 	INF
 	literal_end
+	NULL //	SPECIAL
+
+/* 3.1.4 Operators
+	   R contains a number of operators. They are listed in the table below.
+	       -	Minus, can be unary or binary
+	       +	Plus, can be unary or binary
+	       !	Unary not
+	       ~	Tilde, used for model formulae, can be either unary or binary
+	       ?	Help
+	       :	Sequence, binary (in model formulae: interaction)
+	       *	Multiplication, binary
+	       /	Division, binary
+	       ^	Exponentiation, binary
+	       %x%	Special binary operators, x can be replaced by any valid name
+	       %%	Modulus, binary
+	       %/%	Integer divide, binary
+	       %*%	Matrix product, binary
+	       %o%	Outer product, binary
+	       %x%	Kronecker product, binary
+	       %in%	Matching operator, binary (in model formulae: nesting)
+	       <	Less than, binary
+	       >	Greater than, binary
+	       ==	Equal to, binary
+	       >=	Greater than or equal to, binary
+	       <=	Less than or equal to, binary
+	       &	And, binary, vectorized
+	       &&	And, binary, not vectorized
+	       |	Or, binary, vectorized
+	       ||	Or, binary, not vectorized
+	       <-	Left assignment, binary
+	       ->	Right assignment, binary
+	       $	List subset, binary
+   
+10.3.6 Operator tokens
+	   R uses the following operator tokens
+	       + - * / %% ^	arithmetic
+	       > >= < <= == !=	relational
+	       ! & |	logical
+	       ~	model formulae
+	       -> <-	assignment
+	       $	list indexing
+	       :	sequence
+*/
 
 	operator_beg
 	// Operators and delimiters
@@ -64,18 +106,7 @@ const (
 	SHR     // >>
 	AND_NOT // &^
 
-	ADD_ASSIGN // +=
-	SUB_ASSIGN // -=
-	MUL_ASSIGN // *=
-	QUO_ASSIGN // /=
-	REM_ASSIGN // %=
 
-	AND_ASSIGN     // &=
-	OR_ASSIGN      // |=
-	XOR_ASSIGN     // ^=
-	SHL_ASSIGN     // <<=
-	SHR_ASSIGN     // >>=
-	AND_NOT_ASSIGN // &^=
 
 	LAND  // &&
 	LOR   // ||
@@ -99,13 +130,11 @@ const (
 	LBRACK // [
 	LBRACE // {
 	COMMA  // ,
-	PERIOD // .
 
 	RPAREN    // )
 	RBRACK    // ]
 	RBRACE    // }
 	SEMICOLON // ;
-	COLON     // :
 
 	operator_end
 
@@ -193,19 +222,6 @@ var tokens = [...]string{
 	SHR:     ">>",
 	AND_NOT: "&^",
 
-	ADD_ASSIGN: "+=",
-	SUB_ASSIGN: "-=",
-	MUL_ASSIGN: "*=",
-	QUO_ASSIGN: "/=",
-	REM_ASSIGN: "%=",
-
-	AND_ASSIGN:     "&=",
-	OR_ASSIGN:      "|=",
-	XOR_ASSIGN:     "^=",
-	SHL_ASSIGN:     "<<=",
-	SHR_ASSIGN:     ">>=",
-	AND_NOT_ASSIGN: "&^=",
-
 	LAND:  "&&",
 	LOR:   "||",
 	ARROW: "<-",
@@ -228,30 +244,30 @@ var tokens = [...]string{
 	LBRACK: "[",
 	LBRACE: "{",
 	COMMA:  ",",
-	PERIOD: ".",
+//	PERIOD: ".",
 
 	RPAREN:    ")",
 	RBRACK:    "]",
 	RBRACE:    "}",
 	SEMICOLON: ";",
-	COLON:     ":",
+//	COLON:     ":",
 
-	//	BREAK:    "break",
+//	BREAK:    "break",
 	CASE:     "case",
 	CHAN:     "chan",
 	CONST:    "const",
 	CONTINUE: "continue",
 
-	DEFAULT: "default",
-	DEFER:   "defer",
-	//	ELSE:        "else",
+	DEFAULT:     "default",
+	DEFER:       "defer",
+//	ELSE:        "else",
 	FALLTHROUGH: "fallthrough",
-	//	FOR:         "for",
+//	FOR:         "for",
 
-	FUNC: "func",
-	GO:   "go",
-	GOTO: "goto",
-	//	IF:     "if",
+	FUNC:   "func",
+	GO:     "go",
+	GOTO:   "goto",
+//	IF:     "if",
 	IMPORT: "import",
 
 	INTERFACE: "interface",

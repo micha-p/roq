@@ -25,7 +25,6 @@ func main() {
 	flag.Parse()
 
 	if *scanPtr {
-
 		src, _ := ioutil.ReadFile(*filePtr)
 
 		var s scanner.Scanner
@@ -41,9 +40,7 @@ func main() {
 			fmt.Printf("%s\t%s\t%q\n", fset.Position(pos), tok, lit)
 		}
 	} else {
-		// Parse the file containing this very example
-		// but stop after processing the imports.
-		f, err := parser.ParseFile(fset, *filePtr, nil, 0)
+		f, err := parser.ParseFile(fset, *filePtr, nil, 0 /*parser.AllErrors|parser.Trace*/)
 		if err != nil {
 			fmt.Println(err)
 			return

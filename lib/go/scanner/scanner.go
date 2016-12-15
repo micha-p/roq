@@ -585,8 +585,6 @@ scanAgain:
 			insertSemi = true
 			tok = token.STRING
 			lit = s.scanString(ch)
-		case ':':
-			tok = s.switch2(token.COLON, token.DEFINE)
 		case '.':
 			if '0' <= s.ch && s.ch <= '9' {
 				insertSemi = true
@@ -604,7 +602,7 @@ scanAgain:
 				lit = "." + s.scanIdentifier()
 				tok = token.IDENT
 			} else {
-				tok = token.PERIOD
+				tok = token.NA
 			}
 		case ',':
 			tok = token.COMMA
@@ -627,17 +625,11 @@ scanAgain:
 			insertSemi = true
 			tok = token.RBRACE
 		case '+':
-			tok = s.switch3(token.ADD, token.ADD_ASSIGN, '+', token.INC)
-			if tok == token.INC {
-				insertSemi = true
-			}
+			tok = token.ADD
 		case '-':
-			tok = s.switch3(token.SUB, token.SUB_ASSIGN, '-', token.DEC)
-			if tok == token.DEC {
-				insertSemi = true
-			}
+			tok = token.SUB
 		case '*':
-			tok = s.switch2(token.MUL, token.MUL_ASSIGN)
+			tok = token.MUL
 		case '#': // R comment
 			if s.insertSemi && s.findLineEnd() {
 				// reset position to the beginning of the comment
@@ -659,29 +651,24 @@ scanAgain:
 				tok = token.ILLEGAL
 			}
 		case '^':
-			tok = s.switch2(token.XOR, token.XOR_ASSIGN)
+			tok = token.XOR
 		case '<':
 			if s.ch == '-' {
 				s.next()
 				tok = token.ARROW
 			} else {
-				tok = s.switch4(token.LSS, token.LEQ, '<', token.SHL, token.SHL_ASSIGN)
+				tok = s.switch4(token.LSS, token.LEQ, '<', token.SHL, token.ILLEGAL)
 			}
 		case '>':
-			tok = s.switch4(token.GTR, token.GEQ, '>', token.SHR, token.SHR_ASSIGN)
-		case '=':
+			tok = s.switch4(token.GTR, token.GEQ, '>', token.SHR, token.ILLEGAL)
+                case '=':
 			tok = s.switch2(token.ASSIGN, token.EQL)
 		case '!':
 			tok = s.switch2(token.NOT, token.NEQ)
 		case '&':
-			if s.ch == '^' {
-				s.next()
-				tok = s.switch2(token.AND_NOT, token.AND_NOT_ASSIGN)
-			} else {
-				tok = s.switch3(token.AND, token.AND_ASSIGN, '&', token.LAND)
-			}
+			tok = token.AND
 		case '|':
-			tok = s.switch3(token.OR, token.OR_ASSIGN, '|', token.LOR)
+			tok = token.OR
 		default:
 			// next reports unexpected BOMs - don't repeat
 			if ch != bom {

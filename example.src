@@ -3,8 +3,8 @@ package parser_test
 
 
 func ExampleParseFile() {
-	fset := token.NewFileSet()
-	f, err := parser.ParseFile(fset, "example_test.go", nil, parser.ImportsOnly)
+	fset = token.NewFileSet()
+	f, err = parser.ParseFile(fset, "example_test.go", nil, parser.ImportsOnly)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -12,7 +12,7 @@ func ExampleParseFile() {
 	v = 23.45 + (2E02*3^4)
 
 	# Print the imports from the file's AST.
-	for _, s := range f.Imports {
+	for _, s = range f.Imports {
 		fmt.Println(s.Path.Value)
 	}
 	s = "src"
@@ -29,9 +29,9 @@ func ExampleParseFile() {
  #
 
 #                 
-r = 1  +2 %% 10
+r = 1  +2 %% 10 + . ;
 
-.a=23. + .1 * a_2 + ..b * ._c / a...b
+a.a=23. + .1 * a_2 + ..b * ._c / a...b
 
 #a[1...3]
 }
