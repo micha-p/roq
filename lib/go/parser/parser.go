@@ -1012,32 +1012,30 @@ func (p *parser) parseOperand(lhs bool) ast.Expr {
 		defer un(trace(p, "Operand"))
 	}
 
-	switch p.tok {
-	case token.IDENT:
-		x := p.parseIdent()
-		if !lhs {
-			p.resolve(x)
-		}
-		return x
-
-	case token.INT, token.FLOAT, token.IMAG, token.STRING, token.NA:
+	if p.tok.IsLiteral(){
 		x := &ast.BasicLit{ValuePos: p.pos, Kind: p.tok, Value: p.lit}
 		p.next()
 		return x
-
-	case token.LPAREN:
-		lparen := p.pos
-		p.next()
-		p.exprLev++
-		x := p.parseRhsOrType() // types may be parenthesized: (some type)
-		p.exprLev--
-		rparen := p.expect(token.RPAREN)
-		return &ast.ParenExpr{Lparen: lparen, X: x, Rparen: rparen}
-
-	case token.FUNC:
-		return p.parseFuncTypeOrLit()
+	} else {
+		switch p.tok {
+		case token.IDENT:
+			x := p.parseIdent()
+			if !lhs {
+				p.resolve(x)
+			}
+			return x
+		case token.LPAREN:
+			lparen := p.pos
+			p.next()
+			p.exprLev++
+			x := p.parseRhsOrType() // types may be parenthesized: (some type)
+			p.exprLev--
+			rparen := p.expect(token.RPAREN)
+			return &ast.ParenExpr{Lparen: lparen, X: x, Rparen: rparen}
+		case token.FUNC:
+			return p.parseFuncTypeOrLit()
+		}
 	}
-
 	if typ := p.tryIdentOrType(); typ != nil {
 		// could be type for composite literal or conversion
 		_, isIdent := typ.(*ast.Ident)
