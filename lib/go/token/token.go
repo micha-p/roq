@@ -43,11 +43,11 @@ const (
 	COMPLEX // wont be implemented in version 1
 	STRING
 
+	NULL //	SPECIAL
 	NA   // Single dot is treated as missing value
 	NAN
 	INF
 	literal_end
-	NULL //	SPECIAL
 
 /* 3.1.4 Operators
 	   R contains a number of operators. They are listed in the table below.
@@ -99,8 +99,8 @@ const (
 	QUO // /
 	REM // %
 
-	AND     // &
-	OR      // |
+//	AND     // &
+//	OR      // |
 	XOR     // ^
 	SHL     // <<
 	SHR     // >>
@@ -118,7 +118,7 @@ const (
 	LSS    // <
 	GTR    // >
 	ASSIGN // =
-	NOT    // !
+//	NOT    // !
 
 	NEQ      // !=
 	LEQ      // <=
@@ -136,7 +136,51 @@ const (
 	RBRACE    // }
 	SEMICOLON // ;
 
+	// R Operators
+
+	MINUS           // -	Minus, can be unary or binary
+	PLUS            // +	Plus, can be unary or binary
+	UNARYMINUS      // -	Minus, can be unary or binary
+	UNARYPLUS       // +	Plus, can be unary or binary
+	NOT             // !	Unary not
+	TILDE           // ~	Tilde, used for model formulae, can be either unary or binary
+	HELP            // ?	Help
+	SEQUENCE        // :	Sequence, binary (in model formulae: interaction)
+	MULTIPLICATION  // *	Multiplication, binary
+	DIVISION        // /	Division, binary
+	MODULUS         // %%	Modulus, binary
+	EXPONENTIATION  // ^	Exponentiation, binary
+	LESS            // <	Less than, binary
+	GREATER         // >	Greater than, binary
+	EQUAL           // ==	Equal to, binary
+	UNEQUAL         // !=	ADDITIONAL TO DOCUMENTATION
+	GREATEREQUAL    // >=	Greater than or equal to, binary
+	LESSEQUAL       // <=	Less than or equal to, binary
+	ANDVECTOR       // &	And, binary, vectorized
+	AND             // &&	And, binary, not vectorized
+	ORVECTOR        // |	Or, binary, vectorized
+	OR              // ||	Or, binary, not vectorized
+	ASSOCIATION     // =	FORGOTTEN IN DOCUMENTATION
+	LEFTASSIGNMENT  // <-	Left assignment, binary
+	RIGHTASSIGNMENT // ->	Right assignment, binary
+	SUPERLEFTASSIGNMENT  // <-	Left assignment, binary
+	SUPERRIGHTASSIGNMENT // ->	Right assignment, binary
+	SUBSET          // $	List subset, binary
+	SLOT            // @	List subset, binary
+	DOUBLECOLON     // ::	List subset, binary
+
+	// R SPECIALOPERATORS
+
+	/*
+	   %x%	Special binary operators, x can be replaced by any valid name
+	   %/%	Integer divide, binary
+	   %*%	Matrix product, binary
+	   %o%	Outer product, binary
+	   %x%	Kronecker product, binary
+	   %in%	Matching operator, binary (in model formulae: nesting)
+	*/
 	operator_end
+
 
 	keyword_beg
 	// Keywords
@@ -209,14 +253,45 @@ var tokens = [...]string{
 	NAN:  "NAN",
 	INF:  "INF",
 
+	// R Operators
+	MINUS:           "-",  // -	Minus, can be unary or binary
+	PLUS:            "+",  // +	Plus, can be unary or binary
+	NOT:             "!",  // !	Unary not
+	TILDE:           "~",  // ~	Tilde, used for model formulae, can be either unary or binary
+	HELP:            "?",  // ?	Help
+	SEQUENCE:        ":",  // :	Sequence, binary (in model formulae: interaction)
+	MULTIPLICATION:  "*",  // *	Multiplication, binary
+	DIVISION:        "/",  // /	Division, binary
+	MODULUS:         "%%", // %%	Modulus, binary
+	EXPONENTIATION:  "^",  // ^	Exponentiation, binary
+	LESS:            "<",  // <	Less than, binary
+	GREATER:         ">",  // >	Greater than, binary
+	EQUAL:           "==", // ==	Equal to, binary
+	UNEQUAL:         "!=", // !=	ADDITIONAL TO DOCUMENTATION
+	GREATEREQUAL:    ">=", // >=	Greater than or equal to, binary
+	LESSEQUAL:       "<=", // <=	Less than or equal to, binary
+	ANDVECTOR:       "&",  // &	And, binary, vectorized
+	AND:             "&&", // &&	And, binary, not vectorized
+	ORVECTOR:        "|",  // |	Or, binary, vectorized
+	OR:              "||", // ||	Or, binary, not vectorized
+	ASSOCIATION:     "=",  // =	FORGOTTEN IN DOCUMENTATION
+	LEFTASSIGNMENT:  "<-", // <-	Left assignment, binary
+	RIGHTASSIGNMENT: "->", // ->	Right assignment, binary
+	SUPERLEFTASSIGNMENT:  "<<-", 
+	SUPERRIGHTASSIGNMENT: "->>", 
+	SUBSET:          "$",  // $	List subset, binary
+	SLOT:            "@",  // $	List subset, binary
+	DOUBLECOLON:     "::", // Namespace
+
+
 	ADD: "+",
 	SUB: "-",
 	MUL: "*",
 	QUO: "/",
 	REM: "%",
 
-	AND:     "&",
-	OR:      "|",
+//	AND:     "&",
+//	OR:      "|",
 	XOR:     "^",
 	SHL:     "<<",
 	SHR:     ">>",
@@ -232,7 +307,7 @@ var tokens = [...]string{
 	LSS:    "<",
 	GTR:    ">",
 	ASSIGN: "=",
-	NOT:    "!",
+//	NOT:    "!",
 
 	NEQ:      "!=",
 	LEQ:      "<=",
@@ -319,9 +394,30 @@ func (tok Token) String() string {
 //
 const (
 	LowestPrec  = 0 // non-operators
-	UnaryPrec   = 6
-	HighestPrec = 7
+	UnaryPrec   = 13
+	HighestPrec = 16
 )
+
+// 10.4.2 Infix and prefix operators
+//
+// The order of precedence (highest first) of the operators is
+//
+// ::
+// $ @
+// ^
+// - +                (unary)
+// :                  (precedes binary +/-, but not ^)
+// %xyz%
+// * /
+// + -                (binary)
+// > >= < <= == !=
+// !
+// & &&
+// | ||
+// ~                  (unary and binary)
+// -> ->>
+// =                  (as assignment)
+// <- <<-
 
 // Precedence returns the operator precedence of the binary
 // operator op. If op is not a binary operator, the result
@@ -330,15 +426,48 @@ const (
 func (op Token) Precedence() int {
 	switch op {
 	case LOR:
-		return 1
-	case LAND:
-		return 2
-	case EQL, NEQ, LSS, LEQ, GTR, GEQ:
-		return 3
-	case ADD, SUB, OR, XOR:
-		return 4
-	case MUL, QUO, REM, SHL, SHR, AND, AND_NOT:
 		return 5
+	case LAND:
+		return 7
+	case EQL, NEQ, LSS, LEQ, GTR, GEQ:
+		return 8
+	case ADD, SUB, /*OR,*/ XOR:
+		return 9
+	case MUL, QUO, REM, SHL, SHR, /* AND,*/ AND_NOT:
+		return 10
+	// R operators
+        case DOUBLECOLON:
+		return 16
+	case SUBSET, SLOT:
+		return 15
+	case EXPONENTIATION:
+		return 14
+	case UNARYMINUS, UNARYPLUS:
+		return 13
+	case SEQUENCE:
+		return 12
+	case MODULUS:
+		return 11
+	case MULTIPLICATION, DIVISION:
+		return 10
+	case PLUS, MINUS:
+		return 9
+	case GREATER, GREATEREQUAL, LESS, LESSEQUAL, EQUAL, UNEQUAL:
+		return 8
+	case AND, ANDVECTOR:
+		return 7
+	case NOT:
+		return 6
+	case OR, ORVECTOR:
+		return 5
+	case TILDE:
+		return 4
+	case LEFTASSIGNMENT, SUPERLEFTASSIGNMENT:
+		return 3
+	case ASSOCIATION:
+		return 2
+	case RIGHTASSIGNMENT, SUPERRIGHTASSIGNMENT:
+		return 1
 	}
 	return LowestPrec
 }
@@ -377,3 +506,16 @@ func (tok Token) IsOperator() bool { return operator_beg < tok && tok < operator
 // it returns false otherwise.
 //
 func (tok Token) IsKeyword() bool { return keyword_beg < tok && tok < keyword_end }
+
+// R predicates
+func isCONSTANT(t Token) bool {
+	return t == INTEGER || t == LOGICAL || t == NUMERIC || t == COMPLEX || t == STRING
+}
+
+func isLOGICAL(t Token) bool {
+	return t == TRUE || t == FALSE
+}
+
+func isNUMERIC(t Token) bool {
+	return t == INTEGER || t == DOUBLE || t == COMPLEX || t == NAN || t == INF
+}

@@ -22,16 +22,14 @@ func ExampleParseFile() {
 	s = 's#c'
 	
 	
-	# r comment
-	# r comment 2
-	
-	#
  #
 
 #                 
 r = 1  +2 %% 10 + . ;
 
 a.a=23. + .1 * a_2 + ..b * ._c / a...b
+
+C= 1 +2 * 3 ^ 2 / 1 * 2 
 
 #a[1...3]
 }
