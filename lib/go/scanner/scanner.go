@@ -602,6 +602,7 @@ scanAgain:
 				lit = "." + s.scanIdentifier()
 				tok = token.IDENT
 			} else {
+				insertSemi = true
 				tok = token.NA
 			}
 		case ',':

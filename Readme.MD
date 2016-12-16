@@ -3,7 +3,7 @@ https://blog.gopheracademy.com/advent-2014/parsers-lexers/
 https://cran.r-project.org/doc/manuals/R-lang.html
 
 
-
+semicolons: during scanning, semicolons are inserted at linebreaks, if insertSemi=true
 
 
 package token
