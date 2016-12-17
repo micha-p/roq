@@ -93,7 +93,7 @@ const (
 
 	operator_beg
 	// Operators and delimiters
-	ADD // +
+/*	ADD // +
 	SUB // -
 	MUL // *
 	QUO // /
@@ -101,7 +101,7 @@ const (
 
 //	AND     // &
 //	OR      // |
-	XOR     // ^
+	XOR     // ^*/
 	SHL     // <<
 	SHR     // >>
 	AND_NOT // &^
@@ -284,7 +284,7 @@ var tokens = [...]string{
 	DOUBLECOLON:     "::", // Namespace
 
 
-	ADD: "+",
+/*	ADD: "+",
 	SUB: "-",
 	MUL: "*",
 	QUO: "/",
@@ -292,7 +292,7 @@ var tokens = [...]string{
 
 //	AND:     "&",
 //	OR:      "|",
-	XOR:     "^",
+	XOR:     "^",*/
 	SHL:     "<<",
 	SHR:     ">>",
 	AND_NOT: "&^",
@@ -431,9 +431,9 @@ func (op Token) Precedence() int {
 		return 7
 	case EQL, NEQ, LSS, LEQ, GTR, GEQ:
 		return 8
-	case ADD, SUB, /*OR,*/ XOR:
-		return 9
-	case MUL, QUO, REM, SHL, SHR, /* AND,*/ AND_NOT:
+//	case ADD, SUB, /*OR,*/ XOR:
+//		return 9
+	case /*MUL, QUO, REM,*/ SHL, SHR, /* AND,*/ AND_NOT:
 		return 10
 	// R operators
         case DOUBLECOLON:

@@ -632,7 +632,7 @@ func (p *parser) parseStructType() *ast.StructType {
 	lbrace := p.expect(token.LBRACE)
 	scope := ast.NewScope(nil) // struct scope
 	var list []*ast.Field
-	for p.tok == token.IDENT || p.tok == token.MUL || p.tok == token.LPAREN {
+	for p.tok == token.IDENT || p.tok == token.MULTIPLICATION || p.tok == token.LPAREN {
 		// a field declaration cannot start with a '(' but we accept
 		// it here for more robust parsing and better error messages
 		// (parseFieldDecl will check and complain if necessary)
@@ -655,7 +655,7 @@ func (p *parser) parsePointerType() *ast.StarExpr {
 		defer un(trace(p, "PointerType"))
 	}
 
-	star := p.expect(token.MUL)
+	star := p.expect(token.MULTIPLICATION)
 	base := p.parseType()
 
 	return &ast.StarExpr{Star: star, X: base}
@@ -906,7 +906,7 @@ func (p *parser) tryIdentOrType() ast.Expr {
 		return p.parseArrayType()
 	case token.STRUCT:
 		return p.parseStructType()
-	case token.MUL:
+	case token.MULTIPLICATION:
 		return p.parsePointerType()
 	case token.FUNC:
 		typ, _ := p.parseFuncType()
@@ -1012,7 +1012,7 @@ func (p *parser) parseOperand(lhs bool) ast.Expr {
 		defer un(trace(p, "Operand"))
 	}
 
-	if p.tok.IsLiteral(){
+	if p.tok.IsLiteral() {
 		x := &ast.BasicLit{ValuePos: p.pos, Kind: p.tok, Value: p.lit}
 		p.next()
 		return x
@@ -1186,7 +1186,7 @@ func (p *parser) parseValue(keyOk bool) ast.Expr {
 			p.tryResolve(x, false)
 		} else {
 			// not a key */
-			p.resolve(x)
+		p.resolve(x)
 		/*}*/
 	}
 
@@ -1399,7 +1399,7 @@ func (p *parser) parseUnaryExpr(lhs bool) ast.Expr {
 	}
 
 	switch p.tok {
-	case token.ADD, token.SUB, token.NOT, token.XOR, token.AND:
+	case token.PLUS, token.MINUS, token.NOT, token.AND:
 		pos, op := p.pos, p.tok
 		p.next()
 		x := p.parseUnaryExpr(false)
@@ -1451,7 +1451,7 @@ func (p *parser) parseUnaryExpr(lhs bool) ast.Expr {
 		// <-(expr)
 		return &ast.UnaryExpr{OpPos: arrow, Op: token.ARROW, X: p.checkExpr(x)}
 
-	case token.MUL:
+	case token.MULTIPLICATION:
 		// pointer type or unary "*" expression
 		pos := p.pos
 		p.next()
@@ -1474,7 +1474,7 @@ func (p *parser) tokPrec() (token.Token, int) {
 func (p *parser) parseBinaryExpr(lhs bool, prec1 int) ast.Expr {
 	if p.trace {
 		defer un(trace(p, "BinaryExpr"))
-		
+
 	}
 	x := p.parseUnaryExpr(lhs)
 	for {
@@ -1741,7 +1741,6 @@ func (p *parser) parseTypeList() (list []ast.Expr) {
 	return
 }
 
-
 func isTypeSwitchAssert(x ast.Expr) bool {
 	a, ok := x.(*ast.TypeAssertExpr)
 	return ok && a.Type == nil
@@ -1767,7 +1766,6 @@ func (p *parser) isTypeSwitchGuard(s ast.Stmt) bool {
 	}
 	return false
 }
-
 
 func (p *parser) parseForStmt() ast.Stmt {
 	if p.trace {
@@ -1864,7 +1862,7 @@ func (p *parser) parseStmt() (s ast.Stmt) {
 		// tokens that may start an expression
 		token.IDENT, token.INT, token.FLOAT, token.NA, token.IMAG, token.STRING, token.FUNC, token.LPAREN, // operands
 		token.LBRACK, token.STRUCT, token.MAP, token.CHAN, token.INTERFACE, // composite types
-		token.ADD, token.SUB, token.MUL, token.AND, token.XOR, token.ARROW, token.NOT: // unary operators
+		token.PLUS, token.MINUS, token.MULTIPLICATION, token.AND, token.ARROW, token.NOT: // unary operators
 		s, _ = p.parseSimpleStmt(labelOk)
 		// because of the required look-ahead, labeled statements are
 		// parsed by parseSimpleStmt - don't expect a semicolon after
@@ -1930,7 +1928,7 @@ func (p *parser) parseImportSpec(doc *ast.CommentGroup, _ token.Token, _ int) as
 
 	var ident *ast.Ident
 	switch p.tok {
-/*	case token.PERIOD:
+	/*	case token.PERIOD:
 		ident = &ast.Ident{NamePos: p.pos, Name: "."}
 		p.next()*/
 	case token.IDENT:

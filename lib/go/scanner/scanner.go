@@ -82,7 +82,6 @@ func (s *Scanner) next() {
 	}
 }
 
-
 // Init prepares the scanner s to tokenize the text src by setting the
 // scanner at the beginning of src. The scanner uses the file set file
 // for position information and it adds line information for each line.
@@ -131,7 +130,7 @@ func (s *Scanner) error(offs int, msg string) {
 var prefix = []byte("//line ")
 
 // 10.2 Comments
-// Comments in R are ignored by the parser. Any text from a # character to the end of the line is taken to be a comment, 
+// Comments in R are ignored by the parser. Any text from a # character to the end of the line is taken to be a comment,
 // unless the # character is inside a quoted string.
 
 func (s *Scanner) skipComment() string {
@@ -626,11 +625,11 @@ scanAgain:
 			insertSemi = true
 			tok = token.RBRACE
 		case '+':
-			tok = token.ADD
+			tok = token.PLUS
 		case '-':
-			tok = token.SUB
+			tok = token.MINUS
 		case '*':
-			tok = token.MUL
+			tok = token.MULTIPLICATION
 		case '#': // R comment
 			if s.insertSemi && s.findLineEnd() {
 				// reset position to the beginning of the comment
@@ -643,16 +642,17 @@ scanAgain:
 			s.skipComment()
 			goto scanAgain
 		case '/':
-			tok = token.QUO
+			tok = token.DIVISION
+
 		case '%':
 			if s.ch == '%' {
 				s.next()
-				tok = token.REM
+				tok = token.MODULUS
 			} else {
 				tok = token.ILLEGAL
 			}
 		case '^':
-			tok = token.XOR
+			tok = token.EXPONENTIATION
 		case '<':
 			if s.ch == '-' {
 				s.next()
@@ -662,7 +662,7 @@ scanAgain:
 			}
 		case '>':
 			tok = s.switch4(token.GTR, token.GEQ, '>', token.SHR, token.ILLEGAL)
-                case '=':
+		case '=':
 			tok = s.switch2(token.ASSIGN, token.EQL)
 		case '!':
 			tok = s.switch2(token.NOT, token.NEQ)
