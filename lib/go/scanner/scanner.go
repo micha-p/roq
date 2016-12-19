@@ -604,6 +604,12 @@ scanAgain:
 				insertSemi = true
 				tok = token.NA
 			}
+		case ':':
+			tok = token.SEQUENCE
+		case '$':
+			tok = token.SUBSET
+		case '@':
+			tok = token.SLOT
 		case ',':
 			tok = token.COMMA
 		case ';':
@@ -627,7 +633,12 @@ scanAgain:
 		case '+':
 			tok = token.PLUS
 		case '-':
-			tok = token.MINUS
+			if s.ch == '>' {
+				s.next()
+				tok = token.RIGHTASSIGNMENT
+			} else {
+				tok = token.MINUS
+			}
 		case '*':
 			tok = token.MULTIPLICATION
 		case '#': // R comment
@@ -656,14 +667,14 @@ scanAgain:
 		case '<':
 			if s.ch == '-' {
 				s.next()
-				tok = token.ARROW
+				tok = token.LEFTASSIGNMENT
 			} else {
 				tok = s.switch4(token.LSS, token.LEQ, '<', token.SHL, token.ILLEGAL)
 			}
 		case '>':
 			tok = s.switch4(token.GTR, token.GEQ, '>', token.SHR, token.ILLEGAL)
 		case '=':
-			tok = s.switch2(token.ASSIGN, token.EQL)
+			tok = s.switch2(token.LEFTASSIGNMENT, token.EQL)
 		case '!':
 			tok = s.switch2(token.NOT, token.NEQ)
 		case '&':

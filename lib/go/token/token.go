@@ -110,14 +110,14 @@ const (
 
 	LAND  // &&
 	LOR   // ||
-	ARROW // <-
+//	ARROW // <-
 	INC   // ++
 	DEC   // --
 
 	EQL    // ==
 	LSS    // <
 	GTR    // >
-	ASSIGN // =
+//	ASSIGN // =
 //	NOT    // !
 
 	NEQ      // !=
@@ -274,7 +274,7 @@ var tokens = [...]string{
 	AND:             "&&", // &&	And, binary, not vectorized
 	ORVECTOR:        "|",  // |	Or, binary, vectorized
 	OR:              "||", // ||	Or, binary, not vectorized
-	ASSOCIATION:     "=",  // =	FORGOTTEN IN DOCUMENTATION
+	ASSOCIATION:     "=",  // =	NOT STRITCLY AN OPERATOR, ALSO USED AS ASSIGNMENT
 	LEFTASSIGNMENT:  "<-", // <-	Left assignment, binary
 	RIGHTASSIGNMENT: "->", // ->	Right assignment, binary
 	SUPERLEFTASSIGNMENT:  "<<-", 
@@ -299,14 +299,14 @@ var tokens = [...]string{
 
 	LAND:  "&&",
 	LOR:   "||",
-	ARROW: "<-",
+//	ARROW: "<-",
 	INC:   "++",
 	DEC:   "--",
 
 	EQL:    "==",
 	LSS:    "<",
 	GTR:    ">",
-	ASSIGN: "=",
+//	ASSIGN: "=",
 //	NOT:    "!",
 
 	NEQ:      "!=",

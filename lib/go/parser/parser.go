@@ -872,31 +872,6 @@ func (p *parser) parseMapType() *ast.MapType {
 	return &ast.MapType{Map: pos, Key: key, Value: value}
 }
 
-func (p *parser) parseChanType() *ast.ChanType {
-	if p.trace {
-		defer un(trace(p, "ChanType"))
-	}
-
-	pos := p.pos
-	dir := ast.SEND | ast.RECV
-	var arrow token.Pos
-	if p.tok == token.CHAN {
-		p.next()
-		if p.tok == token.ARROW {
-			arrow = p.pos
-			p.next()
-			dir = ast.SEND
-		}
-	} else {
-		arrow = p.expect(token.ARROW)
-		p.expect(token.CHAN)
-		dir = ast.RECV
-	}
-	value := p.parseType()
-
-	return &ast.ChanType{Begin: pos, Arrow: arrow, Dir: dir, Value: value}
-}
-
 // If the result is an identifier, it is not resolved.
 func (p *parser) tryIdentOrType() ast.Expr {
 	switch p.tok {
@@ -915,8 +890,6 @@ func (p *parser) tryIdentOrType() ast.Expr {
 		return p.parseInterfaceType()
 	case token.MAP:
 		return p.parseMapType()
-	case token.CHAN, token.ARROW:
-		return p.parseChanType()
 	case token.LPAREN:
 		lparen := p.pos
 		p.next()
@@ -1058,24 +1031,6 @@ func (p *parser) parseSelector(x ast.Expr) ast.Expr {
 	sel := p.parseIdent()
 
 	return &ast.SelectorExpr{X: x, Sel: sel}
-}
-
-func (p *parser) parseTypeAssertion(x ast.Expr) ast.Expr {
-	if p.trace {
-		defer un(trace(p, "TypeAssertion"))
-	}
-
-	lparen := p.expect(token.LPAREN)
-	var typ ast.Expr
-	if p.tok == token.TYPE {
-		// type switch: typ == nil
-		p.next()
-	} else {
-		typ = p.parseType()
-	}
-	rparen := p.expect(token.RPAREN)
-
-	return &ast.TypeAssertExpr{X: x, Type: typ, Lparen: lparen, Rparen: rparen}
 }
 
 func (p *parser) parseIndexOrSlice(x ast.Expr) ast.Expr {
@@ -1355,8 +1310,6 @@ L:
 			switch p.tok {
 			case token.IDENT:
 				x = p.parseSelector(p.checkExprOrType(x))
-			case token.LPAREN:
-				x = p.parseTypeAssertion(p.checkExpr(x))
 			default:
 				pos := p.pos
 				p.errorExpected(pos, "selector or type assertion")
@@ -1405,52 +1358,6 @@ func (p *parser) parseUnaryExpr(lhs bool) ast.Expr {
 		x := p.parseUnaryExpr(false)
 		return &ast.UnaryExpr{OpPos: pos, Op: op, X: p.checkExpr(x)}
 
-	case token.ARROW:
-		// channel type or receive expression
-		arrow := p.pos
-		p.next()
-
-		// If the next token is token.CHAN we still don't know if it
-		// is a channel type or a receive operation - we only know
-		// once we have found the end of the unary expression. There
-		// are two cases:
-		//
-		//   <- type  => (<-type) must be channel type
-		//   <- expr  => <-(expr) is a receive from an expression
-		//
-		// In the first case, the arrow must be re-associated with
-		// the channel type parsed already:
-		//
-		//   <- (chan type)    =>  (<-chan type)
-		//   <- (chan<- type)  =>  (<-chan (<-type))
-
-		x := p.parseUnaryExpr(false)
-
-		// determine which case we have
-		if typ, ok := x.(*ast.ChanType); ok {
-			// (<-type)
-
-			// re-associate position info and <-
-			dir := ast.SEND
-			for ok && dir == ast.SEND {
-				if typ.Dir == ast.RECV {
-					// error: (<-type) is (<-(<-chan T))
-					p.errorExpected(typ.Arrow, "'chan'")
-				}
-				arrow, typ.Begin, typ.Arrow = typ.Arrow, arrow, arrow
-				dir, typ.Dir = typ.Dir, ast.RECV
-				typ, ok = typ.Value.(*ast.ChanType)
-			}
-			if dir == ast.SEND {
-				p.errorExpected(arrow, "channel type")
-			}
-
-			return x
-		}
-
-		// <-(expr)
-		return &ast.UnaryExpr{OpPos: arrow, Op: token.ARROW, X: p.checkExpr(x)}
-
 	case token.MULTIPLICATION:
 		// pointer type or unary "*" expression
 		pos := p.pos
@@ -1464,7 +1371,7 @@ func (p *parser) parseUnaryExpr(lhs bool) ast.Expr {
 
 func (p *parser) tokPrec() (token.Token, int) {
 	tok := p.tok
-	if p.inRhs && tok == token.ASSIGN {
+	if p.inRhs && tok == token.LEFTASSIGNMENT {
 		tok = token.EQL
 	}
 	return tok, tok.Precedence()
@@ -1541,22 +1448,18 @@ func (p *parser) parseSimpleStmt(mode int) (ast.Stmt, bool) {
 
 	x := p.parseLhsList()
 
+	// TODO RIGHTASSIGNMENT
+	
 	switch p.tok {
 	case
-		token.DEFINE, token.ASSIGN:
+		token.DEFINE, token.LEFTASSIGNMENT, token.RIGHTASSIGNMENT:
 		// assignment statement, possibly part of a range clause
 		pos, tok := p.pos, p.tok
 		p.next()
 		var y []ast.Expr
 		isRange := false
-		if mode == rangeOk && p.tok == token.RANGE && (tok == token.DEFINE || tok == token.ASSIGN) {
-			pos := p.pos
-			p.next()
-			y = []ast.Expr{&ast.UnaryExpr{OpPos: pos, Op: token.RANGE, X: p.parseRhs()}}
-			isRange = true
-		} else {
-			y = p.parseRhsList()
-		}
+        y = p.parseRhsList()
+		
 		as := &ast.AssignStmt{Lhs: x, TokPos: pos, Tok: tok, Rhs: y}
 		if tok == token.DEFINE {
 			p.shortVarDecl(as, x)
@@ -1568,24 +1471,6 @@ func (p *parser) parseSimpleStmt(mode int) (ast.Stmt, bool) {
 		p.errorExpected(x[0].Pos(), "1 expression")
 		// continue with first expression
 	}
-
-	switch p.tok {
-
-	case token.ARROW:
-		// send statement
-		arrow := p.pos
-		p.next()
-		y := p.parseRhs()
-		return &ast.SendStmt{Chan: x[0], Arrow: arrow, Value: y}, false
-
-	case token.INC, token.DEC:
-		// increment or decrement
-		s := &ast.IncDecStmt{X: x[0], TokPos: p.pos, Tok: p.tok}
-		p.next()
-		return s, false
-	}
-
-	// expression
 	return &ast.ExprStmt{X: x[0]}, false
 }
 
@@ -1741,31 +1626,6 @@ func (p *parser) parseTypeList() (list []ast.Expr) {
 	return
 }
 
-func isTypeSwitchAssert(x ast.Expr) bool {
-	a, ok := x.(*ast.TypeAssertExpr)
-	return ok && a.Type == nil
-}
-
-func (p *parser) isTypeSwitchGuard(s ast.Stmt) bool {
-	switch t := s.(type) {
-	case *ast.ExprStmt:
-		// x.(type)
-		return isTypeSwitchAssert(t.X)
-	case *ast.AssignStmt:
-		// v := x.(type)
-		if len(t.Lhs) == 1 && len(t.Rhs) == 1 && isTypeSwitchAssert(t.Rhs[0]) {
-			switch t.Tok {
-			case token.ASSIGN:
-				// permit v = x.(type) but complain
-				p.error(t.TokPos, "expected ':=', found '='")
-				fallthrough
-			case token.DEFINE:
-				return true
-			}
-		}
-	}
-	return false
-}
 
 func (p *parser) parseForStmt() ast.Stmt {
 	if p.trace {
@@ -1862,7 +1722,7 @@ func (p *parser) parseStmt() (s ast.Stmt) {
 		// tokens that may start an expression
 		token.IDENT, token.INT, token.FLOAT, token.NA, token.IMAG, token.STRING, token.FUNC, token.LPAREN, // operands
 		token.LBRACK, token.STRUCT, token.MAP, token.CHAN, token.INTERFACE, // composite types
-		token.PLUS, token.MINUS, token.MULTIPLICATION, token.AND, token.ARROW, token.NOT: // unary operators
+		token.PLUS, token.MINUS, token.MULTIPLICATION, token.AND, token.NOT: // unary operators
 		s, _ = p.parseSimpleStmt(labelOk)
 		// because of the required look-ahead, labeled statements are
 		// parsed by parseSimpleStmt - don't expect a semicolon after
@@ -1970,7 +1830,7 @@ func (p *parser) parseValueSpec(doc *ast.CommentGroup, keyword token.Token, iota
 	typ := p.tryType()
 	var values []ast.Expr
 	// always permit optional initialization for more tolerant parsing
-	if p.tok == token.ASSIGN {
+	if p.tok == token.LEFTASSIGNMENT {
 		p.next()
 		values = p.parseRhsList()
 	}
