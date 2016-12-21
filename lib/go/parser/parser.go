@@ -2038,7 +2038,7 @@ func (p *parser) parseFile() *ast.File {
 		if true /* p.mode&ImportsOnly == 0 */ {
 			// rest of package body
 			for p.tok != token.EOF {
-				decls = append(decls, p.parseDecl(syncDecl))
+				decls = append(decls, p.parseDecl(syncDecl)) // this is the main iterator!!!
 			}
 		}
 	}
@@ -2069,3 +2069,4 @@ func (p *parser) parseFile() *ast.File {
 		Comments:   p.comments,
 	}
 }
+

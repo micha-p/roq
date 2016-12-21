@@ -123,6 +123,61 @@ func ParseFile(fset *token.FileSet, filename string, src interface{}, mode Mode)
 	return
 }
 
+// paserInit and parseIter are derived from SPLITTED ParseFile and parseFile to allwo for subsequent parsing
+
+func ParseInit(fset *token.FileSet, filename string, src interface{}, mode Mode) (r *parser, err error) {
+
+	if fset == nil {
+		panic("parser.ParseFile: no token.FileSet provided (fset == nil)")
+	}
+
+	// get source
+	text, err := readSource(filename, src)
+	if err != nil {
+		return nil, err
+	}
+
+	var p parser
+	p.init(fset, filename, text, mode)
+	assert(&p != nil, "nil instead of parser")
+	p.openScope()
+
+	return &p, err
+}
+
+func ParseIter(p *parser) (s ast.Stmt, tok token.Token) {
+	if p.trace {
+		defer un(trace(p, "ITER"))
+	}
+
+	p.pkgScope = p.topScope
+
+	if true /* p.mode&ImportsOnly == 0 */ {
+		s = p.parseStmt()
+	}
+
+	// TODO resolve global identifiers within the same scope
+	/*
+	i := 0
+
+	for _, ident := range p.unresolved {
+
+		print("RESOLVE: ")
+		ast.Print(nil, ident)
+
+		// i <= index for current ident
+		assert(ident.Obj == unresolved, "object already resolved")
+		ident.Obj = p.pkgScope.Lookup(ident.Name) // also removes unresolved sentinel
+		if ident.Obj == nil {
+			p.unresolved[i] = ident
+			i++
+		}
+	}
+	*/
+
+	return s, p.tok
+}
+
 // ParseDir calls ParseFile for all files with names ending in ".go" in the
 // directory specified by path and returns a map of package name -> package
 // AST with all the packages found.

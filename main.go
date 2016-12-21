@@ -17,6 +17,7 @@ func myerrorhandler(pos token.Position, msg string) {
 	println("SCANNER ERROR", pos.Filename, pos.Line, pos.Column, msg)
 }
 
+
 func main() {
 	fset := token.NewFileSet() // positions are relative to fset
 
@@ -40,15 +41,21 @@ func main() {
 			fmt.Printf("%s\t%s\t%q\n", fset.Position(pos), tok, lit)
 		}
 	} else {
-		f, err := parser.ParseFile(fset, *filePtr, nil, 0 /*parser.AllErrors|parser.Trace*/)
+
+		p, err := parser.ParseInit(fset, *filePtr, nil, parser.AllErrors|parser.Trace)
+
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
 
-		// Print the AST.
-		ast.Print(fset, f)
+		
+		for true {
+			stmt, tok := parser.ParseIter(p) // main iterator calls parse.stmt
+			ast.Print(fset, stmt)
+			if tok == token.EOF {
+				return
+			}
+		}
 	}
 }
-
-//	p := parser.NewParser(os.Stdin)
