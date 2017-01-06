@@ -4,6 +4,9 @@ af <- function(a,b,c) {
 	a+1
 }
 
+void <- function(a) {
+	return()
+}
 
 zero <- function() {
 	return(0)

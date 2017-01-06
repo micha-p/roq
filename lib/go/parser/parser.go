@@ -1478,13 +1478,17 @@ func (p *parser) parseReturnStmt() *ast.ReturnStmt {
 
 	pos := p.pos
 	p.expect(token.RETURN)
-	var x []ast.Expr
-	if p.tok != token.SEMICOLON && p.tok != token.RBRACE {
-		x = p.parseRhsList()
+	p.expect(token.LPAREN)
+	var x ast.Expr
+	if p.tok != token.RPAREN {
+		x = p.parseRhs()
+	} else {
+		x = nil
 	}
+	p.expect(token.RPAREN)
 	p.expectSemi()
 
-	return &ast.ReturnStmt{Return: pos, Results: x}
+	return &ast.ReturnStmt{Return: pos, Result: x}
 }
 
 func (p *parser) parseBranchStmt(tok token.Token) *ast.BranchStmt {

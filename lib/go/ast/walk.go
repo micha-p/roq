@@ -213,7 +213,7 @@ func Walk(v Visitor, node Node) {
 		Walk(v, n.Call)
 
 	case *ReturnStmt:
-		walkExprList(v, n.Results)
+		Walk(v, n.Result)
 
 	case *BranchStmt:
 		if n.Label != nil {

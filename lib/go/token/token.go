@@ -206,7 +206,7 @@ const (
 	MAP
 	PACKAGE
 	RANGE
-	RETURN
+	RETURN  // missing in R language definition
 
 	SELECT
 	STRUCT
