@@ -196,7 +196,7 @@ const (
 	FALLTHROUGH
 //	FOR
 
-	FUNC
+//	FUNC
 	GO
 	GOTO
 //	IF
@@ -339,7 +339,7 @@ var tokens = [...]string{
 	FALLTHROUGH: "fallthrough",
 //	FOR:         "for",
 
-	FUNC:   "func",
+//	FUNC:   "func",
 	GO:     "go",
 	GOTO:   "goto",
 //	IF:     "if",

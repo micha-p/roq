@@ -13,9 +13,6 @@ import (
 	"io/ioutil"
 	"lib/go/ast"
 	"lib/go/token"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 // If src != nil, readSource converts src to a []byte if possible;
@@ -62,6 +59,8 @@ const (
 	AllErrors         = SpuriousErrors             // report all errors (not just the first 10 on different lines)
 )
 
+
+/*
 // ParseFile parses the source code of a single Go source file and returns
 // the corresponding ast.File node. The source code may be provided via
 // the filename of the source file, or via the src parameter.
@@ -122,6 +121,7 @@ func ParseFile(fset *token.FileSet, filename string, src interface{}, mode Mode)
 
 	return
 }
+*/
 
 // paserInit and parseIter are derived from SPLITTED ParseFile and parseFile to allwo for subsequent parsing
 
@@ -146,9 +146,6 @@ func ParseInit(fset *token.FileSet, filename string, src interface{}, mode Mode)
 }
 
 func ParseIter(p *parser) (s ast.Stmt, tok token.Token) {
-	if p.trace {
-		defer un(trace(p, "ITER"))
-	}
 
 	p.pkgScope = p.topScope
 
@@ -178,54 +175,7 @@ func ParseIter(p *parser) (s ast.Stmt, tok token.Token) {
 	return s, p.tok
 }
 
-// ParseDir calls ParseFile for all files with names ending in ".go" in the
-// directory specified by path and returns a map of package name -> package
-// AST with all the packages found.
-//
-// If filter != nil, only the files with os.FileInfo entries passing through
-// the filter (and ending in ".go") are considered. The mode bits are passed
-// to ParseFile unchanged. Position information is recorded in fset, which
-// must not be nil.
-//
-// If the directory couldn't be read, a nil map and the respective error are
-// returned. If a parse error occurred, a non-nil but incomplete map and the
-// first error encountered are returned.
-//
-func ParseDir(fset *token.FileSet, path string, filter func(os.FileInfo) bool, mode Mode) (pkgs map[string]*ast.Package, first error) {
-	fd, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer fd.Close()
 
-	list, err := fd.Readdir(-1)
-	if err != nil {
-		return nil, err
-	}
-
-	pkgs = make(map[string]*ast.Package)
-	for _, d := range list {
-		if strings.HasSuffix(d.Name(), ".go") && (filter == nil || filter(d)) {
-			filename := filepath.Join(path, d.Name())
-			if src, err := ParseFile(fset, filename, nil, mode); err == nil {
-				name := src.Name.Name
-				pkg, found := pkgs[name]
-				if !found {
-					pkg = &ast.Package{
-						Name:  name,
-						Files: make(map[string]*ast.File),
-					}
-					pkgs[name] = pkg
-				}
-				pkg.Files[filename] = src
-			} else if first == nil {
-				first = err
-			}
-		}
-	}
-
-	return
-}
 
 // ParseExprFrom is a convenience function for parsing an expression.
 // The arguments have the same meaning as for Parse, but the source must

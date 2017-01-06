@@ -164,9 +164,9 @@ func Walk(v Visitor, node Node) {
 		if n.Params != nil {
 			Walk(v, n.Params)
 		}
-		if n.Results != nil {
+	/*	if n.Results != nil {
 			Walk(v, n.Results)
-		}
+		}*/
 
 	case *InterfaceType:
 		Walk(v, n.Methods)

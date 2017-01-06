@@ -391,7 +391,7 @@ type (
 	FuncType struct {
 		Func    token.Pos  // position of "func" keyword (token.NoPos if there is no "func")
 		Params  *FieldList // (incoming) parameters; non-nil
-		Results *FieldList // (outgoing) results; or nil
+	/*	Results *FieldList // (outgoing) results; or nil*/
 	}
 
 	// An InterfaceType node represents an interface type.
@@ -476,9 +476,9 @@ func (x *KeyValueExpr) End() token.Pos   { return x.Value.End() }
 func (x *ArrayType) End() token.Pos      { return x.Elt.End() }
 func (x *StructType) End() token.Pos     { return x.Fields.End() }
 func (x *FuncType) End() token.Pos {
-	if x.Results != nil {
+/*	if x.Results != nil {
 		return x.Results.End()
-	}
+	}*/
 	return x.Params.End()
 }
 func (x *InterfaceType) End() token.Pos { return x.Methods.End() }

@@ -17,7 +17,6 @@ func myerrorhandler(pos token.Position, msg string) {
 	println("SCANNER ERROR", pos.Filename, pos.Line, pos.Column, msg)
 }
 
-
 func main() {
 	fset := token.NewFileSet() // positions are relative to fset
 
@@ -49,7 +48,6 @@ func main() {
 			return
 		}
 
-		
 		for true {
 			stmt, tok := parser.ParseIter(p) // main iterator calls parse.stmt
 			ast.Print(fset, stmt)
