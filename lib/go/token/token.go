@@ -190,23 +190,13 @@ const (
 	CONST
 	CONTINUE
 
-	DEFAULT
-	DEFER
-//	ELSE
-	FALLTHROUGH
-//	FOR
-
-//	FUNC
-	GO
-	GOTO
-//	IF
 	IMPORT
 
 	INTERFACE
 	MAP
 	PACKAGE
 	RANGE
-	RETURN  // missing in R language definition
+	RETURN  // not well covered in R language definition
 
 	SELECT
 	STRUCT
@@ -333,16 +323,6 @@ var tokens = [...]string{
 	CONST:    "const",
 	CONTINUE: "continue",
 
-	DEFAULT:     "default",
-	DEFER:       "defer",
-//	ELSE:        "else",
-	FALLTHROUGH: "fallthrough",
-//	FOR:         "for",
-
-//	FUNC:   "func",
-	GO:     "go",
-	GOTO:   "goto",
-//	IF:     "if",
 	IMPORT: "import",
 
 	INTERFACE: "interface",

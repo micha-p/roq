@@ -352,8 +352,7 @@ func assert(cond bool, msg string) {
 func syncStmt(p *parser) {
 	for {
 		switch p.tok {
-		case token.BREAK, token.CONST, token.CONTINUE, token.DEFER,
-			token.FALLTHROUGH, token.FOR, token.GO, token.GOTO,
+		case token.BREAK, token.CONST, token.CONTINUE, token.FOR,
 			token.IF, token.RETURN, token.SELECT, token.SWITCH,
 			token.TYPE, token.VAR:
 			// Return only if parser made some progress since last
@@ -873,7 +872,7 @@ func (p *parser) parseStmtList() (list []ast.Stmt) {
 		defer un(trace(p, "StatementList"))
 	}
 
-	for p.tok != token.CASE && p.tok != token.DEFAULT && p.tok != token.RBRACE && p.tok != token.EOF {
+	for p.tok != token.CASE && p.tok != token.RBRACE && p.tok != token.EOF {
 		list = append(list, p.parseStmt())
 	}
 
@@ -1441,36 +1440,6 @@ func (p *parser) parseCallExpr(callType string) *ast.CallExpr {
 	return nil
 }
 
-func (p *parser) parseGoStmt() ast.Stmt {
-	if p.trace {
-		defer un(trace(p, "GoStmt"))
-	}
-
-	pos := p.expect(token.GO)
-	call := p.parseCallExpr("go")
-	p.expectSemi()
-	if call == nil {
-		return &ast.BadStmt{From: pos, To: pos + 2} // len("go")
-	}
-
-	return &ast.GoStmt{Go: pos, Call: call}
-}
-
-func (p *parser) parseDeferStmt() ast.Stmt {
-	if p.trace {
-		defer un(trace(p, "DeferStmt"))
-	}
-
-	pos := p.expect(token.DEFER)
-	call := p.parseCallExpr("defer")
-	p.expectSemi()
-	if call == nil {
-		return &ast.BadStmt{From: pos, To: pos + 5} // len("defer")
-	}
-
-	return &ast.DeferStmt{Defer: pos, Call: call}
-}
-
 func (p *parser) parseReturnStmt() *ast.ReturnStmt {
 	if p.trace {
 		defer un(trace(p, "ReturnStmt"))
@@ -1498,7 +1467,7 @@ func (p *parser) parseBranchStmt(tok token.Token) *ast.BranchStmt {
 
 	pos := p.expect(tok)
 	var label *ast.Ident
-	if tok != token.FALLTHROUGH && p.tok == token.IDENT {
+	if p.tok == token.IDENT {
 		label = p.parseIdent()
 		// add to list of unresolved targets
 		n := len(p.targetStack) - 1
@@ -1688,13 +1657,9 @@ func (p *parser) parseStmt() (s ast.Stmt) {
 		if _, isLabeledStmt := s.(*ast.LabeledStmt); !isLabeledStmt {
 			p.expectSemi()
 		}
-	case token.GO:
-		s = p.parseGoStmt()
-	case token.DEFER:
-		s = p.parseDeferStmt()
 	case token.RETURN:
 		s = p.parseReturnStmt()
-	case token.BREAK, token.CONTINUE, token.GOTO, token.FALLTHROUGH:
+	case token.BREAK, token.CONTINUE:
 		s = p.parseBranchStmt(p.tok)
 	case token.LBRACE:
 		s = p.parseBlockStmt()
