@@ -1,16 +1,10 @@
-af <- function(a,b,c) {
-	#s = 's#c'
-	#r = 1  +2 %% 10 + .
-	a+1
-}
+if (TRUE) {1} else {2}
 
-void <- function(a) {
-	return()
-}
+if (TRUE) 3 else {4};
+if (TRUE) 3 else {4}
 
-zero <- function() {
-	return(0)
-}
+if (1>0) {3} else 4;
+if (1>0) {3} else 4
 
 #r = 1  +2 %% 10 + . ;
 

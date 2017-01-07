@@ -909,6 +909,21 @@ func (p *parser) parseBlockStmt() *ast.BlockStmt {
 	return &ast.BlockStmt{Lbrace: lbrace, List: list, Rbrace: rbrace}
 }
 
+// return one single statement as list of length 1
+func (p *parser) parseBlockStmt1() *ast.BlockStmt {
+	if p.trace {
+		defer un(trace(p, "BlockStmt1"))
+	}
+
+	p.openScope()
+	var list []ast.Stmt
+	list = append(list, &ast.ExprStmt{X: p.parseRhs()} )
+	p.closeScope()
+
+	return &ast.BlockStmt{List: list}
+}
+
+
 // ----------------------------------------------------------------------------
 // Expressions
 
@@ -1498,28 +1513,16 @@ func (p *parser) parseIfStmt() *ast.IfStmt {
 	p.openScope()
 	defer p.closeScope()
 
-	var s ast.Stmt
 	var x ast.Expr
-	{
-		prevLev := p.exprLev
-		p.exprLev = -1
-		if p.tok == token.SEMICOLON {
-			p.next()
-			x = p.parseRhs()
-		} else {
-			s, _ = p.parseAssignment(basic)
-			if p.tok == token.SEMICOLON {
-				p.next()
-				x = p.parseRhs()
-			} else {
-				x = p.makeExpr(s, "boolean expression")
-				s = nil
-			}
-		}
-		p.exprLev = prevLev
-	}
+	x = p.parseRhs()
 
-	body := p.parseBlockStmt()
+	var body *ast.BlockStmt
+	if p.tok == token.LBRACE {
+		body = p.parseBlockStmt()
+	} else {
+		body = p.parseBlockStmt1()
+	}
+	
 	var else_ ast.Stmt
 	if p.tok == token.ELSE {
 		p.next()
@@ -1530,14 +1533,14 @@ func (p *parser) parseIfStmt() *ast.IfStmt {
 			else_ = p.parseBlockStmt()
 			p.expectSemi()
 		default:
-			p.errorExpected(p.pos, "if statement or block")
-			else_ = &ast.BadStmt{From: p.pos, To: p.pos}
+			else_ = p.parseBlockStmt1()
+			p.expectSemi()
 		}
 	} else {
 		p.expectSemi()
 	}
 
-	return &ast.IfStmt{If: pos, Init: s, Cond: x, Body: body, Else: else_}
+	return &ast.IfStmt{If: pos, Cond: x, Body: body, Else: else_}
 }
 
 func (p *parser) parseTypeList() (list []ast.Expr) {
@@ -1651,12 +1654,6 @@ func (p *parser) parseStmt() (s ast.Stmt) {
 		token.PLUS, token.MINUS, token.MULTIPLICATION, token.AND, token.NOT: // unary operators
 		s, _ = p.parseAssignment(labelOk) // this parses an assignment!
 	
-		// because of the required look-ahead, labeled statements are
-		// parsed by parseAssignment - don't expect a semicolon after
-		// them
-		if _, isLabeledStmt := s.(*ast.LabeledStmt); !isLabeledStmt {
-			p.expectSemi()
-		}
 	case token.RETURN:
 		s = p.parseReturnStmt()
 	case token.BREAK, token.CONTINUE:

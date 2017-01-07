@@ -644,7 +644,6 @@ type (
 	// An IfStmt node represents an if statement.
 	IfStmt struct {
 		If   token.Pos // position of "if" keyword
-		Init Stmt      // initialization statement; or nil
 		Cond Expr      // condition
 		Body *BlockStmt
 		Else Stmt // else branch; or nil

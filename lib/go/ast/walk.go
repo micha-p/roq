@@ -206,12 +206,6 @@ func Walk(v Visitor, node Node) {
 		walkExprList(v, n.Lhs)
 		walkExprList(v, n.Rhs)
 
-	case *GoStmt:
-		Walk(v, n.Call)
-
-	case *DeferStmt:
-		Walk(v, n.Call)
-
 	case *ReturnStmt:
 		Walk(v, n.Result)
 
@@ -224,9 +218,6 @@ func Walk(v Visitor, node Node) {
 		walkStmtList(v, n.List)
 
 	case *IfStmt:
-		if n.Init != nil {
-			Walk(v, n.Init)
-		}
 		Walk(v, n.Cond)
 		Walk(v, n.Body)
 		if n.Else != nil {
