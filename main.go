@@ -13,7 +13,7 @@ import (
 	"lib/go/token"
 )
 
-var TRACE = true
+var TRACE bool
 
 func myerrorhandler(pos token.Position, msg string) {
 	println("SCANNER ERROR", pos.Filename, pos.Line, pos.Column, msg)
@@ -24,8 +24,12 @@ func main() {
 
 	scanPtr := flag.Bool("scan", false, "scan")
 	parsePtr := flag.Bool("parse", false, "parse")
+	traceLongPtr := flag.Bool("trace", false, "trace")
+	traceFlagPtr := flag.Bool("T", false, "trace")
 	filePtr := flag.String("file", "example.src", "filename to process")
 	flag.Parse()
+	
+	TRACE = *traceFlagPtr || *traceLongPtr
 
 	if *scanPtr {
 		src, _ := ioutil.ReadFile(*filePtr)
@@ -44,7 +48,15 @@ func main() {
 		}
 	} else if *parsePtr {
 
-		p, err := parser.ParseInit(fset, *filePtr, nil, parser.AllErrors|parser.Trace)
+		var parserOpts parser.Mode
+		if TRACE {
+			parserOpts = parser.AllErrors|parser.Trace
+		} else {
+			parserOpts = parser.AllErrors
+		}	
+		
+		
+		p, err := parser.ParseInit(fset, *filePtr, nil, parserOpts)
 
 		if err != nil {
 			fmt.Println(err)
