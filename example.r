@@ -1,12 +1,6 @@
-if (TRUE) {1} else {2}
-if (TRUE) {7}
+5.5
 
-if (TRUE) 3 else {4};
-if (TRUE) 3 else {4}
-if (TRUE) 6
-
-if (1>0) {3} else 4;
-if (1>0) {3} else 4
+2.0+(3.0*4.0)
 
 #r = 1  +2 %% 10 + . ;
 

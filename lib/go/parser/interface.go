@@ -123,8 +123,7 @@ func ParseFile(fset *token.FileSet, filename string, src interface{}, mode Mode)
 }
 */
 
-// paserInit and parseIter are derived from SPLITTED ParseFile and parseFile to allwo for subsequent parsing
-
+// parserInit and parseIter are derived from SPLITTED ParseFile and parseFile to allwo for subsequent parsing
 func ParseInit(fset *token.FileSet, filename string, src interface{}, mode Mode) (r *parser, err error) {
 
 	if fset == nil {

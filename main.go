@@ -13,6 +13,8 @@ import (
 	"lib/go/token"
 )
 
+var TRACE = true
+
 func myerrorhandler(pos token.Position, msg string) {
 	println("SCANNER ERROR", pos.Filename, pos.Line, pos.Column, msg)
 }
@@ -20,7 +22,8 @@ func myerrorhandler(pos token.Position, msg string) {
 func main() {
 	fset := token.NewFileSet() // positions are relative to fset
 
-	scanPtr := flag.Bool("scan", false, "scan instead of parse")
+	scanPtr := flag.Bool("scan", false, "scan")
+	parsePtr := flag.Bool("parse", false, "parse")
 	filePtr := flag.String("file", "example.src", "filename to process")
 	flag.Parse()
 
@@ -39,7 +42,7 @@ func main() {
 			}
 			fmt.Printf("%s\t%s\t%q\n", fset.Position(pos), tok, lit)
 		}
-	} else {
+	} else if *parsePtr {
 
 		p, err := parser.ParseInit(fset, *filePtr, nil, parser.AllErrors|parser.Trace)
 
@@ -51,6 +54,21 @@ func main() {
 		for true {
 			stmt, tok := parser.ParseIter(p) // main iterator calls parse.stmt
 			ast.Print(fset, stmt)
+			if tok == token.EOF {
+				return
+			}
+		}
+	} else {
+		p, err := parser.ParseInit(fset, *filePtr, nil, parser.AllErrors)
+
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		for true {
+			stmt, tok := parser.ParseIter(p) // main iterator calls parse.stmt
+			evalStmt(stmt)
 			if tok == token.EOF {
 				return
 			}
