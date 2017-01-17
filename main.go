@@ -28,7 +28,7 @@ func main() {
 	traceFlagPtr := flag.Bool("T", false, "trace")
 	filePtr := flag.String("file", "example.src", "filename to process")
 	flag.Parse()
-	
+
 	TRACE = *traceFlagPtr || *traceLongPtr
 
 	if *scanPtr {
@@ -50,12 +50,11 @@ func main() {
 
 		var parserOpts parser.Mode
 		if TRACE {
-			parserOpts = parser.AllErrors|parser.Trace
+			parserOpts = parser.AllErrors | parser.Trace
 		} else {
 			parserOpts = parser.AllErrors
-		}	
-		
-		
+		}
+
 		p, err := parser.ParseInit(fset, *filePtr, nil, parserOpts)
 
 		if err != nil {

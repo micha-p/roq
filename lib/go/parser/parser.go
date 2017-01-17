@@ -224,7 +224,6 @@ func trace0(p *parser, msg string) *parser {
 	return p
 }
 
-
 func trace(p *parser, msg string) *parser {
 	p.printTrace(msg, "(")
 	p.indent++
@@ -236,7 +235,6 @@ func un(p *parser) {
 	p.indent--
 	p.printTrace(")")
 }
-
 
 // Advance to the next token.
 func (p *parser) next() {
@@ -286,9 +284,8 @@ func (p *parser) errorExpected(pos token.Pos, msg string) {
 
 func (p *parser) expect(tok token.Token) token.Pos {
 	if p.trace {
-		defer trace0(p, "EXPECT: "+ tok.String() + "  GIVEN: "+ p.tok.String() )
+		defer trace0(p, "EXPECT: "+tok.String()+"  GIVEN: "+p.tok.String())
 	}
-
 
 	pos := p.pos
 	if p.tok != tok {
@@ -712,7 +709,7 @@ func (p *parser) parseVarType(isParam bool) ast.Expr {
 
 func (p *parser) parseFuncParameterList(scope *ast.Scope, ellipsisOk bool) (params []*ast.Field) {
 	if p.trace {
-		defer un(trace(p, "ParameterList: " + p.lit))
+		defer un(trace(p, "ParameterList: "+p.lit))
 	}
 
 	// 1st ParameterDecl
@@ -722,7 +719,7 @@ func (p *parser) parseFuncParameterList(scope *ast.Scope, ellipsisOk bool) (para
 		if p.tok == token.RPAREN {
 			break
 		}
-//		list = append(list, p.parseVarType(ellipsisOk))
+		//		list = append(list, p.parseVarType(ellipsisOk))
 		list = append(list, p.parseIdent())
 		if p.tok != token.COMMA {
 			break
@@ -776,12 +773,12 @@ func (p *parser) parseFuncParameterList(scope *ast.Scope, ellipsisOk bool) (para
 func (p *parser) parseFuncParameters(scope *ast.Scope, ellipsisOk bool) *ast.FieldList {
 
 	if p.trace {
-		defer un(trace(p, "Parameters: " + p.lit))
+		defer un(trace(p, "Parameters: "+p.lit))
 	}
 
 	var params []*ast.Field
 	lparen := p.expect(token.LPAREN)
-	
+
 	if p.tok != token.RPAREN {
 		params = p.parseFuncParameterList(scope, ellipsisOk)
 	}
@@ -790,10 +787,9 @@ func (p *parser) parseFuncParameters(scope *ast.Scope, ellipsisOk bool) *ast.Fie
 	return &ast.FieldList{Opening: lparen, List: params, Closing: rparen}
 }
 
-
 func (p *parser) parseFuncSignature(scope *ast.Scope) (params *ast.FieldList) {
 	if p.trace {
-		defer un(trace(p, "Signature:"+ p.lit))
+		defer un(trace(p, "Signature:"+p.lit))
 	}
 
 	params = p.parseFuncParameters(scope, true)
@@ -811,7 +807,6 @@ func (p *parser) parseFuncType() (*ast.FuncType, *ast.Scope) {
 
 	return &ast.FuncType{Func: pos, Params: params}, scope
 }
-
 
 func (p *parser) parseMapType() *ast.MapType {
 	if p.trace {
@@ -841,8 +836,8 @@ func (p *parser) tryIdentOrType() ast.Expr {
 	case token.FUNCTION:
 		typ, _ := p.parseFuncType()
 		return typ
-/*	case token.INTERFACE:
-		return p.parseInterfaceType()*/
+		/*	case token.INTERFACE:
+			return p.parseInterfaceType()*/
 	case token.MAP:
 		return p.parseMapType()
 	case token.LPAREN:
@@ -918,12 +913,11 @@ func (p *parser) parseBlockStmt1() *ast.BlockStmt {
 
 	p.openScope()
 	var list []ast.Stmt
-	list = append(list, &ast.ExprStmt{X: p.parseRhs()} )
+	list = append(list, &ast.ExprStmt{X: p.parseRhs()})
 	p.closeScope()
 
 	return &ast.BlockStmt{List: list}
 }
-
 
 // ----------------------------------------------------------------------------
 // Expressions
@@ -935,8 +929,8 @@ func (p *parser) parseFuncLit() ast.Expr {
 
 	typ, scope := p.parseFuncType()
 	//if p.tok != token.LBRACE {
-		//// function type only
-		//return typ
+	//// function type only
+	//return typ
 	//}
 
 	p.exprLev++
@@ -1419,7 +1413,7 @@ func (p *parser) parseAssignment(mode int) (ast.Stmt, bool) {
 	x := p.parseLhsList()
 
 	// TODO RIGHTASSIGNMENT
-	
+
 	switch p.tok {
 	case
 		token.DEFINE, token.LEFTASSIGNMENT, token.RIGHTASSIGNMENT:
@@ -1428,8 +1422,8 @@ func (p *parser) parseAssignment(mode int) (ast.Stmt, bool) {
 		p.next()
 		var y []ast.Expr
 		isRange := false
-        y = p.parseRhsList()
-		
+		y = p.parseRhsList()
+
 		as := &ast.AssignStmt{Lhs: x, TokPos: pos, Tok: tok, Rhs: y}
 		if tok == token.DEFINE {
 			p.shortVarDecl(as, x)
@@ -1523,7 +1517,7 @@ func (p *parser) parseIfStmt() *ast.IfStmt {
 	} else {
 		body = p.parseBlockStmt1()
 	}
-	
+
 	var else_ ast.Stmt
 	if p.tok == token.ELSE {
 		p.next()
@@ -1557,7 +1551,6 @@ func (p *parser) parseTypeList() (list []ast.Expr) {
 
 	return
 }
-
 
 func (p *parser) parseForStmt() ast.Stmt {
 	if p.trace {
@@ -1654,7 +1647,7 @@ func (p *parser) parseStmt() (s ast.Stmt) {
 		token.LBRACK, token.STRUCT, token.MAP, token.CHAN, token.INTERFACE, // composite types
 		token.PLUS, token.MINUS, token.MULTIPLICATION, token.AND, token.NOT: // unary operators
 		s, _ = p.parseAssignment(labelOk) // this parses an assignment!
-	
+
 	case token.RETURN:
 		s = p.parseReturnStmt()
 	case token.BREAK, token.CONTINUE:
@@ -1787,5 +1780,3 @@ func (p *parser) parseValueSpec(doc *ast.CommentGroup, keyword token.Token, iota
 
 	return spec
 }
-
-

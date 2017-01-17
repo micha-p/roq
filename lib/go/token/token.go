@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-
 /* 10.3.1 Constants
  * There are five types of constants: integer, logical, numeric, complex and string.
  * In addition, there are four special constants, NULL, NA, Inf, and NaN.
@@ -49,76 +48,74 @@ const (
 	INF
 	literal_end
 
-/* 3.1.4 Operators
-	   R contains a number of operators. They are listed in the table below.
-	       -	Minus, can be unary or binary
-	       +	Plus, can be unary or binary
-	       !	Unary not
-	       ~	Tilde, used for model formulae, can be either unary or binary
-	       ?	Help
-	       :	Sequence, binary (in model formulae: interaction)
-	       *	Multiplication, binary
-	       /	Division, binary
-	       ^	Exponentiation, binary
-	       %x%	Special binary operators, x can be replaced by any valid name
-	       %%	Modulus, binary
-	       %/%	Integer divide, binary
-	       %*%	Matrix product, binary
-	       %o%	Outer product, binary
-	       %x%	Kronecker product, binary
-	       %in%	Matching operator, binary (in model formulae: nesting)
-	       <	Less than, binary
-	       >	Greater than, binary
-	       ==	Equal to, binary
-	       >=	Greater than or equal to, binary
-	       <=	Less than or equal to, binary
-	       &	And, binary, vectorized
-	       &&	And, binary, not vectorized
-	       |	Or, binary, vectorized
-	       ||	Or, binary, not vectorized
-	       <-	Left assignment, binary
-	       ->	Right assignment, binary
-	       $	List subset, binary
-   
-10.3.6 Operator tokens
-	   R uses the following operator tokens
-	       + - * / %% ^	arithmetic
-	       > >= < <= == !=	relational
-	       ! & |	logical
-	       ~	model formulae
-	       -> <-	assignment
-	       $	list indexing
-	       :	sequence
-*/
+	/* 3.1.4 Operators
+	   	   R contains a number of operators. They are listed in the table below.
+	   	       -	Minus, can be unary or binary
+	   	       +	Plus, can be unary or binary
+	   	       !	Unary not
+	   	       ~	Tilde, used for model formulae, can be either unary or binary
+	   	       ?	Help
+	   	       :	Sequence, binary (in model formulae: interaction)
+	   	       *	Multiplication, binary
+	   	       /	Division, binary
+	   	       ^	Exponentiation, binary
+	   	       %x%	Special binary operators, x can be replaced by any valid name
+	   	       %%	Modulus, binary
+	   	       %/%	Integer divide, binary
+	   	       %*%	Matrix product, binary
+	   	       %o%	Outer product, binary
+	   	       %x%	Kronecker product, binary
+	   	       %in%	Matching operator, binary (in model formulae: nesting)
+	   	       <	Less than, binary
+	   	       >	Greater than, binary
+	   	       ==	Equal to, binary
+	   	       >=	Greater than or equal to, binary
+	   	       <=	Less than or equal to, binary
+	   	       &	And, binary, vectorized
+	   	       &&	And, binary, not vectorized
+	   	       |	Or, binary, vectorized
+	   	       ||	Or, binary, not vectorized
+	   	       <-	Left assignment, binary
+	   	       ->	Right assignment, binary
+	   	       $	List subset, binary
+
+	   10.3.6 Operator tokens
+	   	   R uses the following operator tokens
+	   	       + - * / %% ^	arithmetic
+	   	       > >= < <= == !=	relational
+	   	       ! & |	logical
+	   	       ~	model formulae
+	   	       -> <-	assignment
+	   	       $	list indexing
+	   	       :	sequence
+	*/
 
 	operator_beg
 	// Operators and delimiters
-/*	ADD // +
-	SUB // -
-	MUL // *
-	QUO // /
-	REM // %
+	/*	ADD // +
+		SUB // -
+		MUL // *
+		QUO // /
+		REM // %
 
-//	AND     // &
-//	OR      // |
-	XOR     // ^*/
+	//	AND     // &
+	//	OR      // |
+		XOR     // ^*/
 	SHL     // <<
 	SHR     // >>
 	AND_NOT // &^
 
+	LAND // &&
+	LOR  // ||
+	//	ARROW // <-
+	INC // ++
+	DEC // --
 
-
-	LAND  // &&
-	LOR   // ||
-//	ARROW // <-
-	INC   // ++
-	DEC   // --
-
-	EQL    // ==
-	LSS    // <
-	GTR    // >
-//	ASSIGN // =
-//	NOT    // !
+	EQL // ==
+	LSS // <
+	GTR // >
+	//	ASSIGN // =
+	//	NOT    // !
 
 	NEQ      // !=
 	LEQ      // <=
@@ -138,36 +135,36 @@ const (
 
 	// R Operators
 
-	MINUS           // -	Minus, can be unary or binary
-	PLUS            // +	Plus, can be unary or binary
-	UNARYMINUS      // -	Minus, can be unary or binary
-	UNARYPLUS       // +	Plus, can be unary or binary
-	NOT             // !	Unary not
-	TILDE           // ~	Tilde, used for model formulae, can be either unary or binary
-	HELP            // ?	Help
-	SEQUENCE        // :	Sequence, binary (in model formulae: interaction)
-	MULTIPLICATION  // *	Multiplication, binary
-	DIVISION        // /	Division, binary
-	MODULUS         // %%	Modulus, binary
-	EXPONENTIATION  // ^	Exponentiation, binary
-	LESS            // <	Less than, binary
-	GREATER         // >	Greater than, binary
-	EQUAL           // ==	Equal to, binary
-	UNEQUAL         // !=	ADDITIONAL TO DOCUMENTATION
-	GREATEREQUAL    // >=	Greater than or equal to, binary
-	LESSEQUAL       // <=	Less than or equal to, binary
-	ANDVECTOR       // &	And, binary, vectorized
-	AND             // &&	And, binary, not vectorized
-	ORVECTOR        // |	Or, binary, vectorized
-	OR              // ||	Or, binary, not vectorized
-	ASSOCIATION     // =	FORGOTTEN IN DOCUMENTATION
-	LEFTASSIGNMENT  // <-	Left assignment, binary
-	RIGHTASSIGNMENT // ->	Right assignment, binary
+	MINUS                // -	Minus, can be unary or binary
+	PLUS                 // +	Plus, can be unary or binary
+	UNARYMINUS           // -	Minus, can be unary or binary
+	UNARYPLUS            // +	Plus, can be unary or binary
+	NOT                  // !	Unary not
+	TILDE                // ~	Tilde, used for model formulae, can be either unary or binary
+	HELP                 // ?	Help
+	SEQUENCE             // :	Sequence, binary (in model formulae: interaction)
+	MULTIPLICATION       // *	Multiplication, binary
+	DIVISION             // /	Division, binary
+	MODULUS              // %%	Modulus, binary
+	EXPONENTIATION       // ^	Exponentiation, binary
+	LESS                 // <	Less than, binary
+	GREATER              // >	Greater than, binary
+	EQUAL                // ==	Equal to, binary
+	UNEQUAL              // !=	ADDITIONAL TO DOCUMENTATION
+	GREATEREQUAL         // >=	Greater than or equal to, binary
+	LESSEQUAL            // <=	Less than or equal to, binary
+	ANDVECTOR            // &	And, binary, vectorized
+	AND                  // &&	And, binary, not vectorized
+	ORVECTOR             // |	Or, binary, vectorized
+	OR                   // ||	Or, binary, not vectorized
+	ASSOCIATION          // =	FORGOTTEN IN DOCUMENTATION
+	LEFTASSIGNMENT       // <-	Left assignment, binary
+	RIGHTASSIGNMENT      // ->	Right assignment, binary
 	SUPERLEFTASSIGNMENT  // <-	Left assignment, binary
 	SUPERRIGHTASSIGNMENT // ->	Right assignment, binary
-	SUBSET          // $	List subset, binary
-	SLOT            // @	List subset, binary
-	DOUBLECOLON     // ::	List subset, binary
+	SUBSET               // $	List subset, binary
+	SLOT                 // @	List subset, binary
+	DOUBLECOLON          // ::	List subset, binary
 
 	// R SPECIALOPERATORS
 
@@ -181,10 +178,9 @@ const (
 	*/
 	operator_end
 
-
 	keyword_beg
 	// Keywords
-//	BREAK
+	//	BREAK
 	CASE
 	CHAN
 	CONST
@@ -196,7 +192,7 @@ const (
 	MAP
 	PACKAGE
 	RANGE
-	RETURN  // not well covered in R language definition
+	RETURN // not well covered in R language definition
 
 	SELECT
 	STRUCT
@@ -244,60 +240,59 @@ var tokens = [...]string{
 	INF:  "INF",
 
 	// R Operators
-	MINUS:           "-",  // -	Minus, can be unary or binary
-	PLUS:            "+",  // +	Plus, can be unary or binary
-	NOT:             "!",  // !	Unary not
-	TILDE:           "~",  // ~	Tilde, used for model formulae, can be either unary or binary
-	HELP:            "?",  // ?	Help
-	SEQUENCE:        ":",  // :	Sequence, binary (in model formulae: interaction)
-	MULTIPLICATION:  "*",  // *	Multiplication, binary
-	DIVISION:        "/",  // /	Division, binary
-	MODULUS:         "%%", // %%	Modulus, binary
-	EXPONENTIATION:  "^",  // ^	Exponentiation, binary
-	LESS:            "<",  // <	Less than, binary
-	GREATER:         ">",  // >	Greater than, binary
-	EQUAL:           "==", // ==	Equal to, binary
-	UNEQUAL:         "!=", // !=	ADDITIONAL TO DOCUMENTATION
-	GREATEREQUAL:    ">=", // >=	Greater than or equal to, binary
-	LESSEQUAL:       "<=", // <=	Less than or equal to, binary
-	ANDVECTOR:       "&",  // &	And, binary, vectorized
-	AND:             "&&", // &&	And, binary, not vectorized
-	ORVECTOR:        "|",  // |	Or, binary, vectorized
-	OR:              "||", // ||	Or, binary, not vectorized
-	ASSOCIATION:     "=",  // =	NOT STRITCLY AN OPERATOR, ALSO USED AS ASSIGNMENT
-	LEFTASSIGNMENT:  "<-", // <-	Left assignment, binary
-	RIGHTASSIGNMENT: "->", // ->	Right assignment, binary
-	SUPERLEFTASSIGNMENT:  "<<-", 
-	SUPERRIGHTASSIGNMENT: "->>", 
-	SUBSET:          "$",  // $	List subset, binary
-	SLOT:            "@",  // $	List subset, binary
-	DOUBLECOLON:     "::", // Namespace
+	MINUS:                "-",  // -	Minus, can be unary or binary
+	PLUS:                 "+",  // +	Plus, can be unary or binary
+	NOT:                  "!",  // !	Unary not
+	TILDE:                "~",  // ~	Tilde, used for model formulae, can be either unary or binary
+	HELP:                 "?",  // ?	Help
+	SEQUENCE:             ":",  // :	Sequence, binary (in model formulae: interaction)
+	MULTIPLICATION:       "*",  // *	Multiplication, binary
+	DIVISION:             "/",  // /	Division, binary
+	MODULUS:              "%%", // %%	Modulus, binary
+	EXPONENTIATION:       "^",  // ^	Exponentiation, binary
+	LESS:                 "<",  // <	Less than, binary
+	GREATER:              ">",  // >	Greater than, binary
+	EQUAL:                "==", // ==	Equal to, binary
+	UNEQUAL:              "!=", // !=	ADDITIONAL TO DOCUMENTATION
+	GREATEREQUAL:         ">=", // >=	Greater than or equal to, binary
+	LESSEQUAL:            "<=", // <=	Less than or equal to, binary
+	ANDVECTOR:            "&",  // &	And, binary, vectorized
+	AND:                  "&&", // &&	And, binary, not vectorized
+	ORVECTOR:             "|",  // |	Or, binary, vectorized
+	OR:                   "||", // ||	Or, binary, not vectorized
+	ASSOCIATION:          "=",  // =	NOT STRITCLY AN OPERATOR, ALSO USED AS ASSIGNMENT
+	LEFTASSIGNMENT:       "<-", // <-	Left assignment, binary
+	RIGHTASSIGNMENT:      "->", // ->	Right assignment, binary
+	SUPERLEFTASSIGNMENT:  "<<-",
+	SUPERRIGHTASSIGNMENT: "->>",
+	SUBSET:               "$",  // $	List subset, binary
+	SLOT:                 "@",  // $	List subset, binary
+	DOUBLECOLON:          "::", // Namespace
 
+	/*	ADD: "+",
+		SUB: "-",
+		MUL: "*",
+		QUO: "/",
+		REM: "%",
 
-/*	ADD: "+",
-	SUB: "-",
-	MUL: "*",
-	QUO: "/",
-	REM: "%",
-
-//	AND:     "&",
-//	OR:      "|",
-	XOR:     "^",*/
+	//	AND:     "&",
+	//	OR:      "|",
+		XOR:     "^",*/
 	SHL:     "<<",
 	SHR:     ">>",
 	AND_NOT: "&^",
 
-	LAND:  "&&",
-	LOR:   "||",
-//	ARROW: "<-",
-	INC:   "++",
-	DEC:   "--",
+	LAND: "&&",
+	LOR:  "||",
+	//	ARROW: "<-",
+	INC: "++",
+	DEC: "--",
 
-	EQL:    "==",
-	LSS:    "<",
-	GTR:    ">",
-//	ASSIGN: "=",
-//	NOT:    "!",
+	EQL: "==",
+	LSS: "<",
+	GTR: ">",
+	//	ASSIGN: "=",
+	//	NOT:    "!",
 
 	NEQ:      "!=",
 	LEQ:      "<=",
@@ -309,15 +304,15 @@ var tokens = [...]string{
 	LBRACK: "[",
 	LBRACE: "{",
 	COMMA:  ",",
-//	PERIOD: ".",
+	//	PERIOD: ".",
 
 	RPAREN:    ")",
 	RBRACK:    "]",
 	RBRACE:    "}",
 	SEMICOLON: ";",
-//	COLON:     ":",
+	//	COLON:     ":",
 
-//	BREAK:    "break",
+	//	BREAK:    "break",
 	CASE:     "case",
 	CHAN:     "chan",
 	CONST:    "const",
@@ -411,12 +406,12 @@ func (op Token) Precedence() int {
 		return 7
 	case EQL, NEQ, LSS, LEQ, GTR, GEQ:
 		return 8
-//	case ADD, SUB, /*OR,*/ XOR:
-//		return 9
-	case /*MUL, QUO, REM,*/ SHL, SHR, /* AND,*/ AND_NOT:
+		//	case ADD, SUB, /*OR,*/ XOR:
+		//		return 9
+	case /*MUL, QUO, REM,*/ SHL, SHR /* AND,*/, AND_NOT:
 		return 10
-	// R operators
-        case DOUBLECOLON:
+		// R operators
+	case DOUBLECOLON:
 		return 16
 	case SUBSET, SLOT:
 		return 15
