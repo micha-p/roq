@@ -188,10 +188,6 @@ func Walk(v Visitor, node Node) {
 	case *EmptyStmt:
 		// nothing to do
 
-	case *LabeledStmt:
-		Walk(v, n.Label)
-		Walk(v, n.Stmt)
-
 	case *ExprStmt:
 		Walk(v, n.X)
 
@@ -208,11 +204,6 @@ func Walk(v Visitor, node Node) {
 
 	case *ReturnStmt:
 		Walk(v, n.Result)
-
-	case *BranchStmt:
-		if n.Label != nil {
-			Walk(v, n.Label)
-		}
 
 	case *BlockStmt:
 		walkStmtList(v, n.List)

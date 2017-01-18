@@ -57,16 +57,11 @@ type parser struct {
 	exprLev int  // < 0: in control clause, >= 0: in expression
 	inRhs   bool // if set, the parser is parsing a rhs expression
 
-	// Ordinary identifier scopes
+	// OIdentifier scopes
 	pkgScope   *ast.Scope        // pkgScope.Outer == nil
 	topScope   *ast.Scope        // top-most scope; may be pkgScope
 	unresolved []*ast.Ident      // unresolved identifiers
 	imports    []*ast.ImportSpec // list of imports
-
-	// Label scopes
-	// (maintained by open/close LabelScope)
-	labelScope  *ast.Scope     // label scope for current function
-	targetStack [][]*ast.Ident // stack of unresolved labels
 }
 
 func (p *parser) init(fset *token.FileSet, filename string, src []byte, mode Mode) {
@@ -91,25 +86,6 @@ func (p *parser) closeScope() {
 	p.topScope = p.topScope.Outer
 }
 
-func (p *parser) openLabelScope() {
-	p.labelScope = ast.NewScope(p.labelScope)
-	p.targetStack = append(p.targetStack, nil)
-}
-
-func (p *parser) closeLabelScope() {
-	// resolve labels
-	n := len(p.targetStack) - 1
-	scope := p.labelScope
-	for _, ident := range p.targetStack[n] {
-		ident.Obj = scope.Lookup(ident.Name)
-		if ident.Obj == nil /* && p.mode&DeclarationErrors != 0 */ {
-			p.error(ident.Pos(), fmt.Sprintf("label %s undefined", ident.Name))
-		}
-	}
-	// pop label scope
-	p.targetStack = p.targetStack[0:n]
-	p.labelScope = p.labelScope.Outer
-}
 
 func (p *parser) declare(decl, data interface{}, scope *ast.Scope, kind ast.ObjKind, idents ...*ast.Ident) {
 	for _, ident := range idents {
@@ -882,9 +858,7 @@ func (p *parser) parseBody(scope *ast.Scope) *ast.BlockStmt {
 
 	lbrace := p.expect(token.LBRACE)
 	p.topScope = scope // open function scope
-	p.openLabelScope()
 	list := p.parseStmtList()
-	p.closeLabelScope()
 	p.closeScope()
 	rbrace := p.expect(token.RBRACE)
 
@@ -1470,24 +1444,6 @@ func (p *parser) parseReturnStmt() *ast.ReturnStmt {
 	return &ast.ReturnStmt{Return: pos, Result: x}
 }
 
-func (p *parser) parseBranchStmt(tok token.Token) *ast.BranchStmt {
-	if p.trace {
-		defer un(trace(p, "BranchStmt"))
-	}
-
-	pos := p.expect(tok)
-	var label *ast.Ident
-	if p.tok == token.IDENT {
-		label = p.parseIdent()
-		// add to list of unresolved targets
-		n := len(p.targetStack) - 1
-		p.targetStack[n] = append(p.targetStack[n], label)
-	}
-	p.expectSemi()
-
-	return &ast.BranchStmt{TokPos: pos, Tok: tok, Label: label}
-}
-
 func (p *parser) makeExpr(s ast.Stmt, kind string) ast.Expr {
 	if s == nil {
 		return nil
@@ -1650,8 +1606,6 @@ func (p *parser) parseStmt() (s ast.Stmt) {
 
 	case token.RETURN:
 		s = p.parseReturnStmt()
-	case token.BREAK, token.CONTINUE:
-		s = p.parseBranchStmt(p.tok)
 	case token.LBRACE:
 		s = p.parseBlockStmt()
 		p.expectSemi()

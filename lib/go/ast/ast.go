@@ -569,13 +569,6 @@ type (
 		Implicit  bool      // if set, ";" was omitted in the source
 	}
 
-	// A LabeledStmt node represents a labeled statement.
-	LabeledStmt struct {
-		Label *Ident
-		Colon token.Pos // position of ":"
-		Stmt  Stmt
-	}
-
 	// An ExprStmt node represents a (stand-alone) expression
 	// in a statement list.
 	//
@@ -623,15 +616,6 @@ type (
 	ReturnStmt struct {
 		Return token.Pos // position of "return" keyword
 		Result Expr      // result expression; or nil
-	}
-
-	// A BranchStmt node represents a break, continue, goto,
-	// or fallthrough statement.
-	//
-	BranchStmt struct {
-		TokPos token.Pos   // position of Tok
-		Tok    token.Token // keyword token (BREAK, CONTINUE, GOTO, FALLTHROUGH)
-		Label  *Ident      // label name; or nil
 	}
 
 	// A BlockStmt node represents a braced statement list.
@@ -712,7 +696,6 @@ type (
 func (s *BadStmt) Pos() token.Pos        { return s.From }
 func (s *DeclStmt) Pos() token.Pos       { return s.Decl.Pos() }
 func (s *EmptyStmt) Pos() token.Pos      { return s.Semicolon }
-func (s *LabeledStmt) Pos() token.Pos    { return s.Label.Pos() }
 func (s *ExprStmt) Pos() token.Pos       { return s.X.Pos() }
 func (s *SendStmt) Pos() token.Pos       { return s.Chan.Pos() }
 func (s *IncDecStmt) Pos() token.Pos     { return s.X.Pos() }
@@ -720,7 +703,6 @@ func (s *AssignStmt) Pos() token.Pos     { return s.Lhs[0].Pos() }
 func (s *GoStmt) Pos() token.Pos         { return s.Go }
 func (s *DeferStmt) Pos() token.Pos      { return s.Defer }
 func (s *ReturnStmt) Pos() token.Pos     { return s.Return }
-func (s *BranchStmt) Pos() token.Pos     { return s.TokPos }
 func (s *BlockStmt) Pos() token.Pos      { return s.Lbrace }
 func (s *IfStmt) Pos() token.Pos         { return s.If }
 func (s *CaseClause) Pos() token.Pos     { return s.Case }
@@ -739,7 +721,6 @@ func (s *EmptyStmt) End() token.Pos {
 	}
 	return s.Semicolon + 1 /* len(";") */
 }
-func (s *LabeledStmt) End() token.Pos { return s.Stmt.End() }
 func (s *ExprStmt) End() token.Pos    { return s.X.End() }
 func (s *SendStmt) End() token.Pos    { return s.Value.End() }
 func (s *IncDecStmt) End() token.Pos {
@@ -754,12 +735,7 @@ func (s *ReturnStmt) End() token.Pos {
 	}*/
 	return s.Return + 6 // len("return")
 }
-func (s *BranchStmt) End() token.Pos {
-	if s.Label != nil {
-		return s.Label.End()
-	}
-	return token.Pos(int(s.TokPos) + len(s.Tok.String()))
-}
+
 func (s *BlockStmt) End() token.Pos { return s.Rbrace + 1 }
 func (s *IfStmt) End() token.Pos {
 	if s.Else != nil {
@@ -791,7 +767,6 @@ func (s *RangeStmt) End() token.Pos  { return s.Body.End() }
 func (*BadStmt) stmtNode()        {}
 func (*DeclStmt) stmtNode()       {}
 func (*EmptyStmt) stmtNode()      {}
-func (*LabeledStmt) stmtNode()    {}
 func (*ExprStmt) stmtNode()       {}
 func (*SendStmt) stmtNode()       {}
 func (*IncDecStmt) stmtNode()     {}
@@ -799,7 +774,6 @@ func (*AssignStmt) stmtNode()     {}
 func (*GoStmt) stmtNode()         {}
 func (*DeferStmt) stmtNode()      {}
 func (*ReturnStmt) stmtNode()     {}
-func (*BranchStmt) stmtNode()     {}
 func (*BlockStmt) stmtNode()      {}
 func (*IfStmt) stmtNode()         {}
 func (*CaseClause) stmtNode()     {}

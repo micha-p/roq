@@ -65,7 +65,7 @@ func (s *Scope) String() string {
 // Objects
 
 // An Object describes a named language entity such as a package,
-// constant, type, variable, function (incl. methods), or label.
+// constant, type, variable, or function (incl. methods).
 //
 // The Data fields contains object-specific data:
 //
@@ -78,7 +78,7 @@ func (s *Scope) String() string {
 type Object struct {
 	Kind ObjKind
 	Name string      // declared name
-	Decl interface{} // corresponding Field, XxxSpec, FuncDecl, LabeledStmt, AssignStmt, Scope; or nil
+	Decl interface{} // corresponding Field, XxxSpec, FuncDecl, AssignStmt, Scope; or nil
 	Data interface{} // object-specific data; or nil
 	Type interface{} // placeholder for type information; may be nil
 }
@@ -119,10 +119,6 @@ func (obj *Object) Pos() token.Pos {
 		if d.Name.Name == name {
 			return d.Name.Pos()
 		}
-	case *LabeledStmt:
-		if d.Label.Name == name {
-			return d.Label.Pos()
-		}
 	case *AssignStmt:
 		for _, x := range d.Lhs {
 			if ident, isIdent := x.(*Ident); isIdent && ident.Name == name {
@@ -146,7 +142,6 @@ const (
 	Typ                // type
 	Var                // variable
 	Fun                // function or method
-	Lbl                // label
 )
 
 var objKindStrings = [...]string{
@@ -156,7 +151,6 @@ var objKindStrings = [...]string{
 	Typ: "type",
 	Var: "var",
 	Fun: "func",
-	Lbl: "label",
 }
 
 func (kind ObjKind) String() string { return objKindStrings[kind] }
