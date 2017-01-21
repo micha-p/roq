@@ -6,6 +6,7 @@ import (
 	"math"
 	"lib/go/token"
 	"lib/go/ast"
+	"lib/go/parser"
 )
 
 // -> scope.go
@@ -47,25 +48,37 @@ type Evaluator struct {
 	indent int  // indentation used for tracing output
 
 	// frame
-	pkgFrame   *Frame        // pkgFrame.Outer == nil
 	topFrame   *Frame        // top-most frame; may be pkgFrame
 }
 
+func EvalInit(fset *token.FileSet, filename string, src interface{}, mode parser.Mode) (r *Evaluator, err error) {
 
+	if fset == nil {
+		panic("eval.evalInit: no token.FileSet provided (fset == nil)")
+	}
+
+	e := Evaluator{TRACE,0,nil}
+	e.topFrame = NewFrame(e.topFrame)
+	return &e, err
+}
 // evaluator 
 // https://go-book.appspot.com/interfaces.html
 // an empty interface accepts all pointers
 
-func evalStmt(s interface{}){
+func evalStmt(ev *Evaluator,s interface{}){
 	switch s.(type) {
 	case *ast.AssignStmt:
 	  if TRACE {println("assignStmt")}
 	  e := s.(*ast.AssignStmt)
-	  fmt.Printf("%s <- %g",evalIdent(e.Lhs), evalExpr(e.Rhs))
+	  value := evalExpr(ev,e.Rhs)
+	  identifier := evalIdent(ev,e.Lhs)
+	  fmt.Printf("%s <- %g", identifier, value)
+	  obj := ast.Object{Name: identifier, Data: value}
+	  ev.topFrame.Insert(&obj)
 	case *ast.ExprStmt:
 	  if TRACE {println("exprStmt")}
 	  e := s.(*ast.ExprStmt)
-	  fmt.Printf("%g",evalExpr(e.X))   // R has small e for exponential format
+	  fmt.Printf("%g",evalExpr(ev,e.X))   // R has small e for exponential format
 	case *ast.EmptyStmt:
 	  println("")
 	case *ast.IfStmt:
@@ -79,19 +92,19 @@ func evalStmt(s interface{}){
 	}
 }
 
-func evalIdent(e ast.Expr) string {
-	node := e.(*ast.BasicLit)
+func evalIdent(ev *Evaluator, ex ast.Expr) string {
+	node := ex.(*ast.BasicLit)
 	return node.Value
 }
 
-func evalExpr(e ast.Expr) float64 {
-	switch e.(type) {
+func evalExpr(ev *Evaluator, ex ast.Expr) float64 {
+	switch ex.(type) {
 	case *ast.BasicLit:
-	  node := e.(*ast.BasicLit)
+	  node := ex.(*ast.BasicLit)
 	  if TRACE {print("BasicLit " + " " + node.Value +" ("+ node.Kind.String() + "): ")}
 	  switch node.Kind {
 		case token.INT:
-			v, err := strconv.ParseFloat(node.Value, 64) // TODO: support for all R formatted values
+			v, err := strconv.ParseFloat(node.Value, 64)
 			if err != nil {print("ERROR:");println(err)}
 			if TRACE {println(v)}
 			return v
@@ -101,20 +114,21 @@ func evalExpr(e ast.Expr) float64 {
 			if TRACE {println(v)}
 			return v
 		case token.IDENT:
-			v:=math.NaN()
+			obj := ev.topFrame.Lookup(node.Value)
+			v:= obj.Data.(float64)
 			if TRACE {println(v)}
 			return v
 		default:
 		    println("Unknown node.kind")
       }
 	case *ast.BinaryExpr:
-	  node := e.(*ast.BinaryExpr)
+	  node := ex.(*ast.BinaryExpr)
 	  if TRACE {println("BinaryExpr " + " " + node.Op.String())}
-	  return evalOp(node.Op, evalExpr(node.X), evalExpr(node.Y))
+	  return evalOp(node.Op, evalExpr(ev,node.X), evalExpr(ev,node.Y))
 	case *ast.ParenExpr:
-	  node := e.(*ast.ParenExpr)
+	  node := ex.(*ast.ParenExpr)
 	  if TRACE {println("ParenExpr")}
-	  return evalExpr(node.X )
+	  return evalExpr(ev, node.X )
 	default:
 	  println("? Expr")
 	}

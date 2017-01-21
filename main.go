@@ -72,16 +72,20 @@ func main() {
 			}
 		}
 	} else {
-		p, err := parser.ParseInit(fset, *filePtr, nil, parser.AllErrors)
-
-		if err != nil {
-			fmt.Println(err)
+		p, errp := parser.ParseInit(fset, *filePtr, nil, parser.AllErrors)
+		if errp != nil {
+			fmt.Println(errp)
+			return
+		}
+		e, erre := EvalInit(fset, *filePtr, nil, parser.AllErrors)
+		if erre != nil {
+			fmt.Println(erre)
 			return
 		}
 
 		for true {
 			stmt, tok := parser.ParseIter(p) // main iterator calls parse.stmt
-			evalStmt(stmt)
+			evalStmt(e,stmt)
 			if tok == token.EOF {
 				return
 			}
