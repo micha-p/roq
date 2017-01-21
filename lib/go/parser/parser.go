@@ -57,7 +57,7 @@ type parser struct {
 	exprLev int  // < 0: in control clause, >= 0: in expression
 	inRhs   bool // if set, the parser is parsing a rhs expression
 
-	// OIdentifier scopes
+	// Identifier scopes
 	pkgScope   *ast.Scope        // pkgScope.Outer == nil
 	topScope   *ast.Scope        // top-most scope; may be pkgScope
 	unresolved []*ast.Ident      // unresolved identifiers
@@ -108,33 +108,6 @@ func (p *parser) declare(decl, data interface{}, scope *ast.Scope, kind ast.ObjK
 	}
 }
 
-func (p *parser) shortVarDecl(decl *ast.AssignStmt, list []ast.Expr) {
-	// Go spec: A short variable declaration may redeclare variables
-	// provided they were originally declared in the same block with
-	// the same type, and at least one of the non-blank variables is new.
-	n := 0 // number of new variables
-	for _, x := range list {
-		if ident, isIdent := x.(*ast.Ident); isIdent {
-			assert(ident.Obj == nil, "identifier already declared or resolved")
-			obj := ast.NewObj(ast.Var, ident.Name)
-			// remember corresponding assignment for other tools
-			obj.Decl = decl
-			ident.Obj = obj
-			if ident.Name != "_" {
-				if alt := p.topScope.Insert(obj); alt != nil {
-					ident.Obj = alt // redeclaration
-				} else {
-					n++ // new declaration
-				}
-			}
-		} else {
-			p.errorExpected(x.Pos(), "identifier on left side of :=")
-		}
-	}
-	if n == 0 {
-		p.error(list[0].Pos(), "no new variables on left side of :=")
-	}
-}
 
 // The unresolved object is a sentinel to mark identifiers that have been added
 // to the list of unresolved identifiers. The sentinel is only used for verifying
@@ -448,39 +421,6 @@ func (p *parser) parseExprList(lhs bool) (list []ast.Expr) {
 	return
 }
 
-func (p *parser) parseLhsList() []ast.Expr {
-	if p.trace {
-		defer un(trace(p, "LhsList"))
-	}
-	old := p.inRhs
-	p.inRhs = false
-	list := p.parseExprList(true)
-	switch p.tok {
-	case token.DEFINE:
-		// lhs of a short variable declaration
-		// but doesn't enter scope until later:
-		// caller must call p.shortVarDecl(p.makeIdentList(list))
-		// at appropriate time.
-	default:
-		// identifiers must be declared elsewhere
-		for _, x := range list {
-			p.resolve(x)
-		}
-	}
-	p.inRhs = old
-	return list
-}
-
-func (p *parser) parseRhsList() []ast.Expr {
-	if p.trace {
-		defer un(trace(p, "RhsList"))
-	}
-	old := p.inRhs
-	p.inRhs = true
-	list := p.parseExprList(false)
-	p.inRhs = old
-	return list
-}
 
 // ----------------------------------------------------------------------------
 // Types
@@ -1379,37 +1319,31 @@ const (
 // of a range clause (with mode == rangeOk). The returned statement is an
 // assignment with a right-hand side that is a single unary expression of
 // the form "range x". No guarantees are given for the left-hand side.
-func (p *parser) parseAssignment(mode int) (ast.Stmt, bool) {
+func (p *parser) parseAssignment(mode int) ast.Stmt {
 	if p.trace {
-		defer un(trace(p, "Assignment"))
+		defer un(trace(p, "Expr or Assignment"))
 	}
 
-	x := p.parseLhsList()
-
-	// TODO RIGHTASSIGNMENT
-
+	x := p.parseExpr(true)
+	var y ast.Expr
+	pos, tok := p.pos, p.tok
+	var s *ast.AssignStmt
+	
 	switch p.tok {
-	case
-		token.DEFINE, token.LEFTASSIGNMENT, token.RIGHTASSIGNMENT:
-		// assignment statement, possibly part of a range clause
-		pos, tok := p.pos, p.tok
+	case token.SHORTASSIGNMENT, token.LEFTASSIGNMENT:
 		p.next()
-		var y []ast.Expr
-		isRange := false
-		y = p.parseRhsList()
-
-		as := &ast.AssignStmt{Lhs: x, TokPos: pos, Tok: tok, Rhs: y}
-		if tok == token.DEFINE {
-			p.shortVarDecl(as, x)
-		}
-		return as, isRange
+		y = p.parseRhs()
+		s = &ast.AssignStmt{Lhs: x, TokPos: pos, Tok: tok, Rhs: y}
+		return s
+	case token.RIGHTASSIGNMENT:
+		p.next()
+		y = p.parseRhs()
+		s = &ast.AssignStmt{Lhs: y, TokPos: pos, Tok: tok, Rhs: x}
+		return s
+	default:
+		e := &ast.ExprStmt{X:x}
+		return e
 	}
-
-	if len(x) > 1 {
-		p.errorExpected(x[0].Pos(), "1 expression")
-		// continue with first expression
-	}
-	return &ast.ExprStmt{X: x[0]}, false
 }
 
 func (p *parser) parseCallExpr(callType string) *ast.CallExpr {
@@ -1527,11 +1461,11 @@ func (p *parser) parseForStmt() ast.Stmt {
 				// "for range x" (nil lhs in assignment)
 				pos := p.pos
 				p.next()
-				y := []ast.Expr{&ast.UnaryExpr{OpPos: pos, Op: token.RANGE, X: p.parseRhs()}}
+				y := &ast.UnaryExpr{OpPos: pos, Op: token.RANGE, X: p.parseRhs()}
 				s2 = &ast.AssignStmt{Rhs: y}
 				isRange = true
 			} else {
-				s2, isRange = p.parseAssignment(rangeOk)
+				s2 = p.parseAssignment(rangeOk)
 			}
 		}
 		if !isRange && p.tok == token.SEMICOLON {
@@ -1539,11 +1473,11 @@ func (p *parser) parseForStmt() ast.Stmt {
 			s1 = s2
 			s2 = nil
 			if p.tok != token.SEMICOLON {
-				s2, _ = p.parseAssignment(basic)
+				s2 = p.parseAssignment(basic)
 			}
 			p.expectSemi()
 			if p.tok != token.LBRACE {
-				s3, _ = p.parseAssignment(basic)
+				s3 = p.parseAssignment(basic)
 			}
 		}
 		p.exprLev = prevLev
@@ -1552,6 +1486,7 @@ func (p *parser) parseForStmt() ast.Stmt {
 	body := p.parseBlockStmt()
 	p.expectSemi()
 
+	/*
 	if isRange {
 		as := s2.(*ast.AssignStmt)
 		// check lhs
@@ -1580,6 +1515,7 @@ func (p *parser) parseForStmt() ast.Stmt {
 			Body:   body,
 		}
 	}
+	*/
 
 	// regular for statement
 	return &ast.ForStmt{
@@ -1602,7 +1538,7 @@ func (p *parser) parseStmt() (s ast.Stmt) {
 		token.IDENT, token.INT, token.FLOAT, token.NA, token.IMAG, token.STRING, token.FUNCTION, token.LPAREN, // operands
 		token.LBRACK, token.STRUCT, token.MAP, token.CHAN, token.INTERFACE, // composite types
 		token.PLUS, token.MINUS, token.MULTIPLICATION, token.AND, token.NOT: // unary operators
-		s, _ = p.parseAssignment(labelOk) // this parses an assignment!
+		s = p.parseAssignment(labelOk) // this parses an assignment!
 
 	case token.RETURN:
 		s = p.parseReturnStmt()
@@ -1696,21 +1632,21 @@ func (p *parser) parseValueSpec(doc *ast.CommentGroup, keyword token.Token, iota
 	pos := p.pos
 	idents := p.parseIdentList()
 	typ := p.tryType()
-	var values []ast.Expr
+	var value ast.Expr
 	// always permit optional initialization for more tolerant parsing
 	if p.tok == token.LEFTASSIGNMENT {
 		p.next()
-		values = p.parseRhsList()
+		value = p.parseRhs()
 	}
 	p.expectSemi() // call before accessing p.linecomment
 
 	switch keyword {
 	case token.VAR:
-		if typ == nil && values == nil {
+		if typ == nil && value == nil {
 			p.error(pos, "missing variable type or initialization")
 		}
 	case token.CONST:
-		if values == nil && (iota == 0 || typ != nil) {
+		if value == nil && (iota == 0 || typ != nil) {
 			p.error(pos, "missing constant value")
 		}
 	}
@@ -1723,7 +1659,7 @@ func (p *parser) parseValueSpec(doc *ast.CommentGroup, keyword token.Token, iota
 		Doc:     doc,
 		Names:   idents,
 		Type:    typ,
-		Values:  values,
+		Value:   value,
 		Comment: p.lineComment,
 	}
 	kind := ast.Con

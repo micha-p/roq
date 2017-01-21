@@ -120,7 +120,6 @@ const (
 	NEQ      // !=
 	LEQ      // <=
 	GEQ      // >=
-	DEFINE   // :=
 	ELLIPSIS // ...
 
 	LPAREN // (
@@ -157,7 +156,7 @@ const (
 	AND                  // &&	And, binary, not vectorized
 	ORVECTOR             // |	Or, binary, vectorized
 	OR                   // ||	Or, binary, not vectorized
-	ASSOCIATION          // =	FORGOTTEN IN DOCUMENTATION
+	SHORTASSIGNMENT      // =	SOMEHOW FORGOTTEN IN DOCUMENTATION
 	LEFTASSIGNMENT       // <-	Left assignment, binary
 	RIGHTASSIGNMENT      // ->	Right assignment, binary
 	SUPERLEFTASSIGNMENT  // <-	Left assignment, binary
@@ -260,7 +259,7 @@ var tokens = [...]string{
 	AND:                  "&&", // &&	And, binary, not vectorized
 	ORVECTOR:             "|",  // |	Or, binary, vectorized
 	OR:                   "||", // ||	Or, binary, not vectorized
-	ASSOCIATION:          "=",  // =	NOT STRITCLY AN OPERATOR, ALSO USED AS ASSIGNMENT
+	SHORTASSIGNMENT:      "=",  // =	NOT STRITCLY AN OPERATOR, ALSO USED AS ASSIGNMENT
 	LEFTASSIGNMENT:       "<-", // <-	Left assignment, binary
 	RIGHTASSIGNMENT:      "->", // ->	Right assignment, binary
 	SUPERLEFTASSIGNMENT:  "<<-",
@@ -297,7 +296,6 @@ var tokens = [...]string{
 	NEQ:      "!=",
 	LEQ:      "<=",
 	GEQ:      ">=",
-	DEFINE:   ":=",
 	ELLIPSIS: "...",
 
 	LPAREN: "(",
@@ -368,7 +366,7 @@ func (tok Token) String() string {
 // indexing, and other operator and delimiter tokens.
 //
 const (
-	LowestPrec  = 0 // non-operators
+	LowestPrec  = 4 // non-operators
 	UnaryPrec   = 13
 	HighestPrec = 16
 )
@@ -439,7 +437,7 @@ func (op Token) Precedence() int {
 		return 4
 	case LEFTASSIGNMENT, SUPERLEFTASSIGNMENT:
 		return 3
-	case ASSOCIATION:
+	case SHORTASSIGNMENT: // TODO CHECK
 		return 2
 	case RIGHTASSIGNMENT, SUPERRIGHTASSIGNMENT:
 		return 1

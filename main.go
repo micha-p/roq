@@ -1,5 +1,7 @@
 package main
 
+// libraries forked from Go 1.7.3
+
 import (
 	"flag"
 	"fmt"

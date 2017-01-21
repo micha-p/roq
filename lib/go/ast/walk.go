@@ -199,8 +199,8 @@ func Walk(v Visitor, node Node) {
 		Walk(v, n.X)
 
 	case *AssignStmt:
-		walkExprList(v, n.Lhs)
-		walkExprList(v, n.Rhs)
+		Walk(v, n.Lhs)
+		Walk(v, n.Rhs)
 
 	case *ReturnStmt:
 		Walk(v, n.Result)
@@ -287,7 +287,7 @@ func Walk(v Visitor, node Node) {
 		if n.Type != nil {
 			Walk(v, n.Type)
 		}
-		walkExprList(v, n.Values)
+		Walk(v, n.Value)
 		if n.Comment != nil {
 			Walk(v, n.Comment)
 		}

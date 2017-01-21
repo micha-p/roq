@@ -120,10 +120,8 @@ func (obj *Object) Pos() token.Pos {
 			return d.Name.Pos()
 		}
 	case *AssignStmt:
-		for _, x := range d.Lhs {
-			if ident, isIdent := x.(*Ident); isIdent && ident.Name == name {
-				return ident.Pos()
-			}
+		if ident, isIdent := d.Lhs.(*Ident); isIdent && ident.Name == name {
+			return ident.Pos()
 		}
 	case *Scope:
 		// predeclared object - nothing to do for now

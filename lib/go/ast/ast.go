@@ -591,13 +591,11 @@ type (
 	}
 
 	// An AssignStmt node represents an assignment or
-	// a short variable declaration.
-	//
 	AssignStmt struct {
-		Lhs    []Expr
+		Lhs    Expr
 		TokPos token.Pos   // position of Tok
 		Tok    token.Token // assignment token, DEFINE
-		Rhs    []Expr
+		Rhs    Expr
 	}
 
 	// A GoStmt node represents a go statement.
@@ -699,7 +697,7 @@ func (s *EmptyStmt) Pos() token.Pos      { return s.Semicolon }
 func (s *ExprStmt) Pos() token.Pos       { return s.X.Pos() }
 func (s *SendStmt) Pos() token.Pos       { return s.Chan.Pos() }
 func (s *IncDecStmt) Pos() token.Pos     { return s.X.Pos() }
-func (s *AssignStmt) Pos() token.Pos     { return s.Lhs[0].Pos() }
+func (s *AssignStmt) Pos() token.Pos     { return s.Lhs.Pos() }
 func (s *GoStmt) Pos() token.Pos         { return s.Go }
 func (s *DeferStmt) Pos() token.Pos      { return s.Defer }
 func (s *ReturnStmt) Pos() token.Pos     { return s.Return }
@@ -726,7 +724,7 @@ func (s *SendStmt) End() token.Pos    { return s.Value.End() }
 func (s *IncDecStmt) End() token.Pos {
 	return s.TokPos + 2 /* len("++") */
 }
-func (s *AssignStmt) End() token.Pos { return s.Rhs[len(s.Rhs)-1].End() }
+func (s *AssignStmt) End() token.Pos { return s.Rhs.End() }
 func (s *GoStmt) End() token.Pos     { return s.Call.End() }
 func (s *DeferStmt) End() token.Pos  { return s.Call.End() }
 func (s *ReturnStmt) End() token.Pos {
@@ -813,7 +811,7 @@ type (
 		Doc     *CommentGroup // associated documentation; or nil
 		Names   []*Ident      // value names (len(Names) > 0)
 		Type    Expr          // value type; or nil
-		Values  []Expr        // initial values; or nil
+		Value   Expr          // initial values; or nil
 		Comment *CommentGroup // line comments; or nil
 	}
 
@@ -845,8 +843,8 @@ func (s *ImportSpec) End() token.Pos {
 }
 
 func (s *ValueSpec) End() token.Pos {
-	if n := len(s.Values); n > 0 {
-		return s.Values[n-1].End()
+	if s.Value != nil {
+		return s.Value.End()
 	}
 	if s.Type != nil {
 		return s.Type.End()
