@@ -13,6 +13,7 @@ import (
 	"lib/go/parser"
 	"lib/go/scanner"
 	"lib/go/token"
+	"lib/eval"
 )
 
 var TRACE bool
@@ -77,7 +78,7 @@ func main() {
 			fmt.Println(errp)
 			return
 		}
-		e, erre := EvalInit(fset, *filePtr, nil, parser.AllErrors)
+		e, erre := eval.EvalInit(fset, *filePtr, nil, parser.AllErrors, TRACE)
 		if erre != nil {
 			fmt.Println(erre)
 			return
@@ -85,7 +86,7 @@ func main() {
 
 		for true {
 			stmt, tok := parser.ParseIter(p) // main iterator calls parse.stmt
-			evalStmt(e,stmt)
+			eval.EvalStmt(e,stmt)
 			if tok == token.EOF {
 				return
 			}

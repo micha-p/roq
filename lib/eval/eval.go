@@ -1,4 +1,4 @@
-package main
+package eval
 
 import (
 	"strconv"
@@ -51,13 +51,13 @@ type Evaluator struct {
 	topFrame   *Frame        // top-most frame; may be pkgFrame
 }
 
-func EvalInit(fset *token.FileSet, filename string, src interface{}, mode parser.Mode) (r *Evaluator, err error) {
+func EvalInit(fset *token.FileSet, filename string, src interface{}, mode parser.Mode, traceflag bool) (r *Evaluator, err error) {
 
 	if fset == nil {
 		panic("eval.evalInit: no token.FileSet provided (fset == nil)")
 	}
 
-	e := Evaluator{TRACE,0,nil}
+	e := Evaluator{traceflag,0,nil}
 	e.topFrame = NewFrame(e.topFrame)
 	return &e, err
 }
@@ -65,20 +65,21 @@ func EvalInit(fset *token.FileSet, filename string, src interface{}, mode parser
 // https://go-book.appspot.com/interfaces.html
 // an empty interface accepts all pointers
 
-func evalStmt(ev *Evaluator,s interface{}){
+func EvalStmt(ev *Evaluator,s interface{}){
+	TRACE := ev.trace
 	switch s.(type) {
 	case *ast.AssignStmt:
 	  if TRACE {println("assignStmt")}
 	  e := s.(*ast.AssignStmt)
-	  value := evalExpr(ev,e.Rhs)
-	  identifier := evalIdent(ev,e.Lhs)
+	  value := EvalExpr(ev,e.Rhs)
+	  identifier := EvalIdent(ev,e.Lhs)
 	  fmt.Printf("%s <- %g", identifier, value)
 	  obj := ast.Object{Name: identifier, Data: value}
 	  ev.topFrame.Insert(&obj)
 	case *ast.ExprStmt:
 	  if TRACE {println("exprStmt")}
 	  e := s.(*ast.ExprStmt)
-	  fmt.Printf("%g",evalExpr(ev,e.X))   // R has small e for exponential format
+	  fmt.Printf("%g",EvalExpr(ev,e.X))   // R has small e for exponential format
 	case *ast.EmptyStmt:
 	  println("")
 	case *ast.IfStmt:
@@ -92,12 +93,13 @@ func evalStmt(ev *Evaluator,s interface{}){
 	}
 }
 
-func evalIdent(ev *Evaluator, ex ast.Expr) string {
+func EvalIdent(ev *Evaluator, ex ast.Expr) string {
 	node := ex.(*ast.BasicLit)
 	return node.Value
 }
 
-func evalExpr(ev *Evaluator, ex ast.Expr) float64 {
+func EvalExpr(ev *Evaluator, ex ast.Expr) float64 {
+	TRACE := ev.trace
 	switch ex.(type) {
 	case *ast.BasicLit:
 	  node := ex.(*ast.BasicLit)
@@ -124,18 +126,18 @@ func evalExpr(ev *Evaluator, ex ast.Expr) float64 {
 	case *ast.BinaryExpr:
 	  node := ex.(*ast.BinaryExpr)
 	  if TRACE {println("BinaryExpr " + " " + node.Op.String())}
-	  return evalOp(node.Op, evalExpr(ev,node.X), evalExpr(ev,node.Y))
+	  return EvalOp(node.Op, EvalExpr(ev,node.X), EvalExpr(ev,node.Y))
 	case *ast.ParenExpr:
 	  node := ex.(*ast.ParenExpr)
 	  if TRACE {println("ParenExpr")}
-	  return evalExpr(ev, node.X )
+	  return EvalExpr(ev, node.X )
 	default:
 	  println("? Expr")
 	}
 	return math.NaN()
 }
 
-func evalOp(op token.Token, x float64, y float64) float64 {
+func EvalOp(op token.Token, x float64, y float64) float64 {
 	switch op {
 	case token.PLUS:
 	  return x + y
