@@ -139,17 +139,10 @@ func filterType(typ Expr, f Filter, export bool) bool {
 		b1 := filterParamList(t.Params, f, export)
 		/*b2 := filterParamList(t.Results, f, export)*/
 		return b1 /*|| b2*/
-	case *InterfaceType:
-		if filterFieldList(t.Methods, f, export) {
-			t.Incomplete = true
-		}
-		return len(t.Methods.List) > 0
 	case *MapType:
 		b1 := filterType(t.Key, f, export)
 		b2 := filterType(t.Value, f, export)
 		return b1 || b2
-	case *ChanType:
-		return filterType(t.Value, f, export)
 	}
 	return false
 }

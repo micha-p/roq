@@ -168,14 +168,8 @@ func Walk(v Visitor, node Node) {
 			Walk(v, n.Results)
 		}*/
 
-	case *InterfaceType:
-		Walk(v, n.Methods)
-
 	case *MapType:
 		Walk(v, n.Key)
-		Walk(v, n.Value)
-
-	case *ChanType:
 		Walk(v, n.Value)
 
 	// Statements

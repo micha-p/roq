@@ -356,15 +356,6 @@ type (
 	}
 )
 
-// The direction of a channel type is indicated by one
-// of the following constants.
-//
-type ChanDir int
-
-const (
-	SEND ChanDir = 1 << iota
-	RECV
-)
 
 // A type is represented by a tree consisting of one
 // or more of the following type-specific expression
@@ -394,26 +385,11 @@ type (
 		/*	Results *FieldList // (outgoing) results; or nil*/
 	}
 
-	// An InterfaceType node represents an interface type.
-	InterfaceType struct {
-		Interface  token.Pos  // position of "interface" keyword
-		Methods    *FieldList // list of methods
-		Incomplete bool       // true if (source) methods are missing in the Methods list
-	}
-
 	// A MapType node represents a map type.
 	MapType struct {
 		Map   token.Pos // position of "map" keyword
 		Key   Expr
 		Value Expr
-	}
-
-	// A ChanType node represents a channel type.
-	ChanType struct {
-		Begin token.Pos // position of "chan" keyword or "<-" (whichever comes first)
-		Arrow token.Pos // position of "<-" (token.NoPos if there is no "<-")
-		Dir   ChanDir   // channel direction
-		Value Expr      // value type
 	}
 )
 
@@ -448,10 +424,7 @@ func (x *FuncType) Pos() token.Pos {
 	}
 	return x.Params.Pos() // interface method declarations have no "func" keyword
 }
-func (x *InterfaceType) Pos() token.Pos { return x.Interface }
 func (x *MapType) Pos() token.Pos       { return x.Map }
-func (x *ChanType) Pos() token.Pos      { return x.Begin }
-
 func (x *BadExpr) End() token.Pos { return x.To }
 func (x *Ident) End() token.Pos   { return token.Pos(int(x.NamePos) + len(x.Name)) }
 func (x *Ellipsis) End() token.Pos {
@@ -481,9 +454,7 @@ func (x *FuncType) End() token.Pos {
 	}*/
 	return x.Params.End()
 }
-func (x *InterfaceType) End() token.Pos { return x.Methods.End() }
 func (x *MapType) End() token.Pos       { return x.Value.End() }
-func (x *ChanType) End() token.Pos      { return x.Value.End() }
 
 // exprNode() ensures that only expression/type nodes can be
 // assigned to an Expr.
@@ -508,9 +479,7 @@ func (*KeyValueExpr) exprNode()   {}
 func (*ArrayType) exprNode()     {}
 func (*StructType) exprNode()    {}
 func (*FuncType) exprNode()      {}
-func (*InterfaceType) exprNode() {}
 func (*MapType) exprNode()       {}
-func (*ChanType) exprNode()      {}
 
 // ----------------------------------------------------------------------------
 // Convenience functions for Idents
