@@ -40,6 +40,17 @@ func (s *Frame) Insert(obj *ast.Object) (alt *ast.Object) {
 	return
 }
 
+// taken from ast resolve.go
+func resolve(frame *Frame, ident *ast.Ident) bool {
+	for ; frame != nil; frame = frame.Outer {
+		if obj := frame.Lookup(ident.Name); obj != nil {
+			ident.Obj = obj
+			return true
+		}
+	}
+	return false
+}
+
 // derived of type parser
 type Evaluator struct {
 
@@ -74,17 +85,18 @@ func EvalStmt(ev *Evaluator, s interface{}) {
 			println("assignStmt")
 		}
 		e := s.(*ast.AssignStmt)
-		value := EvalExpr(ev, e.Rhs)
 		identifier := EvalIdent(ev, e.Lhs)
-		fmt.Printf("%s <- %g", identifier, value)
-		obj := ast.Object{Name: identifier, Data: value}
+		result := EvalExpr(ev, e.Rhs)
+		fmt.Printf("%s <- %g", identifier, result.Value)
+
+		obj := ast.Object{Name: identifier, Data: result}
 		ev.topFrame.Insert(&obj)
 	case *ast.ExprStmt:
 		if TRACE {
 			println("exprStmt")
 		}
 		e := s.(*ast.ExprStmt)
-		fmt.Printf("%g", EvalExpr(ev, e.X)) // R has small e for exponential format
+		PrintResult(EvalExpr(ev, e.X))
 	case *ast.EmptyStmt:
 		println("")
 	case *ast.IfStmt:
@@ -104,14 +116,25 @@ func EvalStmt(ev *Evaluator, s interface{}) {
 	}
 }
 
+func PrintResult(r *ast.Evaluated) {
+	switch r.Kind {
+	case token.FLOAT:
+		fmt.Printf("%g", r.Value) // R has small e for exponential format
+	default:
+	    println("unknown")
+	}
+}
+
 func EvalIdent(ev *Evaluator, ex ast.Expr) string {
 	node := ex.(*ast.BasicLit)
 	return node.Value
 }
 
-func EvalExpr(ev *Evaluator, ex ast.Expr) float64 {
+func EvalExpr(ev *Evaluator, ex ast.Expr) *ast.Evaluated {
 	TRACE := ev.trace
 	switch ex.(type) {
+	case *ast.Evaluated:
+	    return ex.(*ast.Evaluated)
 	case *ast.BasicLit:
 		node := ex.(*ast.BasicLit)
 		if TRACE {
@@ -127,7 +150,8 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) float64 {
 			if TRACE {
 				println(v)
 			}
-			return v
+			r := ast.Evaluated{ValuePos: node.ValuePos, Kind: token.FLOAT, Value: v}
+			return &r
 		case token.FLOAT:
 			v, err := strconv.ParseFloat(node.Value, 64) // TODO: support for all R formatted values
 			if err != nil {
@@ -137,14 +161,15 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) float64 {
 			if TRACE {
 				println(v)
 			}
-			return v
+			r := ast.Evaluated{ValuePos: node.ValuePos, Kind: token.FLOAT, Value: v}
+			return &r
 		case token.IDENT:
 			obj := ev.topFrame.Lookup(node.Value)
-			v := obj.Data.(float64)
+			evaluated := obj.Data.(*ast.Evaluated)
 			if TRACE {
-				println(v)
+				println(evaluated.Value)
 			}
-			return v
+			return evaluated
 		default:
 			println("Unknown node.kind")
 		}
@@ -153,7 +178,10 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) float64 {
 		if TRACE {
 			println("BinaryExpr " + " " + node.Op.String())
 		}
-		return EvalOp(node.Op, EvalExpr(ev, node.X), EvalExpr(ev, node.Y))
+		r :=  ast.Evaluated{ValuePos: node.Pos(), 
+			                Kind: token.FLOAT, 
+			                Value:EvalOp(node.Op, EvalExpr(ev, node.X).Value, EvalExpr(ev, node.Y).Value)}
+		return &r
 	case *ast.ParenExpr:
 		node := ex.(*ast.ParenExpr)
 		if TRACE {
@@ -163,25 +191,29 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) float64 {
 	default:
 		println("? Expr")
 	}
-	return math.NaN()
+	node := ex.(*ast.BadExpr)
+	r := ast.Evaluated{ValuePos: node.From, Kind: token.FLOAT, Value: math.NaN()}
+	return &r
 }
 
-func EvalOp(op token.Token, x float64, y float64) float64 {
+func EvalOp(op token.Token, x float64, y float64) float64{
+	var val float64 
 	switch op {
 	case token.PLUS:
-		return x + y
+		val= x + y
 	case token.MINUS:
-		return x - y
+		val= x - y
 	case token.MULTIPLICATION:
-		return x * y
+		val= x * y
 	case token.DIVISION:
-		return x / y
+		val= x / y
 	case token.EXPONENTIATION:
-		return math.Pow(x, y)
+		val= math.Pow(x, y)
 	case token.MODULUS:
-		return math.Mod(x, y)
+		val= math.Mod(x, y)
 	default:
 		println("? Op: " + op.String())
+		val = math.NaN()
 	}
-	return math.NaN()
+	return val
 }

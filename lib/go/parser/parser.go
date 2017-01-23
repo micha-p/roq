@@ -703,15 +703,6 @@ func (p *parser) parseFuncParameters(scope *ast.Scope, ellipsisOk bool) *ast.Fie
 	return &ast.FieldList{Opening: lparen, List: params, Closing: rparen}
 }
 
-func (p *parser) parseFuncSignature(scope *ast.Scope) (params *ast.FieldList) {
-	if p.trace {
-		defer un(trace(p, "Signature:"+p.lit))
-	}
-
-	params = p.parseFuncParameters(scope, true)
-	return
-}
-
 func (p *parser) parseFuncType() (*ast.FuncType, *ast.Scope) {
 	if p.trace {
 		defer un(trace(p, "FuncType"))
@@ -719,7 +710,7 @@ func (p *parser) parseFuncType() (*ast.FuncType, *ast.Scope) {
 
 	pos := p.expect(token.FUNCTION)
 	scope := ast.NewScope(p.topScope) // function scope
-	params := p.parseFuncSignature(scope)
+	params := p.parseFuncParameters(scope, true)
 
 	return &ast.FuncType{Func: pos, Params: params}, scope
 }
