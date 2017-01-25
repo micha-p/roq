@@ -1321,15 +1321,10 @@ func (p *parser) parseAssignment(mode int) ast.Stmt {
 	var s *ast.AssignStmt
 	
 	switch p.tok {
-	case token.SHORTASSIGNMENT, token.LEFTASSIGNMENT:
+	case token.SHORTASSIGNMENT, token.LEFTASSIGNMENT, token.RIGHTASSIGNMENT:
 		p.next()
 		y = p.parseRhs()
 		s = &ast.AssignStmt{Lhs: x, TokPos: pos, Tok: tok, Rhs: y}
-		return s
-	case token.RIGHTASSIGNMENT:
-		p.next()
-		y = p.parseRhs()
-		s = &ast.AssignStmt{Lhs: y, TokPos: pos, Tok: tok, Rhs: x}
 		return s
 	default:
 		e := &ast.ExprStmt{X:x}

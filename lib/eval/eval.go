@@ -85,11 +85,17 @@ func EvalStmt(ev *Evaluator, s interface{}) {
 			println("assignStmt")
 		}
 		e := s.(*ast.AssignStmt)
-		identifier := EvalIdent(ev, e.Lhs)
-		result := EvalExpr(ev, e.Rhs)
-		print(identifier + " <- ")
+		var identifier string
+		var result *ast.Evaluated
+		if e.Tok == token.RIGHTASSIGNMENT {
+			identifier = EvalIdent(ev, e.Rhs)
+			result = EvalExpr(ev, e.Lhs)
+		} else {
+			identifier = EvalIdent(ev, e.Lhs)
+			result = EvalExpr(ev, e.Rhs)
+		}
+		print(identifier + " " + e.Tok.String() + " ")
 		PrintResult(result)
-
 		obj := ast.Object{Name: identifier, Data: result}
 		ev.topFrame.Insert(&obj)
 	case *ast.ExprStmt:
@@ -111,6 +117,10 @@ func EvalStmt(ev *Evaluator, s interface{}) {
 	case *ast.BlockStmt:
 		if TRACE {
 			println("blockStmt")
+		}
+		e := s.(*ast.BlockStmt)
+		for _,stmt := range e.List {
+			EvalStmt(ev,stmt)
 		}
 	default:
 		println("? Stmt")
@@ -184,9 +194,14 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *ast.Evaluated {
 			return &r
 		case token.IDENT:
 			obj := ev.topFrame.Lookup(node.Value)
+			if obj==nil {
+				println("unassigned")
+			r := ast.Evaluated{ValuePos: node.ValuePos, Kind: token.FLOAT, Value: math.NaN()}
+			return &r
+			}
 			evaluated := obj.Data.(*ast.Evaluated)
 			if TRACE {
-				println(evaluated.Value)
+				fmt.Printf("%g\n",evaluated.Value)
 			}
 			return evaluated
 		default:
