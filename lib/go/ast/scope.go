@@ -105,16 +105,6 @@ func (obj *Object) Pos() token.Pos {
 			return d.Name.Pos()
 		}
 		return d.Path.Pos()
-	case *ValueSpec:
-		for _, n := range d.Names {
-			if n.Name == name {
-				return n.Pos()
-			}
-		}
-	case *TypeSpec:
-		if d.Name.Name == name {
-			return d.Name.Pos()
-		}
 	case *FuncDecl:
 		if d.Name.Name == name {
 			return d.Name.Pos()

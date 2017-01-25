@@ -147,45 +147,7 @@ func filterType(typ Expr, f Filter, export bool) bool {
 	return false
 }
 
-func filterSpec(spec Spec, f Filter, export bool) bool {
-	switch s := spec.(type) {
-	case *ValueSpec:
-		s.Names = filterIdentList(s.Names, f)
-		if len(s.Names) > 0 {
-			if export {
-				filterType(s.Type, f, export)
-			}
-			return true
-		}
-	case *TypeSpec:
-		if f(s.Name.Name) {
-			if export {
-				filterType(s.Type, f, export)
-			}
-			return true
-		}
-		if !export {
-			// For general filtering (not just exports),
-			// filter type even if name is not filtered
-			// out.
-			// If the type contains filtered elements,
-			// keep the declaration.
-			return filterType(s.Type, f, export)
-		}
-	}
-	return false
-}
 
-func filterSpecList(list []Spec, f Filter, export bool) []Spec {
-	j := 0
-	for _, s := range list {
-		if filterSpec(s, f, export) {
-			list[j] = s
-			j++
-		}
-	}
-	return list[0:j]
-}
 
 // FilterDecl trims the AST for a Go declaration in place by removing
 // all names (including struct field and interface method names, but
@@ -201,7 +163,6 @@ func FilterDecl(decl Decl, f Filter) bool {
 func filterDecl(decl Decl, f Filter, export bool) bool {
 	switch d := decl.(type) {
 	case *GenDecl:
-		d.Specs = filterSpecList(d.Specs, f, export)
 		return len(d.Specs) > 0
 	case *FuncDecl:
 		return f(d.Name.Name)

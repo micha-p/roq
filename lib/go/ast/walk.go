@@ -224,29 +224,6 @@ func Walk(v Visitor, node Node) {
 			Walk(v, n.Comment)
 		}
 
-	case *ValueSpec:
-		if n.Doc != nil {
-			Walk(v, n.Doc)
-		}
-		walkIdentList(v, n.Names)
-		if n.Type != nil {
-			Walk(v, n.Type)
-		}
-		Walk(v, n.Value)
-		if n.Comment != nil {
-			Walk(v, n.Comment)
-		}
-
-	case *TypeSpec:
-		if n.Doc != nil {
-			Walk(v, n.Doc)
-		}
-		Walk(v, n.Name)
-		Walk(v, n.Type)
-		if n.Comment != nil {
-			Walk(v, n.Comment)
-		}
-
 	case *BadDecl:
 		// nothing to do
 

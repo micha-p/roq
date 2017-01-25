@@ -656,25 +656,6 @@ type (
 		Comment *CommentGroup // line comments; or nil
 		EndPos  token.Pos     // end of spec (overrides Path.Pos if nonzero)
 	}
-
-	// A ValueSpec node represents a constant or variable declaration
-	// (ConstSpec or VarSpec production).
-	//
-	ValueSpec struct {
-		Doc     *CommentGroup // associated documentation; or nil
-		Names   []*Ident      // value names (len(Names) > 0)
-		Type    Expr          // value type; or nil
-		Value   Expr          // initial values; or nil
-		Comment *CommentGroup // line comments; or nil
-	}
-
-	// A TypeSpec node represents a type declaration (TypeSpec production).
-	TypeSpec struct {
-		Doc     *CommentGroup // associated documentation; or nil
-		Name    *Ident        // type name
-		Type    Expr          // *Ident, *ParenExpr, *SelectorExpr, *StarExpr, or any of the *XxxTypes
-		Comment *CommentGroup // line comments; or nil
-	}
 )
 
 // Pos and End implementations for spec nodes.
@@ -685,9 +666,6 @@ func (s *ImportSpec) Pos() token.Pos {
 	}
 	return s.Path.Pos()
 }
-func (s *ValueSpec) Pos() token.Pos { return s.Names[0].Pos() }
-func (s *TypeSpec) Pos() token.Pos  { return s.Name.Pos() }
-
 func (s *ImportSpec) End() token.Pos {
 	if s.EndPos != 0 {
 		return s.EndPos
@@ -695,23 +673,11 @@ func (s *ImportSpec) End() token.Pos {
 	return s.Path.End()
 }
 
-func (s *ValueSpec) End() token.Pos {
-	if s.Value != nil {
-		return s.Value.End()
-	}
-	if s.Type != nil {
-		return s.Type.End()
-	}
-	return s.Names[len(s.Names)-1].End()
-}
-func (s *TypeSpec) End() token.Pos { return s.Type.End() }
 
 // specNode() ensures that only spec nodes can be
 // assigned to a Spec.
 //
 func (*ImportSpec) specNode() {}
-func (*ValueSpec) specNode()  {}
-func (*TypeSpec) specNode()   {}
 
 // A declaration is represented by one of the following declaration nodes.
 //
