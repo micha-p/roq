@@ -1,9 +1,4 @@
-#b<-function(c,d){c+d}
-#b
-#b(1,2)
-{
-1+1
-a <- 2
-3 -> b
-a+b
-}
+b<-function(c,d){1+2}
+b
+b(1,2)
+c(3)

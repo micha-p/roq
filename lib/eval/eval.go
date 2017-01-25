@@ -138,7 +138,7 @@ func PrintResult(r *ast.Evaluated) {
 			//	print(ident)
 			//}
 			identifier := field.Type.(*ast.Ident)
-			if n>0 {print(",")}
+			if n>0 {print(',')}
 			print(identifier.Name)
 		}
 		print(")")
@@ -162,7 +162,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *ast.Evaluated {
 		if TRACE {
 			print("FuncLit")
 		}
-		r := ast.Evaluated{Kind: token.FUNCTION, Fieldlist: node.Type.Params.List}
+		r := ast.Evaluated{Kind: token.FUNCTION, Fieldlist: node.Type.Params.List, Body: node.Body}
 		return &r
 	case *ast.BasicLit:
 		node := ex.(*ast.BasicLit)
@@ -217,6 +217,24 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *ast.Evaluated {
 			                Kind: token.FLOAT,
 			                Value:v}
 		return &r
+	case *ast.CallExpr:
+		node := ex.(*ast.CallExpr)
+		funcobject := node.Fun
+		funcname := funcobject.(*ast.BasicLit).Value
+		if TRACE {
+			println("CallExpr " + " " + funcname)
+		}
+		obj := ev.topFrame.Lookup(funcname)
+		if obj==nil {
+			println("Error: could not find function \"" + funcname + "\"")
+			r := ast.Evaluated{ValuePos: node.Pos(), Kind: token.FLOAT, Value: math.NaN()}
+			return &r
+		} else {
+			stored := obj.Data.(*ast.Evaluated)
+			EvalStmt(ev,stored.Body)
+			r := ast.Evaluated{ValuePos: node.Pos(), Kind: token.FLOAT, Value: math.NaN()}
+			return &r
+		}
 	case *ast.ParenExpr:
 		node := ex.(*ast.ParenExpr)
 		if TRACE {
