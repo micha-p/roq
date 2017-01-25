@@ -86,7 +86,8 @@ func main() {
 
 		for true {
 			stmt, tok := parser.ParseIter(p) // main iterator calls parse.stmt
-			eval.EvalStmt(e,stmt)
+			r := eval.EvalStmt(e,stmt)
+			if r != nil {eval.PrintResult(r)}
 			if tok == token.EOF {
 				return
 			}

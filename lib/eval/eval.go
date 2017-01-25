@@ -67,32 +67,38 @@ func EvalInit(fset *token.FileSet, filename string, src interface{}, mode parser
 // https://go-book.appspot.com/interfaces.html
 // an empty interface accepts all pointers
 
-func EvalStmt(ev *Evaluator, s interface{}) {
+func EvalStmt(ev *Evaluator, s interface{}) *SEXPREC {
 	TRACE := ev.trace
 	switch s.(type) {
 	case *ast.AssignStmt:
 		if TRACE {
-			println("assignStmt")
+			print("assignStmt: ")
 		}
 		e := s.(*ast.AssignStmt)
 		var identifier string
 		var result *SEXPREC
 		if e.Tok == token.RIGHTASSIGNMENT {
 			identifier = EvalIdent(ev, e.Rhs)
+		if TRACE {
+			println(identifier + " " + e.Tok.String() + " ")
+		}
 			result = EvalExpr(ev, e.Lhs)
 		} else {
 			identifier = EvalIdent(ev, e.Lhs)
+		if TRACE {
+			println(identifier + " " + e.Tok.String() + " ")
+		}
 			result = EvalExpr(ev, e.Rhs)
 		}
-		print(identifier + " " + e.Tok.String() + " ")
-		PrintResult(result)
 		ev.topFrame.Insert(identifier, result)
+		return nil
 	case *ast.ExprStmt:
 		if TRACE {
 			println("exprStmt")
 		}
 		e := s.(*ast.ExprStmt)
-		PrintResult(EvalExpr(ev, e.X))
+		sexprec := EvalExpr(ev, e.X)
+		return sexprec
 	case *ast.EmptyStmt:
 		println("")
 	case *ast.IfStmt:
@@ -108,12 +114,15 @@ func EvalStmt(ev *Evaluator, s interface{}) {
 			println("blockStmt")
 		}
 		e := s.(*ast.BlockStmt)
+		var r *SEXPREC
 		for _,stmt := range e.List {
-			EvalStmt(ev,stmt)
+			r = EvalStmt(ev,stmt)
 		}
+		return r
 	default:
 		println("? Stmt")
 	}
+	return nil
 }
 
 func PrintResult(r *SEXPREC) {
@@ -127,7 +136,7 @@ func PrintResult(r *SEXPREC) {
 			//	print(ident)
 			//}
 			identifier := field.Type.(*ast.Ident)
-			if n>0 {print(',')}
+			if n>0 {print(",")}
 			print(identifier.Name)
 		}
 		print(")")
@@ -214,12 +223,9 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXPREC {
 		sexprec := ev.topFrame.Lookup(funcname)
 		if sexprec==nil {
 			println("Error: could not find function \"" + funcname + "\"")
-			r := SEXPREC{ValuePos: node.Pos(), Kind: token.FLOAT, Value: math.NaN()}
-			return &r
+			return nil
 		} else {
-			EvalStmt(ev,sexprec.Body)
-			r := SEXPREC{ValuePos: node.Pos(), Kind: token.FLOAT, Value: math.NaN()}
-			return &r
+			return EvalStmt(ev,sexprec.Body)
 		}
 	case *ast.ParenExpr:
 		node := ex.(*ast.ParenExpr)
