@@ -674,7 +674,7 @@ scanAgain:
 		case '>':
 			tok = s.switch4(token.GTR, token.GEQ, '>', token.SHR, token.ILLEGAL)
 		case '=':
-			tok = s.switch2(token.LEFTASSIGNMENT, token.EQL)
+			tok = s.switch2(token.SHORTASSIGNMENT, token.EQL)
 		case '!':
 			tok = s.switch2(token.NOT, token.NEQ)
 		case '&':

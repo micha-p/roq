@@ -857,7 +857,7 @@ func (p *parser) parseOperand(lhs bool) ast.Expr {
 			lparen := p.pos
 			p.next()
 			p.exprLev++
-			x := p.parseRhsOrType() // types may be parenthesized: (some type)
+			x := p.parseRhs()
 			p.exprLev--
 			rparen := p.expect(token.RPAREN)
 			return &ast.ParenExpr{Lparen: lparen, X: x, Rparen: rparen}
@@ -936,9 +936,9 @@ func (p *parser) parseIndexOrSlice(x ast.Expr) ast.Expr {
 	return &ast.IndexExpr{X: x, Lbrack: lbrack, Index: index[0], Rbrack: rbrack}
 }
 
-func (p *parser) parseCallOrConversion(fun ast.Expr) *ast.CallExpr {
+func (p *parser) parseCall(fun ast.Expr) *ast.CallExpr {
 	if p.trace {
-		defer un(trace(p, "CallOrConversion"))
+		defer un(trace(p, "Call"))
 	}
 
 	lparen := p.expect(token.LPAREN)
@@ -946,13 +946,13 @@ func (p *parser) parseCallOrConversion(fun ast.Expr) *ast.CallExpr {
 	var list []ast.Expr
 	var ellipsis token.Pos
 	for p.tok != token.RPAREN && p.tok != token.EOF && !ellipsis.IsValid() {
-		list = append(list, p.parseRhsOrType()) // builtins may expect a type: make(some type, ...)
+		list = append(list, p.parseRhsOrShort())
 		if p.tok == token.ELLIPSIS {
 			ellipsis = p.pos
 			p.next()
 		}
 		if !p.atComma("argument list", token.RPAREN) {
-			break
+		   break
 		}
 		p.next()
 	}
@@ -1182,7 +1182,7 @@ L:
 			if lhs {
 				p.resolve(x)
 			}
-			x = p.parseCallOrConversion(p.checkExprOrType(x))
+			x = p.parseCall(p.checkExpr(x))
 		case token.LBRACE:
 			if isLiteralType(x) && (p.exprLev >= 0 || !isTypeName(x)) {
 				if lhs {
@@ -1227,9 +1227,6 @@ func (p *parser) parseUnaryExpr(lhs bool) ast.Expr {
 
 func (p *parser) tokPrec() (token.Token, int) {
 	tok := p.tok
-	if p.inRhs && tok == token.LEFTASSIGNMENT {
-		tok = token.EQL
-	}
 	return tok, tok.Precedence()
 }
 
@@ -1240,7 +1237,7 @@ func (p *parser) parseBinaryExpr(lhs bool, prec1 int) ast.Expr {
 
 	}
 	x := p.parseUnaryExpr(lhs)
-	for {
+	for p.tok != token.RPAREN && p.tok != token.COMMA{
 		op, oprec := p.tokPrec()
 		if oprec < prec1 {
 			return x
@@ -1253,6 +1250,7 @@ func (p *parser) parseBinaryExpr(lhs bool, prec1 int) ast.Expr {
 		y := p.parseBinaryExpr(false, oprec+1)
 		x = &ast.BinaryExpr{X: p.checkExpr(x), OpPos: pos, Op: op, Y: p.checkExpr(y)}
 	}
+	return x
 }
 
 // If lhs is set and the result is an identifier, it is not resolved.
@@ -1267,6 +1265,7 @@ func (p *parser) parseExpr(lhs bool) ast.Expr {
 	return p.parseBinaryExpr(lhs, token.LowestPrec+1)
 }
 
+
 func (p *parser) parseRhs() ast.Expr {
 	old := p.inRhs
 	p.inRhs = true
@@ -1275,13 +1274,14 @@ func (p *parser) parseRhs() ast.Expr {
 	return x
 }
 
-func (p *parser) parseRhsOrType() ast.Expr {
-	old := p.inRhs
-	p.inRhs = true
-	x := p.checkExprOrType(p.parseExpr(false))
-	p.inRhs = old
-	return x
+func (p *parser) parseRhsOrShort() ast.Expr {
+	if p.trace {
+		defer un(trace(p, "RhsOrShort"))
+	}
+	return p.parseBinaryExpr(false, token.LowestPrec)
 }
+
+
 
 // ----------------------------------------------------------------------------
 // Statements
@@ -1319,17 +1319,6 @@ func (p *parser) parseAssignment(mode int) ast.Stmt {
 	}
 }
 
-func (p *parser) parseCallExpr(callType string) *ast.CallExpr {
-	x := p.parseRhsOrType() // could be a conversion: (some type)(x)
-	if call, isCall := x.(*ast.CallExpr); isCall {
-		return call
-	}
-	if _, isBad := x.(*ast.BadExpr); !isBad {
-		// only report error if it's a new one
-		p.error(p.safePos(x.End()), fmt.Sprintf("function must be invoked in %s statement", callType))
-	}
-	return nil
-}
 
 func (p *parser) parseReturnStmt() *ast.ReturnStmt {
 	if p.trace {
@@ -1401,19 +1390,6 @@ func (p *parser) parseIfStmt() *ast.IfStmt {
 	return &ast.IfStmt{If: pos, Cond: x, Body: body, Else: else_}
 }
 
-func (p *parser) parseTypeList() (list []ast.Expr) {
-	if p.trace {
-		defer un(trace(p, "TypeList"))
-	}
-
-	list = append(list, p.parseType())
-	for p.tok == token.COMMA {
-		p.next()
-		list = append(list, p.parseType())
-	}
-
-	return
-}
 
 func (p *parser) parseForStmt() ast.Stmt {
 	if p.trace {

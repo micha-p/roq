@@ -366,7 +366,7 @@ func (tok Token) String() string {
 // indexing, and other operator and delimiter tokens.
 //
 const (
-	LowestPrec  = 4 // non-operators
+	LowestPrec  = 2 // non-operators
 	UnaryPrec   = 13
 	HighestPrec = 16
 )
@@ -435,9 +435,9 @@ func (op Token) Precedence() int {
 		return 5
 	case TILDE:
 		return 4
-	case LEFTASSIGNMENT, SUPERLEFTASSIGNMENT:
-		return 3
 	case SHORTASSIGNMENT: // TODO CHECK
+		return 3
+	case LEFTASSIGNMENT, SUPERLEFTASSIGNMENT:
 		return 2
 	case RIGHTASSIGNMENT, SUPERRIGHTASSIGNMENT:
 		return 1

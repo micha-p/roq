@@ -51,6 +51,14 @@ type Evaluator struct {
 	topFrame *Frame // top-most frame; may be pkgFrame
 }
 
+func (e *Evaluator) openFrame() {
+	e.topFrame = NewFrame(e.topFrame)
+}
+
+func (e *Evaluator) closeFrame() {
+	e.topFrame = e.topFrame.Outer
+}
+
 func EvalInit(fset *token.FileSet, filename string, src interface{}, mode parser.Mode, traceflag bool) (r *Evaluator, err error) {
 
 	if fset == nil {
