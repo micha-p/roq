@@ -259,6 +259,7 @@ type (
 	Evaluated struct {       // TODO: change to SEXPR
 		ValuePos token.Pos   // literal position
 		Kind     token.Token // token.INT, token.FLOAT, token.IMAG, token.CHAR, or token.STRING
+		Fieldlist []*Field  // only if function
 		Value    float64 
 	}
 

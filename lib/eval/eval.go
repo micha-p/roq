@@ -87,7 +87,8 @@ func EvalStmt(ev *Evaluator, s interface{}) {
 		e := s.(*ast.AssignStmt)
 		identifier := EvalIdent(ev, e.Lhs)
 		result := EvalExpr(ev, e.Rhs)
-		fmt.Printf("%s <- %g", identifier, result.Value)
+		print(identifier + " <- ")
+		PrintResult(result)
 
 		obj := ast.Object{Name: identifier, Data: result}
 		ev.topFrame.Insert(&obj)
@@ -120,6 +121,17 @@ func PrintResult(r *ast.Evaluated) {
 	switch r.Kind {
 	case token.FLOAT:
 		fmt.Printf("%g", r.Value) // R has small e for exponential format
+	case token.FUNCTION:
+		print("function(")
+		for n,field := range r.Fieldlist {
+			//for _,ident := range field.Names {
+			//	print(ident)
+			//}
+			identifier := field.Type.(*ast.Ident)
+			if n>0 {print(",")}
+			print(identifier.Name)
+		}
+		print(")")
 	default:
 	    println("unknown")
 	}
@@ -135,6 +147,13 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *ast.Evaluated {
 	switch ex.(type) {
 	case *ast.Evaluated:
 	    return ex.(*ast.Evaluated)
+	case *ast.FuncLit:
+		node := ex.(*ast.FuncLit)
+		if TRACE {
+			print("FuncLit")
+		}
+		r := ast.Evaluated{Kind: token.FUNCTION, Fieldlist: node.Type.Params.List}
+		return &r
 	case *ast.BasicLit:
 		node := ex.(*ast.BasicLit)
 		if TRACE {
@@ -178,9 +197,10 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *ast.Evaluated {
 		if TRACE {
 			println("BinaryExpr " + " " + node.Op.String())
 		}
+		v :=  EvalOp(node.Op, EvalExpr(ev, node.X).Value, EvalExpr(ev, node.Y).Value)
 		r :=  ast.Evaluated{ValuePos: node.Pos(), 
-			                Kind: token.FLOAT, 
-			                Value:EvalOp(node.Op, EvalExpr(ev, node.X).Value, EvalExpr(ev, node.Y).Value)}
+			                Kind: token.FLOAT,
+			                Value:v}
 		return &r
 	case *ast.ParenExpr:
 		node := ex.(*ast.ParenExpr)

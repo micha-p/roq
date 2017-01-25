@@ -1,7 +1,8 @@
 1+2.0
 a=5
 a+3
-#b<-function(c,d){c+d}
+b<-function(c,d){c+d}
+b
 #b(1,2)
 
 #r = 1  +2 %% 10 + . ;
