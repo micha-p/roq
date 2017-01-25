@@ -105,10 +105,6 @@ func (obj *Object) Pos() token.Pos {
 			return d.Name.Pos()
 		}
 		return d.Path.Pos()
-	case *FuncDecl:
-		if d.Name.Name == name {
-			return d.Name.Pos()
-		}
 	case *AssignStmt:
 		if ident, isIdent := d.Lhs.(*Ident); isIdent && ident.Name == name {
 			return ident.Pos()

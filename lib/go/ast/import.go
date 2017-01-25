@@ -13,43 +13,6 @@ import (
 // SortImports sorts runs of consecutive import lines in import blocks in f.
 // It also removes duplicate imports when it is possible to do so without data loss.
 func SortImports(fset *token.FileSet, f *File) {
-	for _, d := range f.Decls {
-		d, ok := d.(*GenDecl)
-		if !ok || d.Tok != token.IMPORT {
-			// Not an import declaration, so we're done.
-			// Imports are always first.
-			break
-		}
-
-		if !d.Lparen.IsValid() {
-			// Not a block: sorted by default.
-			continue
-		}
-
-		// Identify and sort runs of specs on successive lines.
-		i := 0
-		specs := d.Specs[:0]
-		for j, s := range d.Specs {
-			if j > i && fset.Position(s.Pos()).Line > 1+fset.Position(d.Specs[j-1].End()).Line {
-				// j begins a new run. End this one.
-				specs = append(specs, sortSpecs(fset, f, d.Specs[i:j])...)
-				i = j
-			}
-		}
-		specs = append(specs, sortSpecs(fset, f, d.Specs[i:])...)
-		d.Specs = specs
-
-		// Deduping can leave a blank line before the rparen; clean that up.
-		if len(d.Specs) > 0 {
-			lastSpec := d.Specs[len(d.Specs)-1]
-			lastLine := fset.Position(lastSpec.Pos()).Line
-			rParenLine := fset.Position(d.Rparen).Line
-			for rParenLine > lastLine+1 {
-				rParenLine--
-				fset.File(d.Rparen).MergeLine(rParenLine)
-			}
-		}
-	}
 }
 
 func importPath(s Spec) string {

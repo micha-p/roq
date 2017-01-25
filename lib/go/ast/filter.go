@@ -149,26 +149,7 @@ func filterType(typ Expr, f Filter, export bool) bool {
 
 
 
-// FilterDecl trims the AST for a Go declaration in place by removing
-// all names (including struct field and interface method names, but
-// not from parameter lists) that don't pass through the filter f.
-//
-// FilterDecl reports whether there are any declared names left after
-// filtering.
-//
-func FilterDecl(decl Decl, f Filter) bool {
-	return filterDecl(decl, f, false)
-}
 
-func filterDecl(decl Decl, f Filter, export bool) bool {
-	switch d := decl.(type) {
-	case *GenDecl:
-		return len(d.Specs) > 0
-	case *FuncDecl:
-		return f(d.Name.Name)
-	}
-	return false
-}
 
 // FilterFile trims the AST for a Go file in place by removing all
 // names from top-level declarations (including struct field and
@@ -186,13 +167,6 @@ func FilterFile(src *File, f Filter) bool {
 
 func filterFile(src *File, f Filter, export bool) bool {
 	j := 0
-	for _, d := range src.Decls {
-		if filterDecl(d, f, export) {
-			src.Decls[j] = d
-			j++
-		}
-	}
-	src.Decls = src.Decls[0:j]
 	return j > 0
 }
 
@@ -236,27 +210,6 @@ const (
 	// If set, duplicate import declarations are excluded.
 	FilterImportDuplicates
 )
-
-// nameOf returns the function (foo) or method name (foo.bar) for
-// the given function declaration. If the AST is incorrect for the
-// receiver, it assumes a function instead.
-//
-func nameOf(f *FuncDecl) string {
-	if r := f.Recv; r != nil && len(r.List) == 1 {
-		// looks like a correct receiver declaration
-		t := r.List[0].Type
-		// dereference pointer receiver types
-		if p, _ := t.(*StarExpr); p != nil {
-			t = p.X
-		}
-		// the receiver type must be a type name
-		if p, _ := t.(*Ident); p != nil {
-			return p.Name + "." + f.Name.Name
-		}
-		// otherwise assume a function instead
-	}
-	return f.Name.Name
-}
 
 // separator is an empty //-style comment that is interspersed between
 // different comment groups when they are concatenated into a single group
@@ -320,63 +273,6 @@ func MergePackageFiles(pkg *Package, mode MergeMode) *File {
 
 	// Collect declarations from all package files.
 	var decls []Decl
-	if ndecls > 0 {
-		decls = make([]Decl, ndecls)
-		funcs := make(map[string]int) // map of func name -> decls index
-		i := 0                        // current index
-		n := 0                        // number of filtered entries
-		for _, filename := range filenames {
-			f := pkg.Files[filename]
-			for _, d := range f.Decls {
-				if mode&FilterFuncDuplicates != 0 {
-					// A language entity may be declared multiple
-					// times in different package files; only at
-					// build time declarations must be unique.
-					// For now, exclude multiple declarations of
-					// functions - keep the one with documentation.
-					//
-					// TODO(gri): Expand this filtering to other
-					//            entities (const, type, vars) if
-					//            multiple declarations are common.
-					if f, isFun := d.(*FuncDecl); isFun {
-						name := nameOf(f)
-						if j, exists := funcs[name]; exists {
-							// function declared already
-							if decls[j] != nil && decls[j].(*FuncDecl).Doc == nil {
-								// existing declaration has no documentation;
-								// ignore the existing declaration
-								decls[j] = nil
-							} else {
-								// ignore the new declaration
-								d = nil
-							}
-							n++ // filtered an entry
-						} else {
-							funcs[name] = i
-						}
-					}
-				}
-				decls[i] = d
-				i++
-			}
-		}
-
-		// Eliminate nil entries from the decls list if entries were
-		// filtered. We do this using a 2nd pass in order to not disturb
-		// the original declaration order in the source (otherwise, this
-		// would also invalidate the monotonically increasing position
-		// info within a single file).
-		if n > 0 {
-			i = 0
-			for _, d := range decls {
-				if d != nil {
-					decls[i] = d
-					i++
-				}
-			}
-			decls = decls[0:i]
-		}
-	}
 
 	// Collect import specs from all package files.
 	var imports []*ImportSpec

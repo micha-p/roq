@@ -224,30 +224,6 @@ func Walk(v Visitor, node Node) {
 			Walk(v, n.Comment)
 		}
 
-	case *BadDecl:
-		// nothing to do
-
-	case *GenDecl:
-		if n.Doc != nil {
-			Walk(v, n.Doc)
-		}
-		for _, s := range n.Specs {
-			Walk(v, s)
-		}
-
-	case *FuncDecl:
-		if n.Doc != nil {
-			Walk(v, n.Doc)
-		}
-		if n.Recv != nil {
-			Walk(v, n.Recv)
-		}
-		Walk(v, n.Name)
-		Walk(v, n.Type)
-		if n.Body != nil {
-			Walk(v, n.Body)
-		}
-
 	// Files and packages
 	case *File:
 		if n.Doc != nil {
