@@ -21,9 +21,6 @@ import (
 	"lib/go/ast"
 	"lib/go/scanner"
 	"lib/go/token"
-	"strconv"
-	"strings"
-	"unicode"
 )
 
 // The parser structure holds the parser's internal state.
@@ -35,11 +32,6 @@ type parser struct {
 	// Tracing/debugging
 	trace  bool // == (mode & Trace != 0)
 	indent int  // indentation used for tracing output
-
-	// Comments
-	comments    []*ast.CommentGroup
-	leadComment *ast.CommentGroup // last lead comment
-	lineComment *ast.CommentGroup // last line comment
 
 	// Next token
 	pos token.Pos   // token position
@@ -502,8 +494,6 @@ func (p *parser) parseFieldDecl(scope *ast.Scope) *ast.Field {
 		defer un(trace(p, "FieldDecl"))
 	}
 
-	doc := p.leadComment
-
 	// 1st FieldDecl
 	// A type name used as an anonymous field looks like a field identifier.
 	var list []ast.Expr
@@ -543,7 +533,7 @@ func (p *parser) parseFieldDecl(scope *ast.Scope) *ast.Field {
 
 	p.expectSemi() // call before accessing p.linecomment
 
-	field := &ast.Field{Doc: doc, Names: idents, Type: typ, Tag: tag, Comment: p.lineComment}
+	field := &ast.Field{Names: idents, Type: typ, Tag: tag}
 	p.declare(field, nil, scope, ast.Var, idents...)
 	p.resolve(typ)
 
@@ -1550,60 +1540,5 @@ func (p *parser) parseStmt() (s ast.Stmt) {
 	}
 
 	return
-}
-
-// ----------------------------------------------------------------------------
-// Declarations
-
-type parseSpecFunction func(doc *ast.CommentGroup, keyword token.Token, iota int) ast.Spec
-
-func isValidImport(lit string) bool {
-	const illegalChars = `!"#$%&'()*,:;<=>?[\]^{|}` + "`\uFFFD"
-	s, _ := strconv.Unquote(lit) // lib/go/scanner returns a legal string literal
-	for _, r := range s {
-		if !unicode.IsGraphic(r) || unicode.IsSpace(r) || strings.ContainsRune(illegalChars, r) {
-			return false
-		}
-	}
-	return s != ""
-}
-
-func (p *parser) parseImportSpec(doc *ast.CommentGroup, _ token.Token, _ int) ast.Spec {
-	if p.trace {
-		defer un(trace(p, "ImportSpec"))
-	}
-
-	var ident *ast.Ident
-	switch p.tok {
-	/*	case token.PERIOD:
-		ident = &ast.Ident{NamePos: p.pos, Name: "."}
-		p.next()*/
-	case token.IDENT:
-		ident = p.parseIdent()
-	}
-
-	pos := p.pos
-	var path string
-	if p.tok == token.STRING {
-		path = p.lit
-		if !isValidImport(path) {
-			p.error(pos, "invalid import path: "+path)
-		}
-		p.next()
-	} else {
-		p.expect(token.STRING) // use expect() error handling
-	}
-	p.expectSemi() // call before accessing p.linecomment
-
-	// collect imports
-	spec := &ast.ImportSpec{
-		Doc:     doc,
-		Name:    ident,
-		Path:    &ast.BasicLit{ValuePos: pos, Kind: token.STRING, Value: path},
-		Comment: p.lineComment,
-	}
-	p.imports = append(p.imports, spec)
-
-	return spec
 }
 

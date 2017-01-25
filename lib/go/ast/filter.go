@@ -211,10 +211,6 @@ const (
 	FilterImportDuplicates
 )
 
-// separator is an empty //-style comment that is interspersed between
-// different comment groups when they are concatenated into a single group
-//
-var separator = &Comment{token.NoPos, "//"}
 
 // MergePackageFiles creates a file AST by merging the ASTs of the
 // files belonging to a package. The mode flags control merging behavior.
@@ -223,53 +219,17 @@ func MergePackageFiles(pkg *Package, mode MergeMode) *File {
 	// Count the number of package docs, comments and declarations across
 	// all package files. Also, compute sorted list of filenames, so that
 	// subsequent iterations can always iterate in the same order.
-	ndocs := 0
-	ncomments := 0
 	ndecls := 0
 	filenames := make([]string, len(pkg.Files))
 	i := 0
 	for filename, f := range pkg.Files {
 		filenames[i] = filename
 		i++
-		if f.Doc != nil {
-			ndocs += len(f.Doc.List) + 1 // +1 for separator
-		}
-		ncomments += len(f.Comments)
 		ndecls += len(f.Decls)
 	}
 	sort.Strings(filenames)
 
-	// Collect package comments from all package files into a single
-	// CommentGroup - the collected package documentation. In general
-	// there should be only one file with a package comment; but it's
-	// better to collect extra comments than drop them on the floor.
-	var doc *CommentGroup
 	var pos token.Pos
-	if ndocs > 0 {
-		list := make([]*Comment, ndocs-1) // -1: no separator before first group
-		i := 0
-		for _, filename := range filenames {
-			f := pkg.Files[filename]
-			if f.Doc != nil {
-				if i > 0 {
-					// not the first group - add separator
-					list[i] = separator
-					i++
-				}
-				for _, c := range f.Doc.List {
-					list[i] = c
-					i++
-				}
-				if f.Package > pos {
-					// Keep the maximum package clause position as
-					// position for the package clause of the merged
-					// files.
-					pos = f.Package
-				}
-			}
-		}
-		doc = &CommentGroup{list}
-	}
 
 	// Collect declarations from all package files.
 	var decls []Decl
@@ -300,16 +260,6 @@ func MergePackageFiles(pkg *Package, mode MergeMode) *File {
 		}
 	}
 
-	// Collect comments from all package files.
-	var comments []*CommentGroup
-	if mode&FilterUnassociatedComments == 0 {
-		comments = make([]*CommentGroup, ncomments)
-		i := 0
-		for _, f := range pkg.Files {
-			i += copy(comments[i:], f.Comments)
-		}
-	}
-
 	// TODO(gri) need to compute unresolved identifiers!
-	return &File{doc, pos, NewIdent(pkg.Name), decls, pkg.Scope, imports, nil, comments}
+	return &File{pos, NewIdent(pkg.Name), decls, pkg.Scope, imports, nil, }
 }
