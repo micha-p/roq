@@ -9,11 +9,11 @@ import (
 	//	"log"
 	//	"strings"
 	//	"os"
+	"lib/eval"
 	"lib/go/ast"
 	"lib/go/parser"
 	"lib/go/scanner"
 	"lib/go/token"
-	"lib/eval"
 )
 
 var TRACE bool
@@ -86,8 +86,10 @@ func main() {
 
 		for true {
 			stmt, tok := parser.ParseIter(p) // main iterator calls parse.stmt
-			r := eval.EvalStmt(e,stmt)
-			if r != nil {eval.PrintResult(r)}
+			r := eval.EvalStmt(e, stmt)
+			if r != nil {
+				eval.PrintResult(r)
+			}
 			if tok == token.EOF {
 				return
 			}

@@ -86,7 +86,6 @@ func (p *parser) closeScope() {
 	p.topScope = p.topScope.Outer
 }
 
-
 func (p *parser) declare(decl, data interface{}, scope *ast.Scope, kind ast.ObjKind, idents ...*ast.Ident) {
 	for _, ident := range idents {
 		assert(ident.Obj == nil, "identifier already declared or resolved")
@@ -107,7 +106,6 @@ func (p *parser) declare(decl, data interface{}, scope *ast.Scope, kind ast.ObjK
 		}
 	}
 }
-
 
 // The unresolved object is a sentinel to mark identifiers that have been added
 // to the list of unresolved identifiers. The sentinel is only used for verifying
@@ -420,7 +418,6 @@ func (p *parser) parseExprList(lhs bool) (list []ast.Expr) {
 
 	return
 }
-
 
 // ----------------------------------------------------------------------------
 // Types
@@ -1319,7 +1316,7 @@ func (p *parser) parseAssignment(mode int) ast.Stmt {
 	var y ast.Expr
 	pos, tok := p.pos, p.tok
 	var s *ast.AssignStmt
-	
+
 	switch p.tok {
 	case token.SHORTASSIGNMENT, token.LEFTASSIGNMENT, token.RIGHTASSIGNMENT:
 		p.next()
@@ -1327,7 +1324,7 @@ func (p *parser) parseAssignment(mode int) ast.Stmt {
 		s = &ast.AssignStmt{Lhs: x, TokPos: pos, Tok: tok, Rhs: y}
 		return s
 	default:
-		e := &ast.ExprStmt{X:x}
+		e := &ast.ExprStmt{X: x}
 		return e
 	}
 }
@@ -1473,34 +1470,34 @@ func (p *parser) parseForStmt() ast.Stmt {
 	p.expectSemi()
 
 	/*
-	if isRange {
-		as := s2.(*ast.AssignStmt)
-		// check lhs
-		var key, value ast.Expr
-		switch len(as.Lhs) {
-		case 0:
-			// nothing to do
-		case 1:
-			key = as.Lhs[0]
-		case 2:
-			key, value = as.Lhs[0], as.Lhs[1]
-		default:
-			p.errorExpected(as.Lhs[len(as.Lhs)-1].Pos(), "at most 2 expressions")
-			return &ast.BadStmt{From: pos, To: p.safePos(body.End())}
+		if isRange {
+			as := s2.(*ast.AssignStmt)
+			// check lhs
+			var key, value ast.Expr
+			switch len(as.Lhs) {
+			case 0:
+				// nothing to do
+			case 1:
+				key = as.Lhs[0]
+			case 2:
+				key, value = as.Lhs[0], as.Lhs[1]
+			default:
+				p.errorExpected(as.Lhs[len(as.Lhs)-1].Pos(), "at most 2 expressions")
+				return &ast.BadStmt{From: pos, To: p.safePos(body.End())}
+			}
+			// parseAssignment returned a right-hand side that
+			// is a single unary expression of the form "range x"
+			x := as.Rhs[0].(*ast.UnaryExpr).X
+			return &ast.RangeStmt{
+				For:    pos,
+				Key:    key,
+				Value:  value,
+				TokPos: as.TokPos,
+				Tok:    as.Tok,
+				X:      x,
+				Body:   body,
+			}
 		}
-		// parseAssignment returned a right-hand side that
-		// is a single unary expression of the form "range x"
-		x := as.Rhs[0].(*ast.UnaryExpr).X
-		return &ast.RangeStmt{
-			For:    pos,
-			Key:    key,
-			Value:  value,
-			TokPos: as.TokPos,
-			Tok:    as.Tok,
-			X:      x,
-			Body:   body,
-		}
-	}
 	*/
 
 	// regular for statement

@@ -356,7 +356,6 @@ type (
 	}
 )
 
-
 // A type is represented by a tree consisting of one
 // or more of the following type-specific expression
 // nodes.
@@ -395,11 +394,11 @@ type (
 
 // Pos and End implementations for expression/type nodes.
 
-func (x *BadExpr) Pos() token.Pos   { return x.From }
-func (x *Ident) Pos() token.Pos     { return x.NamePos }
-func (x *Ellipsis) Pos() token.Pos  { return x.Ellipsis }
-func (x *BasicLit) Pos() token.Pos  { return x.ValuePos }
-func (x *FuncLit) Pos() token.Pos   { return x.Type.Pos() }
+func (x *BadExpr) Pos() token.Pos  { return x.From }
+func (x *Ident) Pos() token.Pos    { return x.NamePos }
+func (x *Ellipsis) Pos() token.Pos { return x.Ellipsis }
+func (x *BasicLit) Pos() token.Pos { return x.ValuePos }
+func (x *FuncLit) Pos() token.Pos  { return x.Type.Pos() }
 func (x *CompositeLit) Pos() token.Pos {
 	if x.Type != nil {
 		return x.Type.Pos()
@@ -424,7 +423,7 @@ func (x *FuncType) Pos() token.Pos {
 	}
 	return x.Params.Pos() // interface method declarations have no "func" keyword
 }
-func (x *MapType) Pos() token.Pos       { return x.Map }
+func (x *MapType) Pos() token.Pos { return x.Map }
 func (x *BadExpr) End() token.Pos { return x.To }
 func (x *Ident) End() token.Pos   { return token.Pos(int(x.NamePos) + len(x.Name)) }
 func (x *Ellipsis) End() token.Pos {
@@ -454,7 +453,7 @@ func (x *FuncType) End() token.Pos {
 	}*/
 	return x.Params.End()
 }
-func (x *MapType) End() token.Pos       { return x.Value.End() }
+func (x *MapType) End() token.Pos { return x.Value.End() }
 
 // exprNode() ensures that only expression/type nodes can be
 // assigned to an Expr.
@@ -476,10 +475,10 @@ func (*UnaryExpr) exprNode()      {}
 func (*BinaryExpr) exprNode()     {}
 func (*KeyValueExpr) exprNode()   {}
 
-func (*ArrayType) exprNode()     {}
-func (*StructType) exprNode()    {}
-func (*FuncType) exprNode()      {}
-func (*MapType) exprNode()       {}
+func (*ArrayType) exprNode()  {}
+func (*StructType) exprNode() {}
+func (*FuncType) exprNode()   {}
+func (*MapType) exprNode()    {}
 
 // ----------------------------------------------------------------------------
 // Convenience functions for Idents
@@ -688,8 +687,8 @@ func (s *EmptyStmt) End() token.Pos {
 	}
 	return s.Semicolon + 1 /* len(";") */
 }
-func (s *ExprStmt) End() token.Pos    { return s.X.End() }
-func (s *SendStmt) End() token.Pos    { return s.Value.End() }
+func (s *ExprStmt) End() token.Pos { return s.X.End() }
+func (s *SendStmt) End() token.Pos { return s.Value.End() }
 func (s *IncDecStmt) End() token.Pos {
 	return s.TokPos + 2 /* len("++") */
 }

@@ -40,7 +40,6 @@ func (s *Frame) Insert(identifier string, obj *SEXPREC) (alt *SEXPREC) {
 	return
 }
 
-
 // derived of type parser
 type Evaluator struct {
 
@@ -79,15 +78,15 @@ func EvalStmt(ev *Evaluator, s interface{}) *SEXPREC {
 		var result *SEXPREC
 		if e.Tok == token.RIGHTASSIGNMENT {
 			identifier = EvalIdent(ev, e.Rhs)
-		if TRACE {
-			println(identifier + " " + e.Tok.String() + " ")
-		}
+			if TRACE {
+				println(identifier + " " + e.Tok.String() + " ")
+			}
 			result = EvalExpr(ev, e.Lhs)
 		} else {
 			identifier = EvalIdent(ev, e.Lhs)
-		if TRACE {
-			println(identifier + " " + e.Tok.String() + " ")
-		}
+			if TRACE {
+				println(identifier + " " + e.Tok.String() + " ")
+			}
 			result = EvalExpr(ev, e.Rhs)
 		}
 		ev.topFrame.Insert(identifier, result)
@@ -115,8 +114,8 @@ func EvalStmt(ev *Evaluator, s interface{}) *SEXPREC {
 		}
 		e := s.(*ast.BlockStmt)
 		var r *SEXPREC
-		for _,stmt := range e.List {
-			r = EvalStmt(ev,stmt)
+		for _, stmt := range e.List {
+			r = EvalStmt(ev, stmt)
 		}
 		return r
 	default:
@@ -131,17 +130,19 @@ func PrintResult(r *SEXPREC) {
 		fmt.Printf("%g", r.Value) // R has small e for exponential format
 	case token.FUNCTION:
 		print("function(")
-		for n,field := range r.Fieldlist {
+		for n, field := range r.Fieldlist {
 			//for _,ident := range field.Names {
 			//	print(ident)
 			//}
 			identifier := field.Type.(*ast.Ident)
-			if n>0 {print(",")}
+			if n > 0 {
+				print(",")
+			}
 			print(identifier.Name)
 		}
 		print(")")
 	default:
-	    println("unknown")
+		println("unknown")
 	}
 }
 
@@ -190,13 +191,13 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXPREC {
 			return &r
 		case token.IDENT:
 			sexprec := ev.topFrame.Lookup(node.Value)
-			if sexprec==nil {
+			if sexprec == nil {
 				println("unassigned")
-			r := SEXPREC{ValuePos: node.ValuePos, Kind: token.FLOAT, Value: math.NaN()}
-			return &r
+				r := SEXPREC{ValuePos: node.ValuePos, Kind: token.FLOAT, Value: math.NaN()}
+				return &r
 			} else {
 				if TRACE {
-					fmt.Printf("%g\n",sexprec.Value)
+					fmt.Printf("%g\n", sexprec.Value)
 				}
 				return sexprec
 			}
@@ -208,10 +209,10 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXPREC {
 		if TRACE {
 			println("BinaryExpr " + " " + node.Op.String())
 		}
-		v :=  EvalOp(node.Op, EvalExpr(ev, node.X).Value, EvalExpr(ev, node.Y).Value)
-		r :=  SEXPREC{ValuePos: node.Pos(), 
-			                Kind: token.FLOAT,
-			                Value:v}
+		v := EvalOp(node.Op, EvalExpr(ev, node.X).Value, EvalExpr(ev, node.Y).Value)
+		r := SEXPREC{ValuePos: node.Pos(),
+			Kind:  token.FLOAT,
+			Value: v}
 		return &r
 	case *ast.CallExpr:
 		node := ex.(*ast.CallExpr)
@@ -221,11 +222,11 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXPREC {
 			println("CallExpr " + " " + funcname)
 		}
 		sexprec := ev.topFrame.Lookup(funcname)
-		if sexprec==nil {
+		if sexprec == nil {
 			println("Error: could not find function \"" + funcname + "\"")
 			return nil
 		} else {
-			return EvalStmt(ev,sexprec.Body)
+			return EvalStmt(ev, sexprec.Body)
 		}
 	case *ast.ParenExpr:
 		node := ex.(*ast.ParenExpr)
@@ -241,21 +242,21 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXPREC {
 	return &r
 }
 
-func EvalOp(op token.Token, x float64, y float64) float64{
-	var val float64 
+func EvalOp(op token.Token, x float64, y float64) float64 {
+	var val float64
 	switch op {
 	case token.PLUS:
-		val= x + y
+		val = x + y
 	case token.MINUS:
-		val= x - y
+		val = x - y
 	case token.MULTIPLICATION:
-		val= x * y
+		val = x * y
 	case token.DIVISION:
-		val= x / y
+		val = x / y
 	case token.EXPONENTIATION:
-		val= math.Pow(x, y)
+		val = math.Pow(x, y)
 	case token.MODULUS:
-		val= math.Mod(x, y)
+		val = math.Mod(x, y)
 	default:
 		println("? Op: " + op.String())
 		val = math.NaN()
