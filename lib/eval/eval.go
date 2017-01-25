@@ -16,40 +16,30 @@ import (
 
 type Frame struct {
 	Outer   *Frame
-	Objects map[string]*ast.Object
+	Objects map[string]*SEXPREC
 }
 
 // NewFrame creates a new scope nested in the outer scope.
 func NewFrame(outer *Frame) *Frame {
 	const n = 4 // initial frame capacity
-	return &Frame{outer, make(map[string]*ast.Object, n)}
+	return &Frame{outer, make(map[string]*SEXPREC, n)}
 }
 
 // Lookup returns the object with the given name if it is
 // found in frame s, otherwise it returns nil. Outer frames
 // are ignored. TODO!!!
 //
-func (s *Frame) Lookup(name string) *ast.Object {
+func (s *Frame) Lookup(name string) *SEXPREC {
 	return s.Objects[name]
 }
 
 // Insert attempts to insert a named object obj into the frame s.
 // If the frame already contains an object alt with the same name, this object is overwritten
-func (s *Frame) Insert(obj *ast.Object) (alt *ast.Object) {
-	s.Objects[obj.Name] = obj
+func (s *Frame) Insert(identifier string, obj *SEXPREC) (alt *SEXPREC) {
+	s.Objects[identifier] = obj
 	return
 }
 
-// taken from ast resolve.go
-func resolve(frame *Frame, ident *ast.Ident) bool {
-	for ; frame != nil; frame = frame.Outer {
-		if obj := frame.Lookup(ident.Name); obj != nil {
-			ident.Obj = obj
-			return true
-		}
-	}
-	return false
-}
 
 // derived of type parser
 type Evaluator struct {
@@ -86,7 +76,7 @@ func EvalStmt(ev *Evaluator, s interface{}) {
 		}
 		e := s.(*ast.AssignStmt)
 		var identifier string
-		var result *ast.Evaluated
+		var result *SEXPREC
 		if e.Tok == token.RIGHTASSIGNMENT {
 			identifier = EvalIdent(ev, e.Rhs)
 			result = EvalExpr(ev, e.Lhs)
@@ -96,8 +86,7 @@ func EvalStmt(ev *Evaluator, s interface{}) {
 		}
 		print(identifier + " " + e.Tok.String() + " ")
 		PrintResult(result)
-		obj := ast.Object{Name: identifier, Data: result}
-		ev.topFrame.Insert(&obj)
+		ev.topFrame.Insert(identifier, result)
 	case *ast.ExprStmt:
 		if TRACE {
 			println("exprStmt")
@@ -127,7 +116,7 @@ func EvalStmt(ev *Evaluator, s interface{}) {
 	}
 }
 
-func PrintResult(r *ast.Evaluated) {
+func PrintResult(r *SEXPREC) {
 	switch r.Kind {
 	case token.FLOAT:
 		fmt.Printf("%g", r.Value) // R has small e for exponential format
@@ -152,17 +141,15 @@ func EvalIdent(ev *Evaluator, ex ast.Expr) string {
 	return node.Value
 }
 
-func EvalExpr(ev *Evaluator, ex ast.Expr) *ast.Evaluated {
+func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXPREC {
 	TRACE := ev.trace
 	switch ex.(type) {
-	case *ast.Evaluated:
-	    return ex.(*ast.Evaluated)
 	case *ast.FuncLit:
 		node := ex.(*ast.FuncLit)
 		if TRACE {
 			print("FuncLit")
 		}
-		r := ast.Evaluated{Kind: token.FUNCTION, Fieldlist: node.Type.Params.List, Body: node.Body}
+		r := SEXPREC{Kind: token.FUNCTION, Fieldlist: node.Type.Params.List, Body: node.Body}
 		return &r
 	case *ast.BasicLit:
 		node := ex.(*ast.BasicLit)
@@ -179,7 +166,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *ast.Evaluated {
 			if TRACE {
 				println(v)
 			}
-			r := ast.Evaluated{ValuePos: node.ValuePos, Kind: token.FLOAT, Value: v}
+			r := SEXPREC{ValuePos: node.ValuePos, Kind: token.FLOAT, Value: v}
 			return &r
 		case token.FLOAT:
 			v, err := strconv.ParseFloat(node.Value, 64) // TODO: support for all R formatted values
@@ -190,20 +177,20 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *ast.Evaluated {
 			if TRACE {
 				println(v)
 			}
-			r := ast.Evaluated{ValuePos: node.ValuePos, Kind: token.FLOAT, Value: v}
+			r := SEXPREC{ValuePos: node.ValuePos, Kind: token.FLOAT, Value: v}
 			return &r
 		case token.IDENT:
-			obj := ev.topFrame.Lookup(node.Value)
-			if obj==nil {
+			sexprec := ev.topFrame.Lookup(node.Value)
+			if sexprec==nil {
 				println("unassigned")
-			r := ast.Evaluated{ValuePos: node.ValuePos, Kind: token.FLOAT, Value: math.NaN()}
+			r := SEXPREC{ValuePos: node.ValuePos, Kind: token.FLOAT, Value: math.NaN()}
 			return &r
+			} else {
+				if TRACE {
+					fmt.Printf("%g\n",sexprec.Value)
+				}
+				return sexprec
 			}
-			evaluated := obj.Data.(*ast.Evaluated)
-			if TRACE {
-				fmt.Printf("%g\n",evaluated.Value)
-			}
-			return evaluated
 		default:
 			println("Unknown node.kind")
 		}
@@ -213,7 +200,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *ast.Evaluated {
 			println("BinaryExpr " + " " + node.Op.String())
 		}
 		v :=  EvalOp(node.Op, EvalExpr(ev, node.X).Value, EvalExpr(ev, node.Y).Value)
-		r :=  ast.Evaluated{ValuePos: node.Pos(), 
+		r :=  SEXPREC{ValuePos: node.Pos(), 
 			                Kind: token.FLOAT,
 			                Value:v}
 		return &r
@@ -224,15 +211,14 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *ast.Evaluated {
 		if TRACE {
 			println("CallExpr " + " " + funcname)
 		}
-		obj := ev.topFrame.Lookup(funcname)
-		if obj==nil {
+		sexprec := ev.topFrame.Lookup(funcname)
+		if sexprec==nil {
 			println("Error: could not find function \"" + funcname + "\"")
-			r := ast.Evaluated{ValuePos: node.Pos(), Kind: token.FLOAT, Value: math.NaN()}
+			r := SEXPREC{ValuePos: node.Pos(), Kind: token.FLOAT, Value: math.NaN()}
 			return &r
 		} else {
-			stored := obj.Data.(*ast.Evaluated)
-			EvalStmt(ev,stored.Body)
-			r := ast.Evaluated{ValuePos: node.Pos(), Kind: token.FLOAT, Value: math.NaN()}
+			EvalStmt(ev,sexprec.Body)
+			r := SEXPREC{ValuePos: node.Pos(), Kind: token.FLOAT, Value: math.NaN()}
 			return &r
 		}
 	case *ast.ParenExpr:
@@ -245,7 +231,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *ast.Evaluated {
 		println("? Expr")
 	}
 	node := ex.(*ast.BadExpr)
-	r := ast.Evaluated{ValuePos: node.From, Kind: token.FLOAT, Value: math.NaN()}
+	r := SEXPREC{ValuePos: node.From, Kind: token.FLOAT, Value: math.NaN()}
 	return &r
 }
 
