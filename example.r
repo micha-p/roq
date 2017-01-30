@@ -1,5 +1,6 @@
-b<-function(c,d){1+2}
+b<-function(c,d){c+d}
 b(c=1,d=2)
-b(3,4)
-b(3,4+1)
-unkn(3)
+b(3,1+1)
+a <- 2
+a
+a*2

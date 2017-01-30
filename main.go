@@ -67,7 +67,11 @@ func main() {
 
 		for true {
 			stmt, tok := parser.ParseIter(p) // main iterator calls parse.stmt
-			ast.Print(fset, stmt)
+			switch stmt.(type) {
+			case *ast.EmptyStmt:
+			default:
+				ast.Print(fset, stmt)
+			}
 			if tok == token.EOF {
 				return
 			}
