@@ -254,6 +254,15 @@ type (
 	// A KeyValueExpr node represents (key : value) pairs
 	// in composite literals.
 	//
+	TaggedExpr struct {
+		Tag   string
+		EqPos token.Pos // position of "="
+		Value Expr
+	}
+	
+	// A KeyValueExpr node represents (key : value) pairs
+	// in composite literals.
+	//
 	KeyValueExpr struct {
 		Key   Expr
 		Colon token.Pos // position of ":"
@@ -319,6 +328,7 @@ func (x *CallExpr) Pos() token.Pos       { return x.Fun.Pos() }
 func (x *StarExpr) Pos() token.Pos       { return x.Star }
 func (x *UnaryExpr) Pos() token.Pos      { return x.OpPos }
 func (x *BinaryExpr) Pos() token.Pos     { return x.X.Pos() }
+func (x *TaggedExpr) Pos() token.Pos     { return x.EqPos }
 func (x *KeyValueExpr) Pos() token.Pos   { return x.Key.Pos() }
 func (x *ArrayType) Pos() token.Pos      { return x.Lbrack }
 func (x *StructType) Pos() token.Pos     { return x.Struct }
@@ -349,6 +359,7 @@ func (x *CallExpr) End() token.Pos       { return x.Rparen + 1 }
 func (x *StarExpr) End() token.Pos       { return x.X.End() }
 func (x *UnaryExpr) End() token.Pos      { return x.X.End() }
 func (x *BinaryExpr) End() token.Pos     { return x.Y.End() }
+func (x *TaggedExpr) End() token.Pos     { return x.Value.End() }
 func (x *KeyValueExpr) End() token.Pos   { return x.Value.End() }
 func (x *ArrayType) End() token.Pos      { return x.Elt.End() }
 func (x *StructType) End() token.Pos     { return x.Fields.End() }
@@ -378,6 +389,7 @@ func (*CallExpr) exprNode()       {}
 func (*StarExpr) exprNode()       {}
 func (*UnaryExpr) exprNode()      {}
 func (*BinaryExpr) exprNode()     {}
+func (*TaggedExpr) exprNode()     {}
 func (*KeyValueExpr) exprNode()   {}
 
 func (*ArrayType) exprNode()  {}

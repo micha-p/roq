@@ -223,19 +223,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXPREC {
 			Value: v}
 		return &r
 	case *ast.CallExpr:
-		node := ex.(*ast.CallExpr)
-		funcobject := node.Fun
-		funcname := funcobject.(*ast.BasicLit).Value
-		if TRACE {
-			println("CallExpr " + " " + funcname)
-		}
-		sexprec := ev.topFrame.Lookup(funcname)
-		if sexprec == nil {
-			println("Error: could not find function \"" + funcname + "\"")
-			return nil
-		} else {
-			return EvalStmt(ev, sexprec.Body)
-		}
+		return evalCall(ev, ex.(*ast.CallExpr))
 	case *ast.ParenExpr:
 		node := ex.(*ast.ParenExpr)
 		if TRACE {
@@ -270,4 +258,41 @@ func EvalOp(op token.Token, x float64, y float64) float64 {
 		val = math.NaN()
 	}
 	return val
+}
+
+// https://cran.r-project.org/doc/manuals/R-lang.html#Argument-matching
+// 1.) Exact matching on tags
+// 2.) Partial matching on tags
+// 3.) Positional matching
+
+func evalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXPREC) {
+	TRACE := ev.trace
+	funcobject := node.Fun
+	funcname := funcobject.(*ast.BasicLit).Value
+	if TRACE {
+		print("CallExpr " + funcname)
+	}
+	f := ev.topFrame.Lookup(funcname)
+	if f == nil {
+		println("\nError: could not find function \"" + funcname + "\"")
+		return nil
+	} else {
+		if TRACE {
+			print("(")
+			for n, field := range f.Fieldlist {
+				identifier := field.Type.(*ast.Ident)
+				if n > 0 {
+					print(",")
+				}
+				print(identifier.Name)
+			}
+			println(")")
+		}
+
+		ev.openFrame()
+		
+		r = EvalStmt(ev, f.Body)
+		ev.closeFrame()
+	}
+	return
 }

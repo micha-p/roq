@@ -946,7 +946,7 @@ func (p *parser) parseCall(fun ast.Expr) *ast.CallExpr {
 	var list []ast.Expr
 	var ellipsis token.Pos
 	for p.tok != token.RPAREN && p.tok != token.EOF && !ellipsis.IsValid() {
-		list = append(list, p.parseRhsOrShort())
+		list = append(list, p.parseParameter())
 		if p.tok == token.ELLIPSIS {
 			ellipsis = p.pos
 			p.next()
@@ -1253,6 +1253,25 @@ func (p *parser) parseBinaryExpr(lhs bool, prec1 int) ast.Expr {
 	return x
 }
 
+func (p *parser) parseParameter() ast.Expr {
+	if p.trace {
+		defer un(trace(p, "Parameter"))
+
+	}
+	x := p.parseBinaryExpr(false, 3)
+	switch x.(type) {
+	case *ast.BinaryExpr:
+		e := x.(*ast.BinaryExpr)
+		if e.Op == token.SHORTASSIGNMENT {
+			lhs := e.X.(*ast.BasicLit)  // TODO check for ident
+			return &ast.TaggedExpr{Tag: lhs.Value, EqPos: e.OpPos, Value:e.Y}
+		} else {
+			return x
+		}
+	}
+	return x
+}
+
 // If lhs is set and the result is an identifier, it is not resolved.
 // The result may be a type or even a raw type ([...]int). Callers must
 // check the result (using checkExpr or checkExprOrType), depending on
@@ -1273,14 +1292,6 @@ func (p *parser) parseRhs() ast.Expr {
 	p.inRhs = old
 	return x
 }
-
-func (p *parser) parseRhsOrShort() ast.Expr {
-	if p.trace {
-		defer un(trace(p, "RhsOrShort"))
-	}
-	return p.parseBinaryExpr(false, token.LowestPrec)
-}
-
 
 
 // ----------------------------------------------------------------------------
