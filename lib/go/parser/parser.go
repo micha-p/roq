@@ -1264,7 +1264,7 @@ func (p *parser) parseParameter() ast.Expr {
 		e := x.(*ast.BinaryExpr)
 		if e.Op == token.SHORTASSIGNMENT {
 			lhs := e.X.(*ast.BasicLit)  // TODO check for ident
-			return &ast.TaggedExpr{Tag: lhs.Value, EqPos: e.OpPos, Value:e.Y}
+			return &ast.TaggedExpr{X: lhs, Tag: lhs.Value, EqPos: e.OpPos, Rhs:e.Y}
 		} else {
 			return x
 		}

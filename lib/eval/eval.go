@@ -29,8 +29,16 @@ func NewFrame(outer *Frame) *Frame {
 // found in frame s, otherwise it returns nil. Outer frames
 // are ignored. TODO!!!
 //
-func (s *Frame) Lookup(name string) *SEXPREC {
-	return s.Objects[name]
+func (f *Frame) Lookup(name string) *SEXPREC {
+	return f.Objects[name]
+}
+
+func (f *Frame) Recursive(name string) (r *SEXPREC) {
+	r = f.Objects[name]
+	if r == nil && f.Outer != nil {
+		f.Outer.Recursive(name)
+	}
+	return
 }
 
 // Insert attempts to insert a named object obj into the frame s.
@@ -107,7 +115,9 @@ func EvalStmt(ev *Evaluator, s interface{}) *SEXPREC {
 		sexprec := EvalExpr(ev, e.X)
 		return sexprec
 	case *ast.EmptyStmt:
-		println("")
+		if TRACE {
+			println("emptyStmt")
+		}
 	case *ast.IfStmt:
 		if TRACE {
 			println("ifStmt")
@@ -135,7 +145,7 @@ func EvalStmt(ev *Evaluator, s interface{}) *SEXPREC {
 func PrintResult(r *SEXPREC) {
 	switch r.Kind {
 	case token.FLOAT:
-		fmt.Printf("%g", r.Value) // R has small e for exponential format
+		fmt.Printf("%g\n", r.Value) // R has small e for exponential format
 	case token.FUNCTION:
 		print("function(")
 		for n, field := range r.Fieldlist {
@@ -198,7 +208,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXPREC {
 			r := SEXPREC{ValuePos: node.ValuePos, Kind: token.FLOAT, Value: v}
 			return &r
 		case token.IDENT:
-			sexprec := ev.topFrame.Lookup(node.Value)
+			sexprec := ev.topFrame.Recursive(node.Value)
 			if sexprec == nil {
 				println("unassigned")
 				r := SEXPREC{ValuePos: node.ValuePos, Kind: token.FLOAT, Value: math.NaN()}
@@ -288,9 +298,23 @@ func evalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXPREC) {
 			}
 			println(")")
 		}
+		cache := make(map[int]*SEXPREC,3)
+		for n, arg := range node.Args {
+			switch arg.(type) {
+			case *ast.TaggedExpr:
+				tagged := arg.(*ast.TaggedExpr)
+				cache[n] = EvalExpr(ev, tagged.Rhs)
+			}
+		}
 
 		ev.openFrame()
-		
+		for n, arg := range node.Args {
+			switch arg.(type) {
+			case *ast.TaggedExpr:
+				tagged := arg.(*ast.TaggedExpr)
+				ev.topFrame.Insert(tagged.Tag, cache[n])
+			}
+		}
 		r = EvalStmt(ev, f.Body)
 		ev.closeFrame()
 	}
