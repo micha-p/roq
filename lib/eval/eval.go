@@ -287,57 +287,60 @@ func evalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXPREC) {
 		println("\nError: could not find function \"" + funcname + "\"")
 		return nil
 	} else {
-		taggedArgs := make(map[string] ast.Expr, 3)
-		untaggedArgs := make(map[int] ast.Expr, 3)
-		collectedArgs := make(map[string] ast.Expr, 3)
-		evaluatedArgs := make(map[string] *SEXPREC, 3)
+		argNames := make(map[int]string, 3)
 
 		// collect field names
-		for _, field := range f.Fieldlist {
+		for n, field := range f.Fieldlist {
 			identifier := field.Type.(*ast.Ident)
-			collectedArgs[identifier.Name]=nil
+			argNames[n] = identifier.Name
 		}
+
+		argnum := len(argNames)
+		taggedArgs := make(map[string]ast.Expr, argnum)
+		untaggedArgs := make(map[int]ast.Expr, argnum)
+		collectedArgs := make(map[int]*ast.Expr, argnum)
+		evaluatedArgs := make(map[int]*SEXPREC, argnum)
 
 		// collect tagged and untagged arguments (unevaluated)
 		i := 0
-		for _, arg := range node.Args {
+		for n := 0; n < argnum; n++ {
+			arg := node.Args[n]
 			switch arg.(type) {
 			case *ast.TaggedExpr:
 				a := arg.(*ast.TaggedExpr)
 				taggedArgs[a.Tag] = a.Rhs
 			default:
 				untaggedArgs[i] = arg
-				i+=1
+				i = i + 1
 			}
 		}
 
 		// match tagged arguments
-		for k,_ := range collectedArgs {
-			expr := taggedArgs[k]
+		for n, v := range argNames { // order of n not fix
+			expr := taggedArgs[v]
 			if expr != nil {
-				collectedArgs[k] = expr
-				delete(taggedArgs,k)
+				collectedArgs[n] = &expr
+				delete(taggedArgs, v)
 			}
 		}
-		
+
 		// match positional arguments
 		j := 0
-		for k,v := range collectedArgs {
-			if v == nil {
-				collectedArgs[k] = untaggedArgs[j]  // TODO check length
-				j += 1
+		for n := 0; n < argnum; n++ {
+			if collectedArgs[n] == nil {
+				expr := untaggedArgs[j]
+				collectedArgs[n] = &expr // TODO check length
+				j = j + 1
 			}
 		}
-		
+
 		// eval args
 		if TRACE {
 			println("Eval args" + funcname)
 		}
-		for k,v := range collectedArgs {
-			evaluatedArgs[k] = EvalExpr(ev,v)
+		for n, v := range collectedArgs {
+			evaluatedArgs[n] = EvalExpr(ev, *v)
 		}
-		
-
 
 		ev.openFrame()
 		{
@@ -345,9 +348,9 @@ func evalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXPREC) {
 				println("Apply function " + funcname)
 			}
 
-			for k, v := range evaluatedArgs {
-					ev.topFrame.Insert(k, v)
-					println(k,v.Value)
+			for n, v := range argNames {
+				value := evaluatedArgs[n]
+				ev.topFrame.Insert(v, value)
 			}
 			r = EvalStmt(ev, f.Body)
 		}
