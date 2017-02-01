@@ -1,7 +1,10 @@
-b<-function(c,d){c+d}
-b(c=1,d=2)
-a <- 5
-b(c=3,d=a+1)
+f<-function(a,b,c,d){1000*a + 100*b + 10*c + d}
+f(a=1,b=2,c=3,d=4)
+f(b=1,a=2,c=3,d=4)
+f(1,2,3,4)
+f(1,2,3,c=4)
+f(c=3,d=4,1,1+1)
+
 
 #f<-function(a,b)a+b
 #f(1,2)

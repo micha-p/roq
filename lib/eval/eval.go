@@ -280,42 +280,77 @@ func evalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXPREC) {
 	funcobject := node.Fun
 	funcname := funcobject.(*ast.BasicLit).Value
 	if TRACE {
-		print("CallExpr " + funcname)
+		println("CallExpr " + funcname)
 	}
 	f := ev.topFrame.Lookup(funcname)
 	if f == nil {
 		println("\nError: could not find function \"" + funcname + "\"")
 		return nil
 	} else {
-		if TRACE {
-			print("(")
-			for n, field := range f.Fieldlist {
-				identifier := field.Type.(*ast.Ident)
-				if n > 0 {
-					print(",")
-				}
-				print(identifier.Name)
-			}
-			println(")")
+		taggedArgs := make(map[string] ast.Expr, 3)
+		untaggedArgs := make(map[int] ast.Expr, 3)
+		collectedArgs := make(map[string] ast.Expr, 3)
+		evaluatedArgs := make(map[string] *SEXPREC, 3)
+
+		// collect field names
+		for _, field := range f.Fieldlist {
+			identifier := field.Type.(*ast.Ident)
+			collectedArgs[identifier.Name]=nil
 		}
-		cache := make(map[int]*SEXPREC,3)
-		for n, arg := range node.Args {
+
+		// collect tagged and untagged arguments (unevaluated)
+		i := 0
+		for _, arg := range node.Args {
 			switch arg.(type) {
 			case *ast.TaggedExpr:
-				tagged := arg.(*ast.TaggedExpr)
-				cache[n] = EvalExpr(ev, tagged.Rhs)
+				a := arg.(*ast.TaggedExpr)
+				taggedArgs[a.Tag] = a.Rhs
+			default:
+				untaggedArgs[i] = arg
+				i+=1
 			}
 		}
 
-		ev.openFrame()
-		for n, arg := range node.Args {
-			switch arg.(type) {
-			case *ast.TaggedExpr:
-				tagged := arg.(*ast.TaggedExpr)
-				ev.topFrame.Insert(tagged.Tag, cache[n])
+		// match tagged arguments
+		for k,_ := range collectedArgs {
+			expr := taggedArgs[k]
+			if expr != nil {
+				collectedArgs[k] = expr
+				delete(taggedArgs,k)
 			}
 		}
-		r = EvalStmt(ev, f.Body)
+		
+		// match positional arguments
+		j := 0
+		for k,v := range collectedArgs {
+			if v == nil {
+				collectedArgs[k] = untaggedArgs[j]  // TODO check length
+				j += 1
+			}
+		}
+		
+		// eval args
+		if TRACE {
+			println("Eval args" + funcname)
+		}
+		for k,v := range collectedArgs {
+			evaluatedArgs[k] = EvalExpr(ev,v)
+		}
+		
+
+
+		ev.openFrame()
+		{
+			if TRACE {
+				println("Apply function " + funcname)
+			}
+
+			for k, v := range evaluatedArgs {
+					ev.topFrame.Insert(k, v)
+					println(k,v.Value)
+			}
+			r = EvalStmt(ev, f.Body)
+		}
 		ev.closeFrame()
 	}
 	return
