@@ -1,16 +1,8 @@
-f<-function(ma,mb,c,d){1000*a + 100*b + 10*c + d}
+f<-function(ma,mb,c,d){1000*ma + 100*mb + 10*c + d}
 f(ma=1,mb=2,c=3,d=4)
-a<-1
-b<-1
-f(ma=1,mb=2,c=3,d=4)
-f(ma=1,mb=2,c=3,d=4,x=1)
-f(ma=1,mb=2,c=3,d=4,x=1,y=1)
-f(ma=1,mb=2,c=3,d=4,5)
-f(ma=1,mb=2,c=3,d=4,5,6)
+f(ma=1,m=2,c=3,d=4)
+f(ma=1,m=2,3,4)
 
-1+1
-1+(1*2)
-1+(1*unkn)
 #f<-function(a,b)a+b
 #f(1,2)
 ## [1] 3
