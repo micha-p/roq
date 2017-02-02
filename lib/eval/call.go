@@ -11,9 +11,14 @@ import (
 	"lib/go/token"
 )
 
-func tryPartialMatch(partial string, argNames map[int]string, bound map[int]bool) map[int]int {
+// argindex is running along the expected arguments taken from function definition
+// callindex is running along the actual arguments given by the call
+type argindex int
+type callindex int
+
+func tryPartialMatch(partial string, argNames map[argindex]string, bound map[argindex]bool) map[int]argindex {
 //	println("  try to match:",partial)
-	matches := make(map[int]int, 16)
+	matches := make(map[int]argindex, 16)
 	i := 0
 	for n,name := range argNames {
 		if strings.Contains(name,partial) {
@@ -29,8 +34,7 @@ func tryPartialMatch(partial string, argNames map[int]string, bound map[int]bool
 	}
 	return matches
 }
-	
-	
+
 func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPREC) {
 	TRACE := ev.trace
 	funcobject := node.Fun
@@ -43,20 +47,21 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPREC) {
 		println("\nError: could not find function \"" + funcname + "\"")
 		return SEXPREC{Kind:  token.ILLEGAL}
 	} else {
-		argNames := make(map[int]string, 0)
+		argNames := make(map[argindex]string)
 
 		// collect field names
 		for n, field := range f.Fieldlist {
+			i := argindex(n)
 			identifier := field.Type.(*ast.Ident)
-			argNames[n] = identifier.Name
+			argNames[i] = identifier.Name
 		}
 
 		argnum := len(argNames)
 		// these maps use the same index as argNames (instead of using a structure)
 		// might be downgarded to arrays
-		boundArgs     := make(map[int]bool, argnum)
-		collectedArgs := make(map[int]*ast.Expr, argnum)
-		evaluatedArgs := make(map[int]*SEXPREC, argnum)
+		boundArgs     := make(map[argindex]bool, argnum)
+		collectedArgs := make(map[argindex]*ast.Expr, argnum)
+		evaluatedArgs := make(map[argindex]*SEXPREC, argnum)
 
 		// collect tagged and untagged arguments (unevaluated)
 		taggedArgs    := make(map[string]ast.Expr, argnum)
@@ -75,11 +80,11 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPREC) {
 		}
 
 		// match tagged arguments
-		for argindex, v := range argNames { // order of n not fix
+		for n, v := range argNames { // order of n not fix
 			expr := taggedArgs[v]
 			if expr != nil {
-				boundArgs[argindex] = true
-				collectedArgs[argindex] = &expr
+				boundArgs[n] = true
+				collectedArgs[n] = &expr
 				delete(taggedArgs, v)
 			}
 		}
@@ -120,7 +125,7 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPREC) {
 
 		// match positional arguments
 		j := 0
-		for n := 0; n < argnum; n++ {
+		for n := argindex(0); n < argindex(argnum); n++ {
 			if collectedArgs[n] == nil {
 				expr := untaggedArgs[j]
 				collectedArgs[n] = &expr // TODO check length
@@ -154,7 +159,7 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPREC) {
 		if TRACE {
 			println("Eval args " + funcname)
 		}
-		for n, v := range collectedArgs {
+		for n, v := range collectedArgs { // TODO: strictly left to right
 			val := EvalExpr(ev, *v)
 			evaluatedArgs[n] = &val
 		}
