@@ -38,10 +38,6 @@ func (f *Frame) Recursive(name string) (r *SEXPREC) {
 	if r == nil {
 		if f.Outer != nil {
 			return f.Outer.Recursive(name)
-		} else {
-			print("error: object '",name,"' not found\n")
-			bad := SEXPREC{}
-			return &bad
 		} 
 	}
 	return 
@@ -88,7 +84,7 @@ func EvalInit(fset *token.FileSet, filename string, src interface{}, mode parser
 // https://go-book.appspot.com/interfaces.html
 // an empty interface accepts all pointers
 
-func EvalStmt(ev *Evaluator, s interface{}) *SEXPREC {
+func EvalStmt(ev *Evaluator, s interface{}) SEXPREC {
 	TRACE := ev.trace
 	switch s.(type) {
 	case *ast.AssignStmt:
@@ -97,29 +93,28 @@ func EvalStmt(ev *Evaluator, s interface{}) *SEXPREC {
 		}
 		e := s.(*ast.AssignStmt)
 		var identifier string
-		var result *SEXPREC
+		var result SEXPREC
 		if e.Tok == token.RIGHTASSIGNMENT {
-			identifier = EvalIdent(ev, e.Rhs)
+			identifier = GetIdent(ev, e.Rhs)
 			if TRACE {
 				println(identifier + " " + e.Tok.String() + " ")
 			}
 			result = EvalExpr(ev, e.Lhs)
 		} else {
-			identifier = EvalIdent(ev, e.Lhs)
+			identifier = GetIdent(ev, e.Lhs)
 			if TRACE {
 				println(identifier + " " + e.Tok.String() + " ")
 			}
 			result = EvalExpr(ev, e.Rhs)
 		}
-		ev.topFrame.Insert(identifier, result)
-		return nil
+		ev.topFrame.Insert(identifier, &result)
+		return SEXPREC{Kind:  token.ILLEGAL}
 	case *ast.ExprStmt:
 		if TRACE {
 			println("exprStmt")
 		}
 		e := s.(*ast.ExprStmt)
-		sexprec := EvalExpr(ev, e.X)
-		return sexprec
+		return EvalExpr(ev, e.X)
 	case *ast.EmptyStmt:
 		if TRACE {
 			println("emptyStmt")
@@ -137,7 +132,7 @@ func EvalStmt(ev *Evaluator, s interface{}) *SEXPREC {
 			println("blockStmt")
 		}
 		e := s.(*ast.BlockStmt)
-		var r *SEXPREC
+		var r SEXPREC
 		for _, stmt := range e.List {
 			r = EvalStmt(ev, stmt)
 		}
@@ -145,11 +140,16 @@ func EvalStmt(ev *Evaluator, s interface{}) *SEXPREC {
 	default:
 		println("? Stmt")
 	}
-	return nil
+	return SEXPREC{Kind:  token.ILLEGAL}
 }
 
-func PrintResult(r *SEXPREC) {
+func PrintResult(ev *Evaluator,r *SEXPREC) {
+	TRACE := ev.trace
 	switch r.Kind {
+	case token.ILLEGAL:
+		if TRACE {
+			println("ILLEGAL RESULT")
+		}
 	case token.FLOAT:
 		fmt.Printf("%g\n", r.Value) // R has small e for exponential format
 	case token.FUNCTION:
@@ -166,16 +166,16 @@ func PrintResult(r *SEXPREC) {
 		}
 		print(")")
 	default:
-		println("unknown")
+		println("SEXPREC with unknown TOKEN")
 	}
 }
 
-func EvalIdent(ev *Evaluator, ex ast.Expr) string {
+func GetIdent(ev *Evaluator, ex ast.Expr) string {
 	node := ex.(*ast.BasicLit)
 	return node.Value
 }
 
-func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXPREC {
+func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPREC {
 	TRACE := ev.trace
 	switch ex.(type) {
 	case *ast.FuncLit:
@@ -183,8 +183,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXPREC {
 		if TRACE {
 			print("FuncLit")
 		}
-		r := SEXPREC{Kind: token.FUNCTION, Fieldlist: node.Type.Params.List, Body: node.Body}
-		return &r
+		return SEXPREC{Kind: token.FUNCTION, Fieldlist: node.Type.Params.List, Body: node.Body}
 	case *ast.BasicLit:
 		node := ex.(*ast.BasicLit)
 		if TRACE {
@@ -200,8 +199,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXPREC {
 			if TRACE {
 				println(v)
 			}
-			r := SEXPREC{ValuePos: node.ValuePos, Kind: token.FLOAT, Value: v}
-			return &r
+			return SEXPREC{ValuePos: node.ValuePos, Kind: token.FLOAT, Value: v}
 		case token.FLOAT:
 			v, err := strconv.ParseFloat(node.Value, 64) // TODO: support for all R formatted values
 			if err != nil {
@@ -211,19 +209,17 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXPREC {
 			if TRACE {
 				println(v)
 			}
-			r := SEXPREC{ValuePos: node.ValuePos, Kind: token.FLOAT, Value: v}
-			return &r
+			return SEXPREC{ValuePos: node.ValuePos, Kind: token.FLOAT, Value: v}
 		case token.IDENT:
 			sexprec := ev.topFrame.Recursive(node.Value)
 			if sexprec == nil {
-				println("unassigned")
-				r := SEXPREC{ValuePos: node.ValuePos, Kind: token.FLOAT, Value: math.NaN()}
-				return &r
+				print("error: object '",node.Value,"' not found\n")
+				return SEXPREC{ValuePos: node.ValuePos, Kind: token.ILLEGAL, Value: math.NaN()}
 			} else {
 				if TRACE {
 					fmt.Printf("%g\n", sexprec.Value)
 				}
-				return sexprec
+				return *sexprec
 			}
 		default:
 			println("Unknown node.kind")
@@ -233,13 +229,9 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXPREC {
 		if TRACE {
 			println("BinaryExpr " + " " + node.Op.String())
 		}
-		v := EvalOp(node.Op, EvalExpr(ev, node.X).Value, EvalExpr(ev, node.Y).Value)
-		r := SEXPREC{ValuePos: node.Pos(),
-			Kind:  token.FLOAT,
-			Value: v}
-		return &r
+		return EvalOp(node.Op, EvalExpr(ev, node.X), EvalExpr(ev, node.Y))
 	case *ast.CallExpr:
-		return evalCall(ev, ex.(*ast.CallExpr))
+		return EvalCall(ev, ex.(*ast.CallExpr))
 	case *ast.ParenExpr:
 		node := ex.(*ast.ParenExpr)
 		if TRACE {
@@ -250,30 +242,32 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXPREC {
 		println("? Expr")
 	}
 	node := ex.(*ast.BadExpr)
-	r := SEXPREC{ValuePos: node.From, Kind: token.FLOAT, Value: math.NaN()}
-	return &r
+	return SEXPREC{ValuePos: node.From, Kind: token.FLOAT, Value: math.NaN()}
 }
 
-func EvalOp(op token.Token, x float64, y float64) float64 {
+func EvalOp(op token.Token, x SEXPREC, y SEXPREC) SEXPREC {
+	if (x.Kind == token.ILLEGAL || y.Kind == token.ILLEGAL) {
+		return SEXPREC{Kind:  token.ILLEGAL}
+	}
 	var val float64
 	switch op {
 	case token.PLUS:
-		val = x + y
+		val = x.Value + y.Value
 	case token.MINUS:
-		val = x - y
+		val = x.Value - y.Value
 	case token.MULTIPLICATION:
-		val = x * y
+		val = x.Value * y.Value
 	case token.DIVISION:
-		val = x / y
+		val = x.Value / y.Value
 	case token.EXPONENTIATION:
-		val = math.Pow(x, y)
+		val = math.Pow(x.Value, y.Value)
 	case token.MODULUS:
-		val = math.Mod(x, y)
+		val = math.Mod(x.Value, y.Value)
 	default:
 		println("? Op: " + op.String())
-		val = math.NaN()
+		return SEXPREC{Kind:  token.ILLEGAL}
 	}
-	return val
+    return SEXPREC{Kind:  token.FLOAT, Value: val}
 }
 
 // https://cran.r-project.org/doc/manuals/R-lang.html#Argument-matching
@@ -281,7 +275,7 @@ func EvalOp(op token.Token, x float64, y float64) float64 {
 // 2.) Partial matching on tags
 // 3.) Positional matching
 
-func evalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXPREC) {
+func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPREC) {
 	TRACE := ev.trace
 	funcobject := node.Fun
 	funcname := funcobject.(*ast.BasicLit).Value
@@ -291,7 +285,7 @@ func evalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXPREC) {
 	f := ev.topFrame.Lookup(funcname)
 	if f == nil {
 		println("\nError: could not find function \"" + funcname + "\"")
-		return nil
+		return SEXPREC{Kind:  token.ILLEGAL}
 	} else {
 		argNames := make(map[int]string, 3)
 
@@ -329,17 +323,8 @@ func evalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXPREC) {
 				delete(taggedArgs, v)
 			}
 		}
-
-		// match positional arguments
-		j := 0
-		for n := 0; n < argnum; n++ {
-			if collectedArgs[n] == nil {
-				expr := untaggedArgs[j]
-				collectedArgs[n] = &expr // TODO check length
-				j = j + 1
-			}
-		}
 		
+		// check unused tagged arguments
 		if len(taggedArgs) > 0 {
 			print("unused argument")
 			if len(taggedArgs) > 1 {
@@ -355,14 +340,48 @@ func evalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXPREC) {
 				start=false
 			}
 			print(")\n")
+			return SEXPREC{Kind:  token.ILLEGAL}
 		}
 
+		// match positional arguments
+		j := 0
+		for n := 0; n < argnum; n++ {
+			if collectedArgs[n] == nil {
+				expr := untaggedArgs[j]
+				collectedArgs[n] = &expr // TODO check length
+				j = j + 1
+			}
+		}
+		
+		// check unused positional arguments
+		if len(untaggedArgs) > j { // CONT
+			
+			print("unused argument")
+			if (len(untaggedArgs) - j > 1) {
+				print("s")
+			}
+			print(" (")
+			start:=true
+			// TODO: some caching
+			for n := len(argNames)+1 ; n < len(argNames) + len(untaggedArgs) +1 ; n++ {
+				if !start {
+					print(", ")
+				}
+				print(n)
+				start=false
+			}
+			print(")\n")
+			return SEXPREC{Kind:  token.ILLEGAL}
+		}
+		
+		
 		// eval args
 		if TRACE {
 			println("Eval args " + funcname)
 		}
 		for n, v := range collectedArgs {
-			evaluatedArgs[n] = EvalExpr(ev, *v)
+			val := EvalExpr(ev, *v)
+			evaluatedArgs[n] = &val
 		}
 
 		ev.openFrame()

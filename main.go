@@ -76,13 +76,13 @@ func main() {
 				return
 			}
 		}
-	} else {
+	} else { // eval
 		p, errp := parser.ParseInit(fset, *filePtr, nil, parser.AllErrors)
 		if errp != nil {
 			fmt.Println(errp)
 			return
 		}
-		e, erre := eval.EvalInit(fset, *filePtr, nil, parser.AllErrors, TRACE)
+		ev, erre := eval.EvalInit(fset, *filePtr, nil, parser.AllErrors, TRACE)
 		if erre != nil {
 			fmt.Println(erre)
 			return
@@ -90,10 +90,8 @@ func main() {
 
 		for true {
 			stmt, tok := parser.ParseIter(p) // main iterator calls parse.stmt
-			r := eval.EvalStmt(e, stmt)
-			if r != nil {
-				eval.PrintResult(r)
-			}
+			sexprec := eval.EvalStmt(ev, stmt)
+			eval.PrintResult(ev,&sexprec)
 			if tok == token.EOF {
 				return
 			}

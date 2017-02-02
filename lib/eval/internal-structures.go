@@ -20,7 +20,7 @@ const (
 	BUILTINSXP        //	8	builtin functions
 	CHARSXP           //	9	internal character strings
 	LGLSXP            //	10	logical vectors
-	INTSXP            //	13	integer vectors
+	INTSXP     = 13   //	13	integer vectors
 	REALSXP           //	14	numeric vectors
 	CPLXSXP           //	15	complex vectors
 	STRSXP            //	16	character vectors
