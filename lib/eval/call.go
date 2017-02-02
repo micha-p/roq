@@ -6,14 +6,31 @@
 package eval
 
 import (
-	"fmt"
+	"strings"
 	"lib/go/ast"
-	"lib/go/parser"
 	"lib/go/token"
-	"math"
-	"strconv"
 )
 
+func tryPartialMatch(partial string, argNames map[int]string, bound map[int]bool) map[int]int {
+//	println("  try to match:",partial)
+	matches := make(map[int]int, 16)
+	i := 0
+	for n,name := range argNames {
+		if strings.Contains(name,partial) {
+//			print("    found: ",name)
+			if bound[n] {
+//				println(" (bound)")
+			} else {
+//				println("match:",n)
+				matches[i]=n
+				i += 1
+			}
+		}
+	}
+	return matches
+}
+	
+	
 func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPREC) {
 	TRACE := ev.trace
 	funcobject := node.Fun
@@ -26,7 +43,7 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPREC) {
 		println("\nError: could not find function \"" + funcname + "\"")
 		return SEXPREC{Kind:  token.ILLEGAL}
 	} else {
-		argNames := make(map[int]string, 3)
+		argNames := make(map[int]string, 0)
 
 		// collect field names
 		for n, field := range f.Fieldlist {
@@ -35,12 +52,15 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPREC) {
 		}
 
 		argnum := len(argNames)
-		taggedArgs := make(map[string]ast.Expr, argnum)
-		untaggedArgs := make(map[int]ast.Expr, argnum)
+		// these maps use the same index as argNames (instead of using a structure)
+		// might be downgarded to arrays
+		boundArgs     := make(map[int]bool, argnum)
 		collectedArgs := make(map[int]*ast.Expr, argnum)
 		evaluatedArgs := make(map[int]*SEXPREC, argnum)
 
 		// collect tagged and untagged arguments (unevaluated)
+		taggedArgs    := make(map[string]ast.Expr, argnum)
+		untaggedArgs  := make(map[int]ast.Expr, argnum)
 		i := 0
 		for n := 0; n < len(node.Args); n++ {
 			arg := node.Args[n]
@@ -55,11 +75,27 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPREC) {
 		}
 
 		// match tagged arguments
-		for n, v := range argNames { // order of n not fix
+		for argindex, v := range argNames { // order of n not fix
 			expr := taggedArgs[v]
 			if expr != nil {
-				collectedArgs[n] = &expr
+				boundArgs[argindex] = true
+				collectedArgs[argindex] = &expr
 				delete(taggedArgs, v)
+			}
+		}
+		
+		// find partially matching tags
+		for k,v := range taggedArgs {
+			matchList := tryPartialMatch(k,argNames, boundArgs)
+			if len(matchList)==1 {
+				argindex := matchList[0]
+				if TRACE {
+					println("argument",k,"matches one formal argument:",argNames[argindex])
+				}
+				collectedArgs[argindex] = &v
+				delete(taggedArgs, k)
+			} else if len(matchList)>1 {
+				println("argument",k,"matches multiple formal arguments")
 			}
 		}
 		
