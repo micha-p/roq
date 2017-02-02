@@ -1,9 +1,10 @@
-f<-function(a,b,c,d){1000*a + 100*b + 10*c + d}
-f(a=1,b=2,c=3,d=4)
-f(b=1,a=2,c=3,d=4)
-f(1,2,3,4)
-f(1,2,3,c=4)
-f(c=3,d=4,1,1+1)
+f<-function(ma,mb,c,d){1000*a + 100*b + 10*c + d}
+f(ma=1,mb=2,c=3,d=4)
+a<-1
+b<-1
+f(ma=1,mb=2,c=3,d=4)
+f(ma=1,mb=2,c=3,d=4,x=1)
+f(ma=1,mb=2,c=3,d=4,x=1,y=1)
 
 
 #f<-function(a,b)a+b

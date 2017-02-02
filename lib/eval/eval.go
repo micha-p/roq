@@ -35,10 +35,16 @@ func (f *Frame) Lookup(name string) *SEXPREC {
 
 func (f *Frame) Recursive(name string) (r *SEXPREC) {
 	r = f.Objects[name]
-	if r == nil && f.Outer != nil {
-		f.Outer.Recursive(name)
+	if r == nil {
+		if f.Outer != nil {
+			return f.Outer.Recursive(name)
+		} else {
+			print("error: object '",name,"' not found\n")
+			bad := SEXPREC{}
+			return &bad
+		} 
 	}
-	return
+	return 
 }
 
 // Insert attempts to insert a named object obj into the frame s.
@@ -303,7 +309,7 @@ func evalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXPREC) {
 
 		// collect tagged and untagged arguments (unevaluated)
 		i := 0
-		for n := 0; n < argnum; n++ {
+		for n := 0; n < len(node.Args); n++ {
 			arg := node.Args[n]
 			switch arg.(type) {
 			case *ast.TaggedExpr:
@@ -333,10 +339,27 @@ func evalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXPREC) {
 				j = j + 1
 			}
 		}
+		
+		if len(taggedArgs) > 0 {
+			print("unused argument")
+			if len(taggedArgs) > 1 {
+				print("s")
+			}
+			print(" (")
+			start:=true
+			for k,_ := range taggedArgs{
+				if !start {
+					print(", ")
+				}
+				print(k)
+				start=false
+			}
+			print(")\n")
+		}
 
 		// eval args
 		if TRACE {
-			println("Eval args" + funcname)
+			println("Eval args " + funcname)
 		}
 		for n, v := range collectedArgs {
 			evaluatedArgs[n] = EvalExpr(ev, *v)
