@@ -35,7 +35,7 @@ func tryPartialMatch(partial string, argNames map[argindex]string, bound map[arg
 	return matches
 }
 
-func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPREC) {
+func EvalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXPREC) {
 	TRACE := ev.trace
 	funcobject := node.Fun
 	funcname := funcobject.(*ast.BasicLit).Value
@@ -45,7 +45,7 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPREC) {
 	f := ev.topFrame.Lookup(funcname)
 	if f == nil {
 		println("\nError: could not find function \"" + funcname + "\"")
-		return SEXPREC{Kind:  token.ILLEGAL}
+		return &SEXPREC{Kind:  token.ILLEGAL}
 	} else {
 		argNames := make(map[argindex]string)
 
@@ -120,7 +120,7 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPREC) {
 				start=false
 			}
 			print(")\n")
-			return SEXPREC{Kind:  token.ILLEGAL}
+			return &SEXPREC{Kind:  token.ILLEGAL}
 		}
 
 		// match positional arguments
@@ -151,7 +151,7 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPREC) {
 				start=false
 			}
 			print(")\n")
-			return SEXPREC{Kind:  token.ILLEGAL}
+			return &SEXPREC{Kind:  token.ILLEGAL}
 		}
 		
 		
@@ -161,7 +161,7 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPREC) {
 		}
 		for n, v := range collectedArgs { // TODO: strictly left to right
 			val := EvalExpr(ev, v)
-			evaluatedArgs[n] = &val
+			evaluatedArgs[n] = val
 		}
 
 		ev.openFrame()

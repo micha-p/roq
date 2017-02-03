@@ -99,7 +99,7 @@ func EvalInit(fset *token.FileSet, filename string, src interface{}, mode parser
 // https://go-book.appspot.com/interfaces.html
 // an empty interface accepts all pointers
 
-func EvalStmt(ev *Evaluator, s ast.Stmt) SEXPREC {
+func EvalStmt(ev *Evaluator, s ast.Stmt) *SEXPREC {
 	TRACE := ev.trace
 	DEBUG := false
 	switch s.(type) {
@@ -112,7 +112,7 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) SEXPREC {
 		if DEBUG {
 			println("emptyStmt")
 		}
-		return SEXPREC{Kind:  token.INVISIBLE}
+		return &SEXPREC{Kind:  token.INVISIBLE}
 	case *ast.IfStmt:
 		if TRACE {
 			println("ifStmt")
@@ -126,7 +126,7 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) SEXPREC {
 			println("blockStmt")
 		}
 		e := s.(*ast.BlockStmt)
-		var r SEXPREC
+		var r *SEXPREC
 		for _, stmt := range e.List {
 			r = EvalStmt(ev, stmt)
 		}
@@ -135,10 +135,10 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) SEXPREC {
 		givenType := reflect.TypeOf(s)
 		println("?Stmt:",givenType.String())
 	}
-	return SEXPREC{Kind:  token.ILLEGAL}
+	return &SEXPREC{Kind:  token.ILLEGAL}
 }
 
-func doAssignment(ev *Evaluator,identifier string, ex ast.Expr) SEXPREC {
+func doAssignment(ev *Evaluator,identifier string, ex ast.Expr) *SEXPREC {
 	TRACE := ev.trace
 
 	if TRACE {
@@ -148,11 +148,11 @@ func doAssignment(ev *Evaluator,identifier string, ex ast.Expr) SEXPREC {
 	if TRACE {
 		println(result.Kind.String())
 	}
-	ev.topFrame.Insert(identifier, &result)
+	ev.topFrame.Insert(identifier, result)
 	return result
 }
 
-func EvalAssignment(ev *Evaluator,e *ast.AssignStmt) SEXPREC {
+func EvalAssignment(ev *Evaluator,e *ast.AssignStmt) *SEXPREC {
 	TRACE := ev.trace
 
 		if TRACE {
@@ -205,7 +205,7 @@ func PrintResult(ev *Evaluator,r *SEXPREC) {
 }
 
 
-func EvalExprOrShortAssign(ev *Evaluator, ex ast.Expr) SEXPREC {
+func EvalExprOrShortAssign(ev *Evaluator, ex ast.Expr) *SEXPREC {
 	TRACE := ev.trace
 	if TRACE {
 		println("Expr or short assignment:")
@@ -220,7 +220,7 @@ func EvalExprOrShortAssign(ev *Evaluator, ex ast.Expr) SEXPREC {
 	return EvalExpr(ev,ex)
 }
 
-func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPREC {
+func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXPREC {
 	TRACE := ev.trace
 	if TRACE {
 		print("EvalExpr ")
@@ -231,7 +231,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPREC {
 		if TRACE {
 			print("FuncLit")
 		}
-		return SEXPREC{Kind: token.FUNCTION, Fieldlist: node.Type.Params.List, Body: node.Body}
+		return &SEXPREC{Kind: token.FUNCTION, Fieldlist: node.Type.Params.List, Body: node.Body}
 	case *ast.BasicLit:
 		node := ex.(*ast.BasicLit)
 		if TRACE {
@@ -247,7 +247,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPREC {
 			if TRACE {
 				println(v)
 			}
-			return SEXPREC{ValuePos: node.ValuePos, Kind: token.FLOAT, Value: v}
+			return &SEXPREC{ValuePos: node.ValuePos, Kind: token.FLOAT, Value: v}
 		case token.FLOAT:
 			v, err := strconv.ParseFloat(node.Value, 64) // TODO: support for all R formatted values
 			if err != nil {
@@ -257,17 +257,17 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPREC {
 			if TRACE {
 				println(v)
 			}
-			return SEXPREC{ValuePos: node.ValuePos, Kind: token.FLOAT, Value: v}
+			return &SEXPREC{ValuePos: node.ValuePos, Kind: token.FLOAT, Value: v}
 		case token.IDENT:
 			sexprec := ev.topFrame.Recursive(node.Value)
 			if sexprec == nil {
 				print("error: object '",node.Value,"' not found\n")
-				return SEXPREC{ValuePos: node.ValuePos, Kind: token.ILLEGAL, Value: math.NaN()}
+				return &SEXPREC{ValuePos: node.ValuePos, Kind: token.ILLEGAL, Value: math.NaN()}
 			} else {
 				if TRACE {
 					fmt.Printf("%g\n", sexprec.Value)
 				}
-				return *sexprec
+				return sexprec
 			}
 		default:
 			println("Unknown node.kind")
@@ -290,13 +290,13 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPREC {
 		givenType := reflect.TypeOf(ex)
 		println("?Expr:",givenType.String())
 	}
-	return SEXPREC{Kind: token.ILLEGAL}
+	return &SEXPREC{Kind: token.ILLEGAL}
 }
 
 
-func EvalOp(op token.Token, x SEXPREC, y SEXPREC) SEXPREC {
+func EvalOp(op token.Token, x *SEXPREC, y *SEXPREC) *SEXPREC {
 	if (x.Kind == token.ILLEGAL || y.Kind == token.ILLEGAL) {
-		return SEXPREC{Kind:  token.ILLEGAL}
+		return &SEXPREC{Kind:  token.ILLEGAL}
 	}
 	var val float64
 	switch op {
@@ -314,9 +314,9 @@ func EvalOp(op token.Token, x SEXPREC, y SEXPREC) SEXPREC {
 		val = math.Mod(x.Value, y.Value)
 	default:
 		println("? Op: " + op.String())
-		return SEXPREC{Kind:  token.ILLEGAL}
+		return &SEXPREC{Kind:  token.ILLEGAL}
 	}
-    return SEXPREC{Kind:  token.FLOAT, Value: val}
+    return &SEXPREC{Kind:  token.FLOAT, Value: val}
 }
 
 
