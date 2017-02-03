@@ -164,7 +164,7 @@ type (
 	// A FuncLit node represents a function literal.
 	FuncLit struct {
 		Type *FuncType  // function type
-		Body *BlockStmt // function body
+		Body Stmt 		// function body BlockStmt or single Stmt
 	}
 
 	// A CompositeLit node represents a composite literal.
@@ -293,7 +293,7 @@ type (
 	FuncType struct {
 		Func   token.Pos  // position of "func" keyword (token.NoPos if there is no "func")
 		Params *FieldList // (incoming) parameters; non-nil
-		/*	Results *FieldList // (outgoing) results; or nil*/
+		Results *FieldList // (outgoing) results; or nil*/
 	}
 
 	// A MapType node represents a map type.
