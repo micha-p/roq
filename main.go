@@ -17,6 +17,7 @@ import (
 )
 
 var TRACE bool
+var DEBUG bool
 
 func myerrorhandler(pos token.Position, msg string) {
 	println("SCANNER ERROR", pos.Filename, pos.Line, pos.Column, msg)
@@ -29,10 +30,13 @@ func main() {
 	parsePtr := flag.Bool("parse", false, "parse")
 	traceLongPtr := flag.Bool("trace", false, "trace")
 	traceFlagPtr := flag.Bool("T", false, "trace")
+	debugLongPtr := flag.Bool("debug", false, "trace")
+	debugFlagPtr := flag.Bool("D", false, "trace")
 	filePtr := flag.String("file", "example.src", "filename to process")
 	flag.Parse()
 
 	TRACE = *traceFlagPtr || *traceLongPtr
+	DEBUG = *debugFlagPtr || *debugLongPtr
 
 	if *scanPtr {
 		src, _ := ioutil.ReadFile(*filePtr)
@@ -82,7 +86,7 @@ func main() {
 			fmt.Println(errp)
 			return
 		}
-		ev, erre := eval.EvalInit(fset, *filePtr, nil, parser.AllErrors, TRACE)
+		ev, erre := eval.EvalInit(fset, *filePtr, nil, parser.AllErrors, TRACE, DEBUG)
 		if erre != nil {
 			fmt.Println(erre)
 			return

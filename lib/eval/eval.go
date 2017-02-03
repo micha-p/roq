@@ -2,8 +2,7 @@
 // ast.Expr
 // ast.Stmt
 
-
-// unevaluated expressions: ast.EXPR 
+// unevaluated expressions: ast.EXPR
 // evaluated expressions and values bound: SEXPREC
 
 package eval
@@ -14,14 +13,13 @@ import (
 	"lib/go/parser"
 	"lib/go/token"
 	"math"
-	"strconv"
 	"reflect"
+	"strconv"
 )
 
 // Frames are derived from ast.Scopes:
 // insert method inserts link struct Object with value set.
 // however, data field must be set before insertion
-
 
 type Frame struct {
 	Outer   *Frame
@@ -47,11 +45,10 @@ func (f *Frame) Recursive(name string) (r *SEXPREC) {
 	if r == nil {
 		if f.Outer != nil {
 			return f.Outer.Recursive(name)
-		} 
+		}
 	}
-	return 
+	return
 }
-
 
 func getIdent(ev *Evaluator, ex ast.Expr) string {
 	node := ex.(*ast.BasicLit)
@@ -69,8 +66,9 @@ func (s *Frame) Insert(identifier string, obj *SEXPREC) (alt *SEXPREC) {
 type Evaluator struct {
 
 	// Tracing/debugging
-	trace  bool // == (mode & Trace != 0)
-	indent int  // indentation used for tracing output
+	trace  bool
+	debug  bool
+	indent int // indentation used for tracing output
 
 	// frame
 	topFrame *Frame // top-most frame; may be pkgFrame
@@ -84,13 +82,13 @@ func (e *Evaluator) closeFrame() {
 	e.topFrame = e.topFrame.Outer
 }
 
-func EvalInit(fset *token.FileSet, filename string, src interface{}, mode parser.Mode, traceflag bool) (r *Evaluator, err error) {
+func EvalInit(fset *token.FileSet, filename string, src interface{}, mode parser.Mode, traceflag bool, debugflag bool) (r *Evaluator, err error) {
 
 	if fset == nil {
 		panic("eval.evalInit: no token.FileSet provided (fset == nil)")
 	}
 
-	e := Evaluator{traceflag, 0, nil}
+	e := Evaluator{traceflag, debugflag, 0, nil}
 	e.topFrame = NewFrame(e.topFrame)
 	return &e, err
 }
@@ -112,7 +110,7 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) *SEXPREC {
 		if DEBUG {
 			println("emptyStmt")
 		}
-		return &SEXPREC{Kind:  token.INVISIBLE}
+		return &SEXPREC{Kind: token.INVISIBLE}
 	case *ast.IfStmt:
 		if TRACE {
 			println("ifStmt")
@@ -128,21 +126,28 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) *SEXPREC {
 		e := s.(*ast.BlockStmt)
 		var r *SEXPREC
 		for _, stmt := range e.List {
-			r = EvalStmt(ev, stmt)
+			switch stmt.(type) {
+			case *ast.EmptyStmt:
+			default:
+				r = EvalStmt(ev, stmt)
+			}
 		}
-		return r 
+		if TRACE {
+			println("return: ", r.Kind.String())
+		}
+		return r
 	default:
 		givenType := reflect.TypeOf(s)
-		println("?Stmt:",givenType.String())
+		println("?Stmt:", givenType.String())
 	}
-	return &SEXPREC{Kind:  token.ILLEGAL}
+	return &SEXPREC{Kind: token.ILLEGAL}
 }
 
-func doAssignment(ev *Evaluator,identifier string, ex ast.Expr) *SEXPREC {
+func doAssignment(ev *Evaluator, identifier string, ex ast.Expr) *SEXPREC {
 	TRACE := ev.trace
 
 	if TRACE {
-		print("assignment: ",identifier," := ")
+		print("assignment: ", identifier, " <- ")
 	}
 	result := EvalExpr(ev, ex)
 	if TRACE {
@@ -152,34 +157,44 @@ func doAssignment(ev *Evaluator,identifier string, ex ast.Expr) *SEXPREC {
 	return result
 }
 
-func EvalAssignment(ev *Evaluator,e *ast.AssignStmt) *SEXPREC {
+func EvalAssignment(ev *Evaluator, e *ast.AssignStmt) *SEXPREC {
 	TRACE := ev.trace
 
-		if TRACE {
-			println("assignStmt: ")
-		}
+	if TRACE {
+		println("assignStmt: ")
+	}
 
-		var identifier string
-		if e.Tok == token.RIGHTASSIGNMENT {
-			identifier = getIdent(ev, e.Rhs)
-		} else {
-			identifier = getIdent(ev, e.Lhs)
-		}
+	var identifier string
+	if e.Tok == token.RIGHTASSIGNMENT {
+		identifier = getIdent(ev, e.Rhs)
+	} else {
+		identifier = getIdent(ev, e.Lhs)
+	}
 
-		var nodepointer ast.Expr
-		if e.Tok == token.RIGHTASSIGNMENT {
-			nodepointer = e.Lhs
-		} else {
-			nodepointer = e.Rhs
-		}
+	var nodepointer ast.Expr
+	if e.Tok == token.RIGHTASSIGNMENT {
+		nodepointer = e.Lhs
+	} else {
+		nodepointer = e.Rhs
+	}
 
-		return doAssignment(ev,identifier, nodepointer)
+	return doAssignment(ev, identifier, nodepointer)
 }
 
-func PrintResult(ev *Evaluator,r *SEXPREC) {
+func PrintResult(ev *Evaluator, r *SEXPREC) {
 	TRACE := ev.trace
+	DEBUG := ev.debug
+
+	if DEBUG {
+		givenType := reflect.TypeOf(r)
+		print("print: ", givenType.String(), ": ", r.Kind.String(), ": ")
+	}
+
 	switch r.Kind {
 	case token.INVISIBLE:
+		if DEBUG {
+			println("Invisible RESULT")
+		}
 	case token.ILLEGAL:
 		if TRACE {
 			println("ILLEGAL RESULT")
@@ -204,7 +219,6 @@ func PrintResult(ev *Evaluator,r *SEXPREC) {
 	}
 }
 
-
 func EvalExprOrShortAssign(ev *Evaluator, ex ast.Expr) *SEXPREC {
 	TRACE := ev.trace
 	if TRACE {
@@ -213,11 +227,11 @@ func EvalExprOrShortAssign(ev *Evaluator, ex ast.Expr) *SEXPREC {
 	switch ex.(type) {
 	case *ast.BinaryExpr:
 		node := ex.(*ast.BinaryExpr)
-		if node.Op==token.SHORTASSIGNMENT {
-			return doAssignment(ev,getIdent(ev,node.X),node.Y)
+		if node.Op == token.SHORTASSIGNMENT {
+			return doAssignment(ev, getIdent(ev, node.X), node.Y)
 		}
 	}
-	return EvalExpr(ev,ex)
+	return EvalExpr(ev, ex)
 }
 
 func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXPREC {
@@ -261,7 +275,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXPREC {
 		case token.IDENT:
 			sexprec := ev.topFrame.Recursive(node.Value)
 			if sexprec == nil {
-				print("error: object '",node.Value,"' not found\n")
+				print("error: object '", node.Value, "' not found\n")
 				return &SEXPREC{ValuePos: node.ValuePos, Kind: token.ILLEGAL, Value: math.NaN()}
 			} else {
 				if TRACE {
@@ -288,15 +302,14 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXPREC {
 		return EvalExpr(ev, node.X)
 	default:
 		givenType := reflect.TypeOf(ex)
-		println("?Expr:",givenType.String())
+		println("?Expr:", givenType.String())
 	}
 	return &SEXPREC{Kind: token.ILLEGAL}
 }
 
-
 func EvalOp(op token.Token, x *SEXPREC, y *SEXPREC) *SEXPREC {
-	if (x.Kind == token.ILLEGAL || y.Kind == token.ILLEGAL) {
-		return &SEXPREC{Kind:  token.ILLEGAL}
+	if x.Kind == token.ILLEGAL || y.Kind == token.ILLEGAL {
+		return &SEXPREC{Kind: token.ILLEGAL}
 	}
 	var val float64
 	switch op {
@@ -314,9 +327,7 @@ func EvalOp(op token.Token, x *SEXPREC, y *SEXPREC) *SEXPREC {
 		val = math.Mod(x.Value, y.Value)
 	default:
 		println("? Op: " + op.String())
-		return &SEXPREC{Kind:  token.ILLEGAL}
+		return &SEXPREC{Kind: token.ILLEGAL}
 	}
-    return &SEXPREC{Kind:  token.FLOAT, Value: val}
+	return &SEXPREC{Kind: token.FLOAT, Value: val}
 }
-
-

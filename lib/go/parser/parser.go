@@ -1525,7 +1525,6 @@ func (p *parser) parseStmt() (s ast.Stmt) {
 		syncStmt(p)
 		s = &ast.BadStmt{From: pos, To: p.pos}
 	}
-
 	return
 }
 
