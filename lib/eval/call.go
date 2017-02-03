@@ -6,9 +6,9 @@
 package eval
 
 import (
-	"strings"
 	"lib/go/ast"
 	"lib/go/token"
+	"strings"
 )
 
 // argindex is running along the expected arguments taken from function definition
@@ -17,17 +17,17 @@ type argindex int
 type callindex int
 
 func tryPartialMatch(partial string, argNames map[argindex]string, bound map[argindex]bool) map[int]argindex {
-//	println("  try to match:",partial)
+	//	println("  try to match:",partial)
 	matches := make(map[int]argindex, 16)
 	i := 0
-	for n,name := range argNames {
-		if strings.Contains(name,partial) {
-//			print("    found: ",name)
+	for n, name := range argNames {
+		if strings.Contains(name, partial) {
+			//			print("    found: ",name)
 			if bound[n] {
-//				println(" (bound)")
+				//				println(" (bound)")
 			} else {
-//				println("match:",n)
-				matches[i]=n
+				//				println("match:",n)
+				matches[i] = n
 				i += 1
 			}
 		}
@@ -45,7 +45,7 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXPREC) {
 	f := ev.topFrame.Lookup(funcname)
 	if f == nil {
 		println("\nError: could not find function \"" + funcname + "\"")
-		return &SEXPREC{Kind:  token.ILLEGAL}
+		return &SEXPREC{Kind: token.ILLEGAL}
 	} else {
 		argNames := make(map[argindex]string)
 
@@ -59,13 +59,13 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXPREC) {
 		argnum := len(argNames)
 		// these maps use the same index as argNames (instead of using a structure)
 		// might be downgarded to arrays
-		boundArgs     := make(map[argindex]bool, argnum)
-		collectedArgs := make(map[argindex] ast.Expr, argnum) // ast.Expr contains pointers to ast.nodes
+		boundArgs := make(map[argindex]bool, argnum)
+		collectedArgs := make(map[argindex]ast.Expr, argnum) // ast.Expr contains pointers to ast.nodes
 		evaluatedArgs := make(map[argindex]*SEXPREC, argnum)
 
 		// collect tagged and untagged arguments (unevaluated)
-		taggedArgs    := make(map[string]ast.Expr, argnum)
-		untaggedArgs  := make(map[int]ast.Expr, argnum)
+		taggedArgs := make(map[string]ast.Expr, argnum)
+		untaggedArgs := make(map[int]ast.Expr, argnum)
 		i := 0
 		for n := 0; n < len(node.Args); n++ {
 			arg := node.Args[n]
@@ -88,22 +88,22 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXPREC) {
 				delete(taggedArgs, v)
 			}
 		}
-		
+
 		// find partially matching tags
-		for k,v := range taggedArgs {
-			matchList := tryPartialMatch(k,argNames, boundArgs)
-			if len(matchList)==1 {
+		for k, v := range taggedArgs {
+			matchList := tryPartialMatch(k, argNames, boundArgs)
+			if len(matchList) == 1 {
 				argindex := matchList[0]
 				if TRACE {
-					println("argument",k,"matches one formal argument:",argNames[argindex])
+					println("argument", k, "matches one formal argument:", argNames[argindex])
 				}
 				collectedArgs[argindex] = v
 				delete(taggedArgs, k)
-			} else if len(matchList)>1 {
-				println("argument",k,"matches multiple formal arguments")
+			} else if len(matchList) > 1 {
+				println("argument", k, "matches multiple formal arguments")
 			}
 		}
-		
+
 		// check unused tagged arguments
 		if len(taggedArgs) > 0 {
 			print("unused argument")
@@ -111,16 +111,16 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXPREC) {
 				print("s")
 			}
 			print(" (")
-			start:=true
-			for k,_ := range taggedArgs{
+			start := true
+			for k, _ := range taggedArgs {
 				if !start {
 					print(", ")
 				}
 				print(k)
-				start=false
+				start = false
 			}
 			print(")\n")
-			return &SEXPREC{Kind:  token.ILLEGAL}
+			return &SEXPREC{Kind: token.ILLEGAL}
 		}
 
 		// match positional arguments
@@ -132,29 +132,28 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXPREC) {
 				j = j + 1
 			}
 		}
-		
+
 		// check unused positional arguments
 		if len(untaggedArgs) > j { // CONT
-			
+
 			print("unused argument")
-			if (len(untaggedArgs) - j > 1) {
+			if len(untaggedArgs)-j > 1 {
 				print("s")
 			}
 			print(" (")
-			start:=true
+			start := true
 			// TODO: some caching
-			for n := len(argNames)+1 ; n < len(argNames) + len(untaggedArgs) +1 ; n++ {
+			for n := len(argNames) + 1; n < len(argNames)+len(untaggedArgs)+1; n++ {
 				if !start {
 					print(", ")
 				}
 				print(n)
-				start=false
+				start = false
 			}
 			print(")\n")
-			return &SEXPREC{Kind:  token.ILLEGAL}
+			return &SEXPREC{Kind: token.ILLEGAL}
 		}
-		
-		
+
 		// eval args
 		if TRACE {
 			println("Eval args " + funcname)

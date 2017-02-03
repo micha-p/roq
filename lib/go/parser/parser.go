@@ -774,15 +774,15 @@ func (p *parser) parseBody(scope *ast.Scope) ast.Stmt {
 		defer un(trace(p, "Body"))
 	}
 
-	if p.tok == token.LBRACE {   
-		lbrace := p.expect(token.LBRACE)	// body is block
-		p.topScope = scope           
+	if p.tok == token.LBRACE {
+		lbrace := p.expect(token.LBRACE) // body is block
+		p.topScope = scope
 		list := p.parseStmtList()
 		p.closeScope()
 		rbrace := p.expect(token.RBRACE)
-		return &ast.BlockStmt{Lbrace:lbrace, List: list, Rbrace:rbrace}
+		return &ast.BlockStmt{Lbrace: lbrace, List: list, Rbrace: rbrace}
 	} else {
-		p.topScope = scope					// body is single stmt
+		p.topScope = scope // body is single stmt
 		s := p.parseStmt()
 		p.closeScope()
 		return s
@@ -958,7 +958,7 @@ func (p *parser) parseCall(fun ast.Expr) *ast.CallExpr {
 			p.next()
 		}
 		if !p.atComma("argument list", token.RPAREN) {
-		   break
+			break
 		}
 		p.next()
 	}
@@ -1243,7 +1243,7 @@ func (p *parser) parseBinaryExpr(lhs bool, prec1 int) ast.Expr {
 
 	}
 	x := p.parseUnaryExpr(lhs)
-	for p.tok != token.RPAREN && p.tok != token.COMMA{
+	for p.tok != token.RPAREN && p.tok != token.COMMA {
 		op, oprec := p.tokPrec()
 		if oprec < prec1 {
 			return x
@@ -1269,8 +1269,8 @@ func (p *parser) parseParameter() ast.Expr {
 	case *ast.BinaryExpr:
 		e := x.(*ast.BinaryExpr)
 		if e.Op == token.SHORTASSIGNMENT {
-			lhs := e.X.(*ast.BasicLit)  // TODO check for ident
-			return &ast.TaggedExpr{X: lhs, Tag: lhs.Value, EqPos: e.OpPos, Rhs:e.Y}
+			lhs := e.X.(*ast.BasicLit) // TODO check for ident
+			return &ast.TaggedExpr{X: lhs, Tag: lhs.Value, EqPos: e.OpPos, Rhs: e.Y}
 		} else {
 			return x
 		}
@@ -1290,7 +1290,6 @@ func (p *parser) parseExpr(lhs bool) ast.Expr {
 	return p.parseBinaryExpr(lhs, token.LowestPrec+1)
 }
 
-
 func (p *parser) parseRhs() ast.Expr {
 	old := p.inRhs
 	p.inRhs = true
@@ -1298,7 +1297,6 @@ func (p *parser) parseRhs() ast.Expr {
 	p.inRhs = old
 	return x
 }
-
 
 // ----------------------------------------------------------------------------
 // Statements
@@ -1335,7 +1333,6 @@ func (p *parser) parseAssignment(mode int) ast.Stmt {
 		return e
 	}
 }
-
 
 func (p *parser) parseReturnStmt() *ast.ReturnStmt {
 	if p.trace {
@@ -1406,7 +1403,6 @@ func (p *parser) parseIfStmt() *ast.IfStmt {
 
 	return &ast.IfStmt{If: pos, Cond: x, Body: body, Else: else_}
 }
-
 
 func (p *parser) parseForStmt() ast.Stmt {
 	if p.trace {
@@ -1533,4 +1529,3 @@ func (p *parser) parseStmt() (s ast.Stmt) {
 	}
 	return
 }
-

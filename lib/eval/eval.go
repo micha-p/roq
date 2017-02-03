@@ -200,20 +200,22 @@ func PrintResult(ev *Evaluator, r *SEXPREC) {
 			println("ILLEGAL RESULT")
 		}
 	case token.FLOAT:
-		fmt.Printf("%g\n", r.Value) // R has small e for exponential format
+		fmt.Printf("[1] %g\n", r.Value) // R has small e for exponential format
 	case token.FUNCTION:
-		print("function(")
-		for n, field := range r.Fieldlist {
-			//for _,ident := range field.Names {
-			//	print(ident)
-			//}
-			identifier := field.Type.(*ast.Ident)
-			if n > 0 {
-				print(",")
+		if DEBUG {
+			print("function(")
+			for n, field := range r.Fieldlist {
+				//for _,ident := range field.Names {
+				//	print(ident)
+				//}
+				identifier := field.Type.(*ast.Ident)
+				if n > 0 {
+					print(",")
+				}
+				print(identifier.Name)
 			}
-			print(identifier.Name)
+			println(")")
 		}
-		println(")")
 	default:
 		println("SEXPREC with unknown TOKEN")
 	}

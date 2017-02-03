@@ -94,14 +94,14 @@ const (
 	operator_beg
 	// Operators and delimiters
 	/*	ADD // +
-		SUB // -
-		MUL // *
-		QUO // /
-		REM // %
+			SUB // -
+			MUL // *
+			QUO // /
+			REM // %
 
-	//	AND     // &
-	//	OR      // |
-		XOR     // ^*/
+		//	AND     // &
+		//	OR      // |
+			XOR     // ^*/
 	SHL     // <<
 	SHR     // >>
 	AND_NOT // &^
@@ -214,7 +214,7 @@ const (
 )
 
 var tokens = [...]string{
-	ILLEGAL: "ILLEGAL",
+	ILLEGAL:   "ILLEGAL",
 	INVISIBLE: "INVISIBLE",
 
 	EOF:     "EOF",
@@ -271,14 +271,14 @@ var tokens = [...]string{
 	DOUBLECOLON:          "::", // Namespace
 
 	/*	ADD: "+",
-		SUB: "-",
-		MUL: "*",
-		QUO: "/",
-		REM: "%",
+			SUB: "-",
+			MUL: "*",
+			QUO: "/",
+			REM: "%",
 
-	//	AND:     "&",
-	//	OR:      "|",
-		XOR:     "^",*/
+		//	AND:     "&",
+		//	OR:      "|",
+			XOR:     "^",*/
 	SHL:     "<<",
 	SHR:     ">>",
 	AND_NOT: "&^",
