@@ -18,6 +18,7 @@ type Token int
 const (
 	// Special tokens
 	ILLEGAL Token = iota
+	INVISIBLE
 	EOF
 	COMMENT
 
@@ -214,6 +215,7 @@ const (
 
 var tokens = [...]string{
 	ILLEGAL: "ILLEGAL",
+	INVISIBLE: "INVISIBLE",
 
 	EOF:     "EOF",
 	COMMENT: "COMMENT",

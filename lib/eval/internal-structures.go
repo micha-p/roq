@@ -52,8 +52,8 @@ type sxpinfo_struct struct {
 type SEXPREC struct {
 	header sxpinfo_struct
 	attributes interface{}
-	previous interface{}
-	next interface{}
+	previous *SEXPREC
+	next *SEXPREC
 	data interface{}
 }
 */

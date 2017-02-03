@@ -60,7 +60,7 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPREC) {
 		// these maps use the same index as argNames (instead of using a structure)
 		// might be downgarded to arrays
 		boundArgs     := make(map[argindex]bool, argnum)
-		collectedArgs := make(map[argindex]*ast.Expr, argnum)
+		collectedArgs := make(map[argindex] ast.Expr, argnum) // ast.Expr contains pointers to ast.nodes
 		evaluatedArgs := make(map[argindex]*SEXPREC, argnum)
 
 		// collect tagged and untagged arguments (unevaluated)
@@ -84,7 +84,7 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPREC) {
 			expr := taggedArgs[v]
 			if expr != nil {
 				boundArgs[n] = true
-				collectedArgs[n] = &expr
+				collectedArgs[n] = expr
 				delete(taggedArgs, v)
 			}
 		}
@@ -97,7 +97,7 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPREC) {
 				if TRACE {
 					println("argument",k,"matches one formal argument:",argNames[argindex])
 				}
-				collectedArgs[argindex] = &v
+				collectedArgs[argindex] = v
 				delete(taggedArgs, k)
 			} else if len(matchList)>1 {
 				println("argument",k,"matches multiple formal arguments")
@@ -128,7 +128,7 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPREC) {
 		for n := argindex(0); n < argindex(argnum); n++ {
 			if collectedArgs[n] == nil {
 				expr := untaggedArgs[j]
-				collectedArgs[n] = &expr // TODO check length
+				collectedArgs[n] = expr // TODO check length
 				j = j + 1
 			}
 		}
@@ -160,7 +160,7 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPREC) {
 			println("Eval args " + funcname)
 		}
 		for n, v := range collectedArgs { // TODO: strictly left to right
-			val := EvalExpr(ev, *v)
+			val := EvalExpr(ev, v)
 			evaluatedArgs[n] = &val
 		}
 
