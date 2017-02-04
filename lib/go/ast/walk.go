@@ -122,9 +122,6 @@ func Walk(v Visitor, node Node) {
 		Walk(v, n.Fun)
 		walkExprList(v, n.Args)
 
-	case *StarExpr:
-		Walk(v, n.X)
-
 	case *UnaryExpr:
 		Walk(v, n.X)
 

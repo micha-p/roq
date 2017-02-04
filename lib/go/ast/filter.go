@@ -68,8 +68,6 @@ func fieldName(x Expr) *Ident {
 		if _, ok := t.X.(*Ident); ok {
 			return t.Sel
 		}
-	case *StarExpr:
-		return fieldName(t.X)
 	}
 	return nil
 }

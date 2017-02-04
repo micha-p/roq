@@ -402,10 +402,10 @@ func (p *parser) parseExprList(lhs bool) (list []ast.Expr) {
 		defer un(trace(p, "ExpressionList"))
 	}
 
-	list = append(list, p.checkExpr(p.parseExpr(lhs)))
+	list = append(list, p.parseExpr(lhs))
 	for p.tok == token.COMMA {
 		p.next()
-		list = append(list, p.checkExpr(p.parseExpr(lhs)))
+		list = append(list, p.parseExpr(lhs))
 	}
 
 	return
@@ -518,9 +518,6 @@ func (p *parser) parseFieldDecl(scope *ast.Scope) *ast.Field {
 		if n := len(list); n > 1 {
 			p.errorExpected(p.pos, "type")
 			typ = &ast.BadExpr{From: p.pos, To: p.pos}
-		} else if !isTypeName(deref(typ)) {
-			p.errorExpected(typ.Pos(), "anonymous field")
-			typ = &ast.BadExpr{From: typ.Pos(), To: p.safePos(typ.End())}
 		}
 	}
 
@@ -567,16 +564,6 @@ func (p *parser) parseStructType() *ast.StructType {
 	}
 }
 
-func (p *parser) parsePointerType() *ast.StarExpr {
-	if p.trace {
-		defer un(trace(p, "PointerType"))
-	}
-
-	star := p.expect(token.MULTIPLICATION)
-	base := p.parseType()
-
-	return &ast.StarExpr{Star: star, X: base}
-}
 
 // If the result is an identifier, it is not resolved.
 func (p *parser) tryVarType(isParam bool) ast.Expr {
@@ -725,8 +712,6 @@ func (p *parser) tryIdentOrType() ast.Expr {
 		return p.parseArrayType()
 	case token.STRUCT:
 		return p.parseStructType()
-	case token.MULTIPLICATION:
-		return p.parsePointerType()
 	case token.FUNCTION:
 		typ, _ := p.parseFuncType()
 		return typ
@@ -989,7 +974,7 @@ func (p *parser) parseValue(keyOk bool) ast.Expr {
 	// undeclared; or b) it is a struct field. In the former case, the type
 	// checker can do a top-level lookup, and in the latter case it will do
 	// a separate field lookup.
-	x := p.checkExpr(p.parseExpr(keyOk))
+	x := p.parseExpr(keyOk)
 	if keyOk {
 		/*if p.tok == token.COLON {
 			// Try to resolve the key but don't collect it
@@ -1053,51 +1038,6 @@ func (p *parser) parseLiteralValue(typ ast.Expr) ast.Expr {
 	return &ast.CompositeLit{Type: typ, Lbrace: lbrace, Elts: elts, Rbrace: rbrace}
 }
 
-// checkExpr checks that x is an expression (and not a type).
-func (p *parser) checkExpr(x ast.Expr) ast.Expr {
-	switch unparen(x).(type) {
-	case *ast.BadExpr:
-	case *ast.Ident:
-	case *ast.BasicLit:
-	case *ast.FuncLit:
-	case *ast.CompositeLit:
-	case *ast.ParenExpr:
-		panic("unreachable")
-	case *ast.SelectorExpr:
-	case *ast.IndexExpr:
-	case *ast.SliceExpr:
-	case *ast.TypeAssertExpr:
-		// If t.Type == nil we have a type assertion of the form
-		// y.(type), which is only allowed in type switch expressions.
-		// It's hard to exclude those but for the case where we are in
-		// a type switch. Instead be lenient and test this in the type
-		// checker.
-	case *ast.CallExpr:
-	case *ast.StarExpr:
-	case *ast.UnaryExpr:
-	case *ast.BinaryExpr:
-	default:
-		// all other nodes are not proper expressions
-		p.errorExpected(x.Pos(), "expression")
-		x = &ast.BadExpr{From: x.Pos(), To: p.safePos(x.End())}
-	}
-	return x
-}
-
-// isTypeName reports whether x is a (qualified) TypeName.
-func isTypeName(x ast.Expr) bool {
-	switch t := x.(type) {
-	case *ast.BadExpr:
-	case *ast.Ident:
-	case *ast.SelectorExpr:
-		_, isIdent := t.X.(*ast.Ident)
-		return isIdent
-	default:
-		return false // all other nodes are not type names
-	}
-	return true
-}
-
 // isLiteralType reports whether x is a legal composite literal type.
 func isLiteralType(x ast.Expr) bool {
 	switch t := x.(type) {
@@ -1115,38 +1055,11 @@ func isLiteralType(x ast.Expr) bool {
 	return true
 }
 
-// If x is of the form *T, deref returns T, otherwise it returns x.
-func deref(x ast.Expr) ast.Expr {
-	if p, isPtr := x.(*ast.StarExpr); isPtr {
-		x = p.X
-	}
-	return x
-}
-
 // If x is of the form (T), unparen returns unparen(T), otherwise it returns x.
 func unparen(x ast.Expr) ast.Expr {
 	if p, isParen := x.(*ast.ParenExpr); isParen {
 		x = unparen(p.X)
 	}
-	return x
-}
-
-// checkExprOrType checks that x is an expression or a type
-// (and not a raw type such as [...]T).
-//
-func (p *parser) checkExprOrType(x ast.Expr) ast.Expr {
-	switch t := unparen(x).(type) {
-	case *ast.ParenExpr:
-		panic("unreachable")
-	case *ast.UnaryExpr:
-	case *ast.ArrayType:
-		if len, isEllipsis := t.Len.(*ast.Ellipsis); isEllipsis {
-			p.error(len.Pos(), "expected array length, found '...'")
-			x = &ast.BadExpr{From: x.Pos(), To: p.safePos(x.End())}
-		}
-	}
-
-	// all other nodes are expressions or types
 	return x
 }
 
@@ -1167,7 +1080,7 @@ L:
 			}
 			switch p.tok {
 			case token.IDENT:
-				x = p.parseSelector(p.checkExprOrType(x))
+				x = p.parseSelector(x)
 			default:
 				pos := p.pos
 				p.errorExpected(pos, "selector or type assertion")
@@ -1179,14 +1092,14 @@ L:
 			if lhs {
 				p.resolve(x)
 			}
-			x = p.parseIndexOrSlice(p.checkExpr(x))
+			x = p.parseIndexOrSlice(x)
 		case token.LPAREN:
 			if lhs {
 				p.resolve(x)
 			}
-			x = p.parseCall(p.checkExpr(x))
+			x = p.parseCall(x)
 		case token.LBRACE:
-			if isLiteralType(x) && (p.exprLev >= 0 || !isTypeName(x)) {
+			if isLiteralType(x) && (p.exprLev >= 0) {
 				if lhs {
 					p.resolve(x)
 				}
@@ -1214,14 +1127,7 @@ func (p *parser) parseUnaryExpr(lhs bool) ast.Expr {
 		pos, op := p.pos, p.tok
 		p.next()
 		x := p.parseUnaryExpr(false)
-		return &ast.UnaryExpr{OpPos: pos, Op: op, X: p.checkExpr(x)}
-
-	case token.MULTIPLICATION:
-		// pointer type or unary "*" expression
-		pos := p.pos
-		p.next()
-		x := p.parseUnaryExpr(false)
-		return &ast.StarExpr{Star: pos, X: p.checkExprOrType(x)}
+		return &ast.UnaryExpr{OpPos: pos, Op: op, X: x}
 	}
 
 	return p.parsePrimaryExpr(lhs)
@@ -1250,7 +1156,7 @@ func (p *parser) parseBinaryExpr(lhs bool, prec1 int) ast.Expr {
 			lhs = false
 		}
 		y := p.parseBinaryExpr(false, oprec+1)
-		x = &ast.BinaryExpr{X: p.checkExpr(x), OpPos: pos, Op: op, Y: p.checkExpr(y)}
+		x = &ast.BinaryExpr{X: x, OpPos: pos, Op: op, Y: y}
 	}
 	return x
 }
@@ -1275,9 +1181,7 @@ func (p *parser) parseParameter() ast.Expr {
 }
 
 // If lhs is set and the result is an identifier, it is not resolved.
-// The result may be a type or even a raw type ([...]int). Callers must
-// check the result (using checkExpr or checkExprOrType), depending on
-// context.
+// The result may be a type or even a raw type ([...]int). 
 func (p *parser) parseExpr(lhs bool) ast.Expr {
 	if p.trace {
 		defer un(trace(p, "Expression"))
@@ -1289,7 +1193,7 @@ func (p *parser) parseExpr(lhs bool) ast.Expr {
 func (p *parser) parseRhs() ast.Expr {
 	old := p.inRhs
 	p.inRhs = true
-	x := p.checkExpr(p.parseExpr(false))
+	x := p.parseExpr(false)
 	p.inRhs = old
 	return x
 }
@@ -1355,7 +1259,7 @@ func (p *parser) makeExpr(s ast.Stmt, kind string) ast.Expr {
 		return nil
 	}
 	if es, isExpr := s.(*ast.ExprStmt); isExpr {
-		return p.checkExpr(es.X)
+		return es.X
 	}
 	p.error(s.Pos(), fmt.Sprintf("expected %s, found simple statement (missing parentheses around composite literal?)", kind))
 	return &ast.BadExpr{From: s.Pos(), To: p.safePos(s.End())}
