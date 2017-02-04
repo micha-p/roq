@@ -90,6 +90,17 @@ const (
 	   	       :	sequence
 	*/
 
+	LPAREN // (
+	LBRACK // [
+	LBRACE // {
+	COMMA  // ,
+
+	RPAREN    // )
+	RBRACK    // ]
+	RBRACE    // }
+	SEMICOLON // ;
+
+
 	operator_beg
 	// Operators and delimiters
 	/*	ADD // +
@@ -121,16 +132,6 @@ const (
 	LEQ      // <=
 	GEQ      // >=
 	ELLIPSIS // ...
-
-	LPAREN // (
-	LBRACK // [
-	LBRACE // {
-	COMMA  // ,
-
-	RPAREN    // )
-	RBRACK    // ]
-	RBRACE    // }
-	SEMICOLON // ;
 
 	// R Operators
 
@@ -480,6 +481,11 @@ func (tok Token) IsOperator() bool { return operator_beg < tok && tok < operator
 func (tok Token) IsKeyword() bool { return keyword_beg < tok && tok < keyword_end }
 
 // R predicates
+func IsAssignment(t Token) bool {
+	return t == SHORTASSIGNMENT || 
+	t == LEFTASSIGNMENT || t == RIGHTASSIGNMENT || t == SUPERLEFTASSIGNMENT || t == SUPERRIGHTASSIGNMENT
+}
+
 func isCONSTANT(t Token) bool {
 	return t == INTEGER || t == LOGICAL || t == NUMERIC || t == COMPLEX || t == STRING
 }

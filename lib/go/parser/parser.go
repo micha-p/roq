@@ -18,10 +18,15 @@ package parser
 
 import (
 	"fmt"
+	"strconv"
 	"lib/go/ast"
 	"lib/go/scanner"
 	"lib/go/token"
 )
+
+// Assignments might be Expressions or Stmts, the first return a SEXPREC during evaluation, 
+// the latter an invisible object
+
 
 // The parser structure holds the parser's internal state.
 type parser struct {
@@ -792,7 +797,8 @@ func (p *parser) parseBlockStmt1() *ast.BlockStmt {
 
 	p.openScope()
 	var list []ast.Stmt
-	list = append(list, &ast.ExprStmt{X: p.parseRhs()})
+	stmt := p.parseStmt()
+	list = append(list, stmt)
 	p.closeScope()
 
 	return &ast.BlockStmt{List: list}
@@ -1141,22 +1147,23 @@ func (p *parser) tokPrec() (token.Token, int) {
 // If lhs is set and the result is an identifier, it is not resolved.
 func (p *parser) parseBinaryExpr(lhs bool, prec1 int) ast.Expr {
 	if p.trace {
-		defer un(trace(p, "BinaryExpr"))
+		defer un(trace(p, "BinaryExpr "+  strconv.Itoa(prec1)))
 
 	}
 	x := p.parseUnaryExpr(lhs)
-	for p.tok != token.RPAREN && p.tok != token.COMMA {
-		op, oprec := p.tokPrec()
+//	for p.tok != token.RPAREN && p.tok != token.COMMA && p.tok != token.SEMICOLON && p.tok != token.ELSE{
+	for p.tok.IsOperator(){
+		operator, oprec := p.tokPrec()
 		if oprec < prec1 {
 			return x
 		}
-		pos := p.expect(op)
+		pos := p.expect(operator)
 		if lhs {
 			p.resolve(x)
 			lhs = false
 		}
 		y := p.parseBinaryExpr(false, oprec+1)
-		x = &ast.BinaryExpr{X: x, OpPos: pos, Op: op, Y: y}
+		x = &ast.BinaryExpr{X: x, OpPos: pos, Op: operator, Y: y}
 	}
 	return x
 }
@@ -1184,16 +1191,23 @@ func (p *parser) parseParameter() ast.Expr {
 // The result may be a type or even a raw type ([...]int). 
 func (p *parser) parseExpr(lhs bool) ast.Expr {
 	if p.trace {
-		defer un(trace(p, "Expression"))
+		defer un(trace(p, "Expression or shortassignment"))
 	}
 
-	return p.parseBinaryExpr(lhs, token.LowestPrec+1)
+	return p.parseBinaryExpr(lhs, 3)
+}
+
+func (p *parser) parseExprOrAssignment(lhs bool) ast.Expr {
+	if p.trace {
+		defer un(trace(p, "Expression or Assignment"))
+	}
+	return p.parseBinaryExpr(lhs, 1)
 }
 
 func (p *parser) parseRhs() ast.Expr {
 	old := p.inRhs
 	p.inRhs = true
-	x := p.parseExpr(false)
+	x := p.parseExprOrAssignment(false)
 	p.inRhs = old
 	return x
 }
@@ -1212,9 +1226,9 @@ const (
 // of a range clause (with mode == rangeOk). The returned statement is an
 // assignment with a right-hand side that is a single unary expression of
 // the form "range x". No guarantees are given for the left-hand side.
-func (p *parser) parseAssignment(mode int) ast.Stmt {
+func (p *parser) parseAssignment() ast.Stmt {
 	if p.trace {
-		defer un(trace(p, "Expr or Assignment"))
+		defer un(trace(p, "Assignment (or expr)"))
 	}
 
 	x := p.parseExpr(true)
@@ -1278,6 +1292,9 @@ func (p *parser) parseIfStmt() *ast.IfStmt {
 	x = p.parseRhs()
 
 	var body *ast.BlockStmt
+	if p.trace {
+		defer un(trace(p, "bodyStmt"))
+	}
 	if p.tok == token.LBRACE {
 		body = p.parseBlockStmt()
 	} else {
@@ -1286,6 +1303,9 @@ func (p *parser) parseIfStmt() *ast.IfStmt {
 
 	var else_ ast.Stmt
 	if p.tok == token.ELSE {
+		if p.trace {
+			defer un(trace(p, "elseStmt"))
+		}
 		p.next()
 		switch p.tok {
 		case token.IF:
@@ -1327,7 +1347,7 @@ func (p *parser) parseForStmt() ast.Stmt {
 				s2 = &ast.AssignStmt{Rhs: y}
 				isRange = true
 			} else {
-				s2 = p.parseAssignment(rangeOk)
+				s2 = p.parseAssignment()
 			}
 		}
 		if !isRange && p.tok == token.SEMICOLON {
@@ -1335,11 +1355,11 @@ func (p *parser) parseForStmt() ast.Stmt {
 			s1 = s2
 			s2 = nil
 			if p.tok != token.SEMICOLON {
-				s2 = p.parseAssignment(basic)
+				s2 = p.parseAssignment()
 			}
 			p.expectSemi()
 			if p.tok != token.LBRACE {
-				s3 = p.parseAssignment(basic)
+				s3 = p.parseAssignment()
 			}
 		}
 		p.exprLev = prevLev
@@ -1400,7 +1420,7 @@ func (p *parser) parseStmt() (s ast.Stmt) {
 		token.IDENT, token.INT, token.FLOAT, token.NA, token.IMAG, token.STRING, token.FUNCTION, token.LPAREN, // operands
 		token.LBRACK, token.STRUCT, token.MAP, token.CHAN, token.INTERFACE, // composite types
 		token.PLUS, token.MINUS, token.MULTIPLICATION, token.AND, token.NOT: // unary operators
-		s = p.parseAssignment(labelOk) // this parses an assignment!
+		s = p.parseAssignment() // this parses an assignment!
 
 	case token.RETURN:
 		s = p.parseReturnStmt()
