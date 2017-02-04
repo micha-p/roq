@@ -18,7 +18,6 @@ type Token int
 const (
 	// Special tokens
 	ILLEGAL Token = iota
-	INVISIBLE
 	EOF
 	COMMENT
 
@@ -215,8 +214,6 @@ const (
 
 var tokens = [...]string{
 	ILLEGAL:   "ILLEGAL",
-	INVISIBLE: "INVISIBLE",
-
 	EOF:     "EOF",
 	COMMENT: "COMMENT",
 
@@ -391,7 +388,7 @@ const (
 // | ||
 // ~                  (unary and binary)
 // -> ->>
-// =                  (as assignment)
+// =                  (as short assignment)
 // <- <<-
 
 // Precedence returns the operator precedence of the binary

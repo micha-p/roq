@@ -68,6 +68,7 @@ type Evaluator struct {
 	// Tracing/debugging
 	trace  bool
 	debug  bool
+	invisible bool
 	indent int // indentation used for tracing output
 
 	// frame
@@ -88,7 +89,7 @@ func EvalInit(fset *token.FileSet, filename string, src interface{}, mode parser
 		panic("eval.evalInit: no token.FileSet provided (fset == nil)")
 	}
 
-	e := Evaluator{traceflag, debugflag, 0, nil}
+	e := Evaluator{trace: traceflag, debug: debugflag, indent: 0, topFrame: nil}
 	e.topFrame = NewFrame(e.topFrame)
 	return &e, err
 }
@@ -100,10 +101,9 @@ func isTrue(e *SEXPREC) bool {
 	if e.Kind == token.FLOAT && e.Value != 0 {
 		return true
 	}
-	 
+
 	return false
 }
-
 
 // evaluator
 // https://go-book.appspot.com/interfaces.html
@@ -122,13 +122,13 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) *SEXPREC {
 		if DEBUG {
 			println("emptyStmt")
 		}
-		return &SEXPREC{Kind: token.INVISIBLE}
+		return &SEXPREC{Kind: token.SEMICOLON}
 	case *ast.IfStmt:
 		if TRACE {
 			println("ifStmt")
 		}
 		e := s.(*ast.IfStmt)
-		if isTrue(EvalExpr(ev, e.Cond)){
+		if isTrue(EvalExpr(ev, e.Cond)) {
 			return EvalStmt(ev, e.Body)
 		} else if e.Else != nil {
 			return EvalStmt(ev, e.Else)
@@ -172,6 +172,7 @@ func doAssignment(ev *Evaluator, identifier string, ex ast.Expr) *SEXPREC {
 		println(result.Kind.String())
 	}
 	ev.topFrame.Insert(identifier, result)
+	ev.invisible=true  // just for the following print
 	return result
 }
 
@@ -195,10 +196,11 @@ func EvalAssignment(ev *Evaluator, e *ast.AssignStmt) *SEXPREC {
 	} else {
 		nodepointer = e.Rhs
 	}
-
 	return doAssignment(ev, identifier, nodepointer)
 }
 
+
+// visibility is stored in the evaluator and unset after every print
 func PrintResult(ev *Evaluator, r *SEXPREC) {
 	TRACE := ev.trace
 	DEBUG := ev.debug
@@ -208,34 +210,39 @@ func PrintResult(ev *Evaluator, r *SEXPREC) {
 		print("print: ", givenType.String(), ": ", r.Kind.String(), ": ")
 	}
 
-	switch r.Kind {
-	case token.INVISIBLE:
-		if DEBUG {
-			println("Invisible RESULT")
-		}
-	case token.ILLEGAL:
-		if TRACE {
-			println("ILLEGAL RESULT")
-		}
-	case token.FLOAT:
-		fmt.Printf("[1] %g\n", r.Value) // R has small e for exponential format
-	case token.FUNCTION:
-		if DEBUG {
-			print("function(")
-			for n, field := range r.Fieldlist {
-				//for _,ident := range field.Names {
-				//	print(ident)
-				//}
-				identifier := field.Type.(*ast.Ident)
-				if n > 0 {
-					print(",")
-				}
-				print(identifier.Name)
+	if ev.invisible {
+		ev.invisible=false
+		return
+	} else {
+		switch r.Kind {
+		case token.SEMICOLON:
+			if DEBUG {
+				println("Semicolon")
 			}
-			println(")")
+		case token.ILLEGAL:
+			if TRACE {
+				println("ILLEGAL RESULT")
+			}
+		case token.FLOAT:
+			fmt.Printf("[1] %g\n", r.Value) // R has small e for exponential format
+		case token.FUNCTION:
+			if DEBUG {
+				print("function(")
+				for n, field := range r.Fieldlist {
+					//for _,ident := range field.Names {
+					//	print(ident)
+					//}
+					identifier := field.Type.(*ast.Ident)
+					if n > 0 {
+						print(",")
+					}
+					print(identifier.Name)
+				}
+				println(")")
+			}
+		default:
+			println("?SEXPREC:", r.Kind.String())
 		}
-	default:
-		println("SEXPREC with unknown TOKEN")
 	}
 }
 
@@ -267,6 +274,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXPREC {
 		}
 		return &SEXPREC{Kind: token.FUNCTION, Fieldlist: node.Type.Params.List, Body: node.Body}
 	case *ast.BasicLit:
+		ev.invisible=false
 		node := ex.(*ast.BasicLit)
 		if TRACE {
 			print("BasicLit " + " " + node.Value + " (" + node.Kind.String() + "): ")
@@ -307,20 +315,24 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXPREC {
 			println("Unknown node.kind")
 		}
 	case *ast.BinaryExpr:
+		ev.invisible=false
 		node := ex.(*ast.BinaryExpr)
 		if TRACE {
 			println("BinaryExpr " + " " + node.Op.String())
 		}
 		return EvalOp(node.Op, EvalExpr(ev, node.X), EvalExpr(ev, node.Y))
 	case *ast.CallExpr:
+		ev.invisible=false
 		return EvalCall(ev, ex.(*ast.CallExpr))
 	case *ast.ParenExpr:
+		ev.invisible=false
 		node := ex.(*ast.ParenExpr)
 		if TRACE {
 			println("ParenExpr")
 		}
 		return EvalExpr(ev, node.X)
 	default:
+		ev.invisible=false
 		givenType := reflect.TypeOf(ex)
 		println("?Expr:", givenType.String())
 	}
