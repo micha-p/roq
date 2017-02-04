@@ -93,6 +93,18 @@ func EvalInit(fset *token.FileSet, filename string, src interface{}, mode parser
 	return &e, err
 }
 
+func isTrue(e *SEXPREC) bool {
+	if e.Kind == token.NULL {
+		return false
+	}
+	if e.Kind == token.FLOAT && e.Value != 0 {
+		return true
+	}
+	 
+	return false
+}
+
+
 // evaluator
 // https://go-book.appspot.com/interfaces.html
 // an empty interface accepts all pointers
@@ -114,6 +126,12 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) *SEXPREC {
 	case *ast.IfStmt:
 		if TRACE {
 			println("ifStmt")
+		}
+		e := s.(*ast.IfStmt)
+		if isTrue(EvalExpr(ev, e.Cond)){
+			return EvalStmt(ev, e.Body)
+		} else if e.Else != nil {
+			return EvalStmt(ev, e.Else)
 		}
 	case *ast.ForStmt:
 		if TRACE {

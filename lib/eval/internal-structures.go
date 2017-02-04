@@ -62,6 +62,6 @@ type SEXPREC struct {
 	ValuePos  token.Pos    // literal position
 	Kind      token.Token  // token.INT, token.FLOAT, token.IMAG, token.CHAR, or token.STRING
 	Fieldlist []*ast.Field // only if function
-	Body      ast.Stmt     // only if function: BlockStmt or single Stmt
+	Body      *ast.BlockStmt     // only if function: BlockStmt or single Stmt
 	Value     float64
 }

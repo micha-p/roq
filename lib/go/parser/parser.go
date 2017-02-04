@@ -769,24 +769,20 @@ func (p *parser) parseStmtList() (list []ast.Stmt) {
 	return
 }
 
-func (p *parser) parseBody(scope *ast.Scope) ast.Stmt {
+func (p *parser) parseBody(scope *ast.Scope) *ast.BlockStmt {
 	if p.trace {
 		defer un(trace(p, "Body"))
 	}
-
+	
+	var r *ast.BlockStmt
+	p.topScope = scope
 	if p.tok == token.LBRACE {
-		lbrace := p.expect(token.LBRACE) // body is block
-		p.topScope = scope
-		list := p.parseStmtList()
-		p.closeScope()
-		rbrace := p.expect(token.RBRACE)
-		return &ast.BlockStmt{Lbrace: lbrace, List: list, Rbrace: rbrace}
+		r = p.parseBlockStmt()
 	} else {
-		p.topScope = scope // body is single stmt
-		s := p.parseStmt()
-		p.closeScope()
-		return s
+		r = p.parseBlockStmt1()
 	}
+	p.closeScope()
+	return r
 }
 
 func (p *parser) parseBlockStmt() *ast.BlockStmt {
