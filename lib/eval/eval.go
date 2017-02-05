@@ -62,6 +62,15 @@ func (s *Frame) Insert(identifier string, obj *SEXPREC) (alt *SEXPREC) {
 	return
 }
 
+type LoopState int
+
+const (
+	normalState LoopState=iota
+	breakState
+	nextState
+)
+	
+
 // derived of type parser
 type Evaluator struct {
 
@@ -69,6 +78,7 @@ type Evaluator struct {
 	trace  bool
 	debug  bool
 	invisible bool
+	state LoopState
 	indent int // indentation used for tracing output
 
 	// frame
@@ -133,10 +143,21 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) *SEXPREC {
 		} else if e.Else != nil {
 			return EvalStmt(ev, e.Else)
 		}
+	case *ast.WhileStmt:
+		if TRACE {
+			println("whileStmt")
+		}
+//		return EvalLoop(ev, s.(*ast.whileStmt))
+	case *ast.RepeatStmt:
+		if TRACE {
+			println("repeatStmt")
+		}
+//		return EvalLoop(ev, s.(*ast.whileStmt),TRUE)
 	case *ast.ForStmt:
 		if TRACE {
 			println("forStmt")
 		}
+//		return EvalLoop(ev, s.(*ast.ForStmt))
 	case *ast.BlockStmt:
 		if TRACE {
 			println("blockStmt")

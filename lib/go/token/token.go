@@ -11,7 +11,9 @@ package token
 
 import "strconv"
 
-// Token is the set of lexical tokens of the Go programming language.
+// https://cran.r-project.org/doc/manuals/R-lang.html#Tokens
+// Token is the set of lexical tokens
+
 type Token int
 
 // The list of tokens.
@@ -37,15 +39,19 @@ const (
 	INTEGER
 	DOUBLE
 	LOGICAL
-	TRUE
-	FALSE
 	COMPLEX // wont be implemented in version 1
 	STRING
 
-	NULL //	SPECIAL
-	NA   // Single dot is treated as missing value
-	NAN
+// https://cran.r-project.org/doc/manuals/R-lang.html#Literal-constants
+// 10.3.1 Literal constants
+
+	NULL
+	NA   // TODO: documentation: Single dot is treated as missing value
 	INF
+	NAN
+	TRUE
+	FALSE
+
 	literal_end
 
 	/* 3.1.4 Operators
@@ -200,7 +206,7 @@ const (
 	TYPE
 	VAR
 
-	//R keywords
+// 10.3.3 Reserved words
 	IF
 	ELSE
 	REPEAT
@@ -228,15 +234,15 @@ var tokens = [...]string{
 	NUMERIC:    "NUMERIC",
 	INTEGER:    "INTEGER",
 	DOUBLE:     "DOUBLE",
-	TRUE:       "TRUE",
-	FALSE:      "FALSE",
 	COMPLEX:    "COMPLEX",
 	STRING:     "STRING", // single or double quoted
 
-	NULL: "NULL", // SPECIAL
-	NA:   "NA",   // Single dot is treated as missing value
-	NAN:  "NAN",
-	INF:  "INF",
+	NULL:  "NULL",
+	NA:    "NA",
+	INF:   "INF",
+	NAN:   "NAN",
+	TRUE:  "TRUE",
+	FALSE: "FALSE",
 
 	// R Operators
 	MINUS:                "-",  // -	Minus, can be unary or binary

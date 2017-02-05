@@ -469,20 +469,32 @@ type (
 		Rbrace token.Pos // position of "}"
 	}
 
-	// An IfStmt node represents an if statement.
 	IfStmt struct {
-		If   token.Pos // position of "if" keyword
-		Cond Expr      // condition
+		Keyword   token.Pos // position of keyword
+		Cond Expr           // condition
 		Body *BlockStmt
-		Else Stmt // else branch; or nil
+		Else Stmt           // else branch; or nil
 	}
-
-	// A ForStmt represents a for statement.
+	WhileStmt struct {
+		Keyword   token.Pos // position of keyword
+		Cond Expr           // condition
+		Body *BlockStmt
+	}
+	RepeatStmt struct {
+		Keyword   token.Pos // position of keyword
+		Body *BlockStmt
+	}
+	BreakStmt struct {
+		Keyword   token.Pos // position of keyword
+	}
+	NextStmt struct {
+		Keyword   token.Pos // position of keyword
+	}
 	ForStmt struct {
-		For  token.Pos // position of "for" keyword
-		Init Stmt      // initialization statement; or nil
-		Cond Expr      // condition; or nil
-		Post Stmt      // post iteration statement; or nil
+		Keyword token.Pos   // position of keyword
+		Init Stmt           // initialization statement; or nil
+		Cond Expr           // condition; or nil
+		Post Stmt           // post iteration statement; or nil
 		Body *BlockStmt
 	}
 )
@@ -496,8 +508,12 @@ func (s *AssignStmt) Pos() token.Pos     { return s.Lhs.Pos() }
 func (s *DeferStmt) Pos() token.Pos      { return s.Defer }
 func (s *ReturnStmt) Pos() token.Pos     { return s.Return }
 func (s *BlockStmt) Pos() token.Pos      { return s.Lbrace }
-func (s *IfStmt) Pos() token.Pos         { return s.If }
-func (s *ForStmt) Pos() token.Pos        { return s.For }
+func (s *IfStmt) Pos() token.Pos         { return s.Keyword }
+func (s *WhileStmt) Pos() token.Pos      { return s.Keyword }
+func (s *RepeatStmt) Pos() token.Pos     { return s.Keyword }
+func (s *BreakStmt) Pos() token.Pos      { return s.Keyword }
+func (s *NextStmt) Pos() token.Pos       { return s.Keyword }
+func (s *ForStmt) Pos() token.Pos        { return s.Keyword }
 
 func (s *BadStmt) End() token.Pos  { return s.To }
 func (s *EmptyStmt) End() token.Pos {
@@ -510,9 +526,9 @@ func (s *ExprStmt) End() token.Pos { return s.X.End() }
 func (s *AssignStmt) End() token.Pos { return s.Rhs.End() }
 func (s *DeferStmt) End() token.Pos  { return s.Call.End() }
 func (s *ReturnStmt) End() token.Pos {
-	/*if n := len(s.Results); n > 0 {
-		return s.Results[n-1].End()
-	}*/
+	if s.Result != nil {
+		return s.Result.End()
+	}
 	return s.Return + 6 // len("return")
 }
 
@@ -523,6 +539,10 @@ func (s *IfStmt) End() token.Pos {
 	}
 	return s.Body.End()
 }
+func (s *WhileStmt) End() token.Pos    { return s.Body.End() }
+func (s *RepeatStmt) End() token.Pos    { return s.Body.End() }
+func (s *NextStmt) End() token.Pos    { return s.Keyword + 4 }
+func (s *BreakStmt) End() token.Pos    { return s.Keyword + 5 }
 func (s *ForStmt) End() token.Pos    { return s.Body.End() }
 
 // stmtNode() ensures that only statement nodes can be
@@ -536,6 +556,10 @@ func (*DeferStmt) stmtNode()      {}
 func (*ReturnStmt) stmtNode()     {}
 func (*BlockStmt) stmtNode()      {}
 func (*IfStmt) stmtNode()         {}
+func (*WhileStmt) stmtNode()      {}
+func (*RepeatStmt) stmtNode()     {}
+func (*BreakStmt) stmtNode()      {}
+func (*NextStmt) stmtNode()       {}
 func (*ForStmt) stmtNode()        {}
 
 // ----------------------------------------------------------------------------

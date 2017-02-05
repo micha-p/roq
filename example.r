@@ -1,4 +1,4 @@
-
-if 3 4 else 5
-if 3+4 4 else 5
-if 3-3 4 else 5
+while(1) 3
+while 1 3
+repeat 3
+repeat {if (4) {break} else {next}}

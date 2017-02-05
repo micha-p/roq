@@ -1288,7 +1288,7 @@ func (p *parser) parseIfStmt() *ast.IfStmt {
 	p.openScope()
 	defer p.closeScope()
 
-	var x ast.Expr
+	var x ast.Expr  // TODO strict flag to insist on parentheses
 	x = p.parseRhs()
 
 	var body *ast.BlockStmt
@@ -1321,7 +1321,52 @@ func (p *parser) parseIfStmt() *ast.IfStmt {
 		p.expectSemi()
 	}
 
-	return &ast.IfStmt{If: pos, Cond: x, Body: body, Else: else_}
+	return &ast.IfStmt{Keyword: pos, Cond: x, Body: body, Else: else_}
+}
+
+func (p *parser) parseWhileStmt() *ast.WhileStmt {
+	if p.trace {
+		defer un(trace(p, "WhileStmt"))
+	}
+
+	pos := p.expect(token.WHILE)
+	p.openScope()
+	defer p.closeScope()
+
+	var x ast.Expr  // TODO strict flag to insist on parentheses
+	x = p.parseRhs()
+
+	var body *ast.BlockStmt
+	if p.trace {
+		defer un(trace(p, "bodyStmt"))
+	}
+	if p.tok == token.LBRACE {
+		body = p.parseBlockStmt()
+	} else {
+		body = p.parseBlockStmt1()
+	}
+	p.expectSemi()
+	return &ast.WhileStmt{Keyword: pos, Cond: x, Body: body}
+}
+
+func (p *parser) parseRepeatStmt() *ast.RepeatStmt {
+	if p.trace {
+		defer un(trace(p, "RepeatStmt"))
+	}
+
+	pos := p.expect(token.REPEAT)
+
+	var body *ast.BlockStmt
+	if p.trace {
+		defer un(trace(p, "bodyStmt"))
+	}
+	if p.tok == token.LBRACE {
+		body = p.parseBlockStmt()
+	} else {
+		body = p.parseBlockStmt1()
+	}
+	p.expectSemi()
+	return &ast.RepeatStmt{Keyword: pos, Body: body}
 }
 
 func (p *parser) parseForStmt() ast.Stmt {
@@ -1368,40 +1413,9 @@ func (p *parser) parseForStmt() ast.Stmt {
 	body := p.parseBlockStmt()
 	p.expectSemi()
 
-	/*
-		if isRange {
-			as := s2.(*ast.AssignStmt)
-			// check lhs
-			var key, value ast.Expr
-			switch len(as.Lhs) {
-			case 0:
-				// nothing to do
-			case 1:
-				key = as.Lhs[0]
-			case 2:
-				key, value = as.Lhs[0], as.Lhs[1]
-			default:
-				p.errorExpected(as.Lhs[len(as.Lhs)-1].Pos(), "at most 2 expressions")
-				return &ast.BadStmt{From: pos, To: p.safePos(body.End())}
-			}
-			// parseAssignment returned a right-hand side that
-			// is a single unary expression of the form "range x"
-			x := as.Rhs[0].(*ast.UnaryExpr).X
-			return &ast.RangeStmt{
-				For:    pos,
-				Key:    key,
-				Value:  value,
-				TokPos: as.TokPos,
-				Tok:    as.Tok,
-				X:      x,
-				Body:   body,
-			}
-		}
-	*/
 
-	// regular for statement
 	return &ast.ForStmt{
-		For:  pos,
+		Keyword:  pos,
 		Init: s1,
 		Cond: p.makeExpr(s2, "boolean or range expression"),
 		Post: s3,
@@ -1429,6 +1443,16 @@ func (p *parser) parseStmt() (s ast.Stmt) {
 		p.expectSemi()
 	case token.IF:
 		s = p.parseIfStmt()
+	case token.WHILE:
+		s = p.parseWhileStmt()
+	case token.REPEAT:
+		s = p.parseRepeatStmt()
+	case token.BREAK:
+		s = &ast.BreakStmt{Keyword: p.pos}
+		p.next()
+	case token.NEXT:
+		s = &ast.NextStmt{Keyword: p.pos}
+		p.next()
 	case token.FOR:
 		s = p.parseForStmt()
 	case token.SEMICOLON:
