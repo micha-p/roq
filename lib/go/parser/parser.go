@@ -24,7 +24,7 @@ import (
 	"lib/go/token"
 )
 
-// Assignments might be Expressions or Stmts, the first return a SEXPREC during evaluation, 
+// Assignments might be Expressions or Stmts, the first return a SEXP during evaluation, 
 // the latter an invisible object
 
 

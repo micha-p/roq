@@ -37,7 +37,7 @@ func tryPartialMatch(partial string, argNames map[argindex]string, bound map[arg
 
 
 // TODO use results field of funcType
-func EvalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXPREC) {
+func EvalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
 	TRACE := ev.trace
 	funcobject := node.Fun
 	funcname := funcobject.(*ast.BasicLit).Value
@@ -47,7 +47,7 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXPREC) {
 	f := ev.topFrame.Lookup(funcname)
 	if f == nil {
 		println("\nError: could not find function \"" + funcname + "\"")
-		return &SEXPREC{Kind: token.ILLEGAL}
+		return &SEXP{Kind: token.ILLEGAL}
 	} else {
 		argNames := make(map[argindex]string)
 
@@ -63,7 +63,7 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXPREC) {
 		// might be downgarded to arrays
 		boundArgs := make(map[argindex]bool, argnum)
 		collectedArgs := make(map[argindex]ast.Expr, argnum) // ast.Expr contains pointers to ast.nodes
-		evaluatedArgs := make(map[argindex]*SEXPREC, argnum)
+		evaluatedArgs := make(map[argindex]*SEXP, argnum)
 
 		// collect tagged and untagged arguments (unevaluated)
 		taggedArgs := make(map[string]ast.Expr, argnum)
@@ -122,7 +122,7 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXPREC) {
 				start = false
 			}
 			print(")\n")
-			return &SEXPREC{Kind: token.ILLEGAL}
+			return &SEXP{Kind: token.ILLEGAL}
 		}
 
 		// match positional arguments
@@ -153,7 +153,7 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXPREC) {
 				start = false
 			}
 			print(")\n")
-			return &SEXPREC{Kind: token.ILLEGAL}
+			return &SEXP{Kind: token.ILLEGAL}
 		}
 
 		// eval args

@@ -3,7 +3,7 @@
 // ast.Stmt
 
 // unevaluated expressions: ast.EXPR
-// evaluated expressions and values bound: SEXPREC
+// evaluated expressions and values bound: SEXP
 
 package eval
 
@@ -23,24 +23,24 @@ import (
 
 type Frame struct {
 	Outer   *Frame
-	Objects map[string]*SEXPREC
+	Objects map[string]*SEXP
 }
 
 // NewFrame creates a new scope nested in the outer scope.
 func NewFrame(outer *Frame) *Frame {
 	const n = 4 // initial frame capacity
-	return &Frame{outer, make(map[string]*SEXPREC, n)}
+	return &Frame{outer, make(map[string]*SEXP, n)}
 }
 
 // Lookup returns the object with the given name if it is
 // found in frame s, otherwise it returns nil. Outer frames
 // are ignored. TODO!!!
 //
-func (f *Frame) Lookup(name string) *SEXPREC {
+func (f *Frame) Lookup(name string) *SEXP {
 	return f.Objects[name]
 }
 
-func (f *Frame) Recursive(name string) (r *SEXPREC) {
+func (f *Frame) Recursive(name string) (r *SEXP) {
 	r = f.Objects[name]
 	if r == nil {
 		if f.Outer != nil {
@@ -57,7 +57,7 @@ func getIdent(ev *Evaluator, ex ast.Expr) string {
 
 // Insert attempts to insert a named object obj into the frame s.
 // If the frame already contains an object alt with the same name, this object is overwritten
-func (s *Frame) Insert(identifier string, obj *SEXPREC) (alt *SEXPREC) {
+func (s *Frame) Insert(identifier string, obj *SEXP) (alt *SEXP) {
 	s.Objects[identifier] = obj
 	return
 }
@@ -104,7 +104,7 @@ func EvalInit(fset *token.FileSet, filename string, src interface{}, mode parser
 	return &e, err
 }
 
-func isTrue(e *SEXPREC) bool {
+func isTrue(e *SEXP) bool {
 	if e.Kind == token.NULL {
 		return false
 	}
@@ -119,7 +119,7 @@ func isTrue(e *SEXPREC) bool {
 // https://go-book.appspot.com/interfaces.html
 // an empty interface accepts all pointers
 
-func EvalStmt(ev *Evaluator, s ast.Stmt) *SEXPREC {
+func EvalStmt(ev *Evaluator, s ast.Stmt) *SEXP {
 	TRACE := ev.trace
 	DEBUG := false
 	switch s.(type) {
@@ -132,7 +132,7 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) *SEXPREC {
 		if DEBUG {
 			println("emptyStmt")
 		}
-		return &SEXPREC{Kind: token.SEMICOLON}
+		return &SEXP{Kind: token.SEMICOLON}
 	case *ast.IfStmt:
 		if TRACE {
 			println("ifStmt")
@@ -163,7 +163,7 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) *SEXPREC {
 			println("blockStmt")
 		}
 		e := s.(*ast.BlockStmt)
-		var r *SEXPREC
+		var r *SEXP
 		for _, stmt := range e.List {
 			switch stmt.(type) {
 			case *ast.EmptyStmt:
@@ -179,10 +179,10 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) *SEXPREC {
 		givenType := reflect.TypeOf(s)
 		println("?Stmt:", givenType.String())
 	}
-	return &SEXPREC{Kind: token.ILLEGAL}
+	return &SEXP{Kind: token.ILLEGAL}
 }
 
-func doAssignment(ev *Evaluator, identifier string, ex ast.Expr) *SEXPREC {
+func doAssignment(ev *Evaluator, identifier string, ex ast.Expr) *SEXP {
 	TRACE := ev.trace
 
 	if TRACE {
@@ -197,7 +197,7 @@ func doAssignment(ev *Evaluator, identifier string, ex ast.Expr) *SEXPREC {
 	return result
 }
 
-func EvalAssignment(ev *Evaluator, e *ast.AssignStmt) *SEXPREC {
+func EvalAssignment(ev *Evaluator, e *ast.AssignStmt) *SEXP {
 	TRACE := ev.trace
 
 	if TRACE {
@@ -222,7 +222,7 @@ func EvalAssignment(ev *Evaluator, e *ast.AssignStmt) *SEXPREC {
 
 
 // visibility is stored in the evaluator and unset after every print
-func PrintResult(ev *Evaluator, r *SEXPREC) {
+func PrintResult(ev *Evaluator, r *SEXP) {
 	TRACE := ev.trace
 	DEBUG := ev.debug
 
@@ -262,12 +262,12 @@ func PrintResult(ev *Evaluator, r *SEXPREC) {
 				println(")")
 			}
 		default:
-			println("?SEXPREC:", r.Kind.String())
+			println("?SEXP:", r.Kind.String())
 		}
 	}
 }
 
-func EvalExprOrShortAssign(ev *Evaluator, ex ast.Expr) *SEXPREC {
+func EvalExprOrShortAssign(ev *Evaluator, ex ast.Expr) *SEXP {
 	TRACE := ev.trace
 	if TRACE {
 		println("Expr or short assignment:")
@@ -282,7 +282,7 @@ func EvalExprOrShortAssign(ev *Evaluator, ex ast.Expr) *SEXPREC {
 	return EvalExpr(ev, ex)
 }
 
-func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXPREC {
+func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXP {
 	TRACE := ev.trace
 	if TRACE {
 		print("EvalExpr ")
@@ -293,7 +293,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXPREC {
 		if TRACE {
 			print("FuncLit")
 		}
-		return &SEXPREC{Kind: token.FUNCTION, Fieldlist: node.Type.Params.List, Body: node.Body}
+		return &SEXP{Kind: token.FUNCTION, Fieldlist: node.Type.Params.List, Body: node.Body}
 	case *ast.BasicLit:
 		ev.invisible=false
 		node := ex.(*ast.BasicLit)
@@ -310,7 +310,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXPREC {
 			if TRACE {
 				println(v)
 			}
-			return &SEXPREC{ValuePos: node.ValuePos, Kind: token.FLOAT, Value: v}
+			return &SEXP{ValuePos: node.ValuePos, Kind: token.FLOAT, Value: v}
 		case token.FLOAT:
 			v, err := strconv.ParseFloat(node.Value, 64) // TODO: support for all R formatted values
 			if err != nil {
@@ -320,12 +320,12 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXPREC {
 			if TRACE {
 				println(v)
 			}
-			return &SEXPREC{ValuePos: node.ValuePos, Kind: token.FLOAT, Value: v}
+			return &SEXP{ValuePos: node.ValuePos, Kind: token.FLOAT, Value: v}
 		case token.IDENT:
 			sexprec := ev.topFrame.Recursive(node.Value)
 			if sexprec == nil {
 				print("error: object '", node.Value, "' not found\n")
-				return &SEXPREC{ValuePos: node.ValuePos, Kind: token.ILLEGAL, Value: math.NaN()}
+				return &SEXP{ValuePos: node.ValuePos, Kind: token.ILLEGAL, Value: math.NaN()}
 			} else {
 				if TRACE {
 					fmt.Printf("%g\n", sexprec.Value)
@@ -357,12 +357,12 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXPREC {
 		givenType := reflect.TypeOf(ex)
 		println("?Expr:", givenType.String())
 	}
-	return &SEXPREC{Kind: token.ILLEGAL}
+	return &SEXP{Kind: token.ILLEGAL}
 }
 
-func EvalOp(op token.Token, x *SEXPREC, y *SEXPREC) *SEXPREC {
+func EvalOp(op token.Token, x *SEXP, y *SEXP) *SEXP {
 	if x.Kind == token.ILLEGAL || y.Kind == token.ILLEGAL {
-		return &SEXPREC{Kind: token.ILLEGAL}
+		return &SEXP{Kind: token.ILLEGAL}
 	}
 	var val float64
 	switch op {
@@ -380,7 +380,7 @@ func EvalOp(op token.Token, x *SEXPREC, y *SEXPREC) *SEXPREC {
 		val = math.Mod(x.Value, y.Value)
 	default:
 		println("? Op: " + op.String())
-		return &SEXPREC{Kind: token.ILLEGAL}
+		return &SEXP{Kind: token.ILLEGAL}
 	}
-	return &SEXPREC{Kind: token.FLOAT, Value: val}
+	return &SEXP{Kind: token.FLOAT, Value: val}
 }

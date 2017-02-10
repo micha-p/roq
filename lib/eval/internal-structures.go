@@ -49,16 +49,16 @@ type sxpinfo_struct struct {
 } /*              Tot: 32 */
 
 /*
-type SEXPREC struct {
+type SEXP struct {
 	header sxpinfo_struct
 	attributes interface{}
-	previous *SEXPREC
-	next *SEXPREC
+	previous *SEXP
+	next *SEXP
 	data interface{}
 }
 */
 
-type SEXPREC struct {
+type SEXP struct {
 	ValuePos  token.Pos    // literal position
 	Kind      token.Token  // token.INT, token.FLOAT, token.IMAG, token.CHAR, or token.STRING
 	Fieldlist []*ast.Field // only if function
