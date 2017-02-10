@@ -320,7 +320,9 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXP {
 			if TRACE {
 				println(v)
 			}
-			return &SEXP{ValuePos: node.ValuePos, Kind: token.FLOAT, Value: v}
+			return &SEXP{ValuePos: node.ValuePos, Kind: node.Kind , Value: v}
+		case token.STRING:
+			return &SEXP{ValuePos: node.ValuePos, Kind: node.Kind, String: node.Value}
 		case token.IDENT:
 			sexprec := ev.topFrame.Recursive(node.Value)
 			if sexprec == nil {

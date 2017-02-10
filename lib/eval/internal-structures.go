@@ -63,5 +63,6 @@ type SEXP struct {
 	Kind      token.Token  // token.INT, token.FLOAT, token.IMAG, token.CHAR, or token.STRING
 	Fieldlist []*ast.Field // only if function
 	Body      *ast.BlockStmt     // only if function: BlockStmt or single Stmt
+	String    string
 	Value     float64
 }

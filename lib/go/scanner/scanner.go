@@ -445,7 +445,7 @@ func (s *Scanner) scanString(terminator rune) string {
 			s.scanEscape(terminator)
 		}
 	}
-	return string(s.src[offs:s.offset])
+	return string(s.src[offs:s.offset-1])
 }
 
 func stripCR(b []byte) []byte {

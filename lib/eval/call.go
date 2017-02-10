@@ -9,6 +9,7 @@ import (
 	"lib/go/ast"
 	"lib/go/token"
 	"strings"
+	"fmt"
 )
 
 // argindex is running along the expected arguments taken from function definition
@@ -35,6 +36,29 @@ func tryPartialMatch(partial string, argNames map[argindex]string, bound map[arg
 	return matches
 }
 
+func EvalCat(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
+	TRACE := ev.trace
+	if TRACE {
+		println("PrintExpr")
+	}
+	for n := 0; n < len(node.Args); n++ {
+		r = EvalExpr(ev, node.Args[n])
+		if n>0 {print(" ")}
+		switch r.Kind {
+			case token.STRING:
+				print(strings.Replace(r.String,"\\n","\n",-1))  // needs strings.Map
+			case token.INT:
+				fmt.Printf("%g", r.Value)
+			case token.FLOAT:
+				fmt.Printf("%g", r.Value)
+			default:
+				println("?CAT",r.Kind.String())
+		}
+	}
+	ev.invisible=true
+	return
+}	
+
 
 // TODO use results field of funcType
 func EvalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
@@ -46,8 +70,13 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
 	}
 	f := ev.topFrame.Lookup(funcname)
 	if f == nil {
-		println("\nError: could not find function \"" + funcname + "\"")
-		return &SEXP{Kind: token.ILLEGAL}
+		switch funcname {
+			case "cat":
+				return EvalCat(ev,node)
+			default:
+				println("\nError: could not find function \"" + funcname + "\"")
+				return &SEXP{Kind: token.ILLEGAL}
+		}
 	} else {
 		argNames := make(map[argindex]string)
 
