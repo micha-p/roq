@@ -492,9 +492,8 @@ type (
 	}
 	ForStmt struct {
 		Keyword token.Pos   // position of keyword
-		Init Stmt           // initialization statement; or nil
-		Cond Expr           // condition; or nil
-		Post Stmt           // post iteration statement; or nil
+		Parameter *Ident
+		Iterable Expr
 		Body *BlockStmt
 	}
 )

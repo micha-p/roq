@@ -1378,47 +1378,25 @@ func (p *parser) parseForStmt() ast.Stmt {
 	p.openScope()
 	defer p.closeScope()
 
-	var s1, s2, s3 ast.Stmt
-	var isRange bool
-	if p.tok != token.LBRACE {
-		prevLev := p.exprLev
-		p.exprLev = -1
-		if p.tok != token.SEMICOLON {
-			if p.tok == token.RANGE {
-				// "for range x" (nil lhs in assignment)
-				pos := p.pos
-				p.next()
-				y := &ast.UnaryExpr{OpPos: pos, Op: token.RANGE, X: p.parseRhs()}
-				s2 = &ast.AssignStmt{Rhs: y}
-				isRange = true
-			} else {
-				s2 = p.parseAssignment()
-			}
-		}
-		if !isRange && p.tok == token.SEMICOLON {
-			p.next()
-			s1 = s2
-			s2 = nil
-			if p.tok != token.SEMICOLON {
-				s2 = p.parseAssignment()
-			}
-			p.expectSemi()
-			if p.tok != token.LBRACE {
-				s3 = p.parseAssignment()
-			}
-		}
-		p.exprLev = prevLev
+	// TODO this is quick and dirty
+	p.expect(token.LPAREN)
+	id := p.parseIdent()
+	p.expect(token.IN)
+	vec := p.parseRhs()
+	p.expect(token.RPAREN)
+
+	var body *ast.BlockStmt
+	if p.tok == token.LBRACE {
+		body = p.parseBlockStmt()
+	} else {
+		body = p.parseBlockStmt1()
 	}
-
-	body := p.parseBlockStmt()
 	p.expectSemi()
-
 
 	return &ast.ForStmt{
 		Keyword:  pos,
-		Init: s1,
-		Cond: p.makeExpr(s2, "boolean or range expression"),
-		Post: s3,
+		Parameter: id,
+		Iterable: vec,
 		Body: body,
 	}
 }

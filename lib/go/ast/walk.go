@@ -183,14 +183,9 @@ func Walk(v Visitor, node Node) {
 		}
 
 	case *ForStmt:
-		if n.Init != nil {
-			Walk(v, n.Init)
-		}
-		if n.Cond != nil {
-			Walk(v, n.Cond)
-		}
-		if n.Post != nil {
-			Walk(v, n.Post)
+		// TODO? Walk(v, n.Parameter)
+		if n.Iterable != nil {
+			Walk(v, n.Iterable)
 		}
 		Walk(v, n.Body)
 
