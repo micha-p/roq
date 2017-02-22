@@ -834,7 +834,7 @@ func (p *parser) parseOperand(lhs bool) ast.Expr {
 		defer un(trace(p, "Operand"))
 	}
 
-	if p.tok.IsLiteral() {
+	if p.tok.IsLiteral() ||  p.tok.IsConstant() {
 		x := &ast.BasicLit{ValuePos: p.pos, Kind: p.tok, Value: p.lit}
 		p.next()
 		return x
@@ -1409,7 +1409,8 @@ func (p *parser) parseStmt() (s ast.Stmt) {
 	switch p.tok {
 	case
 		// tokens that may start an expression
-		token.IDENT, token.INT, token.FLOAT, token.NA, token.IMAG, token.STRING, token.FUNCTION, token.LPAREN, // operands
+		token.IDENT, token.INT, token.FLOAT, token.IMAG, token.STRING, token.FUNCTION, token.LPAREN, // operands
+		token.NULL, token.NA, token.INF, token.NAN, token.TRUE, token.FALSE, // constants
 		token.LBRACK, token.STRUCT, token.MAP, token.CHAN, token.INTERFACE, // composite types
 		token.PLUS, token.MINUS, token.MULTIPLICATION, token.AND, token.NOT: // unary operators
 		s = p.parseAssignment() // this parses an assignment!

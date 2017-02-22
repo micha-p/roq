@@ -223,7 +223,7 @@ func EvalAssignment(ev *Evaluator, e *ast.AssignStmt) *SEXP {
 
 // visibility is stored in the evaluator and unset after every print
 func PrintResult(ev *Evaluator, r *SEXP) {
-	TRACE := ev.trace
+//	TRACE := ev.trace
 	DEBUG := ev.debug
 
 	if DEBUG {
@@ -241,7 +241,7 @@ func PrintResult(ev *Evaluator, r *SEXP) {
 				println("Semicolon")
 			}
 		case token.ILLEGAL:
-			if TRACE {
+			if DEBUG {
 				println("ILLEGAL RESULT")
 			}
 		case token.FLOAT:
@@ -262,7 +262,10 @@ func PrintResult(ev *Evaluator, r *SEXP) {
 				println(")")
 			}
 		default:
-			println("?SEXP:", r.Kind.String())
+			if DEBUG {
+				println("default print")
+			}
+			println(r.Kind.String())
 		}
 	}
 }
@@ -323,6 +326,8 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXP {
 			return &SEXP{ValuePos: node.ValuePos, Kind: node.Kind , Value: v}
 		case token.STRING:
 			return &SEXP{ValuePos: node.ValuePos, Kind: node.Kind, String: node.Value}
+		case token.NULL, token.NA, token.INF, token.NAN, token.TRUE, token.FALSE:
+			return &SEXP{ValuePos: node.ValuePos, Kind: node.Kind}
 		case token.IDENT:
 			sexprec := ev.topFrame.Recursive(node.Value)
 			if sexprec == nil {

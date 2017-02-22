@@ -42,17 +42,21 @@ const (
 	COMPLEX // wont be implemented in version 1
 	STRING
 
+	literal_end
+
 // https://cran.r-project.org/doc/manuals/R-lang.html#Literal-constants
 // 10.3.1 Literal constants
 
+	constant_beg
+
 	NULL
-	NA   // TODO: documentation: Single dot is treated as missing value
+	NA   // TODO: extension documentation: Single dot is treated as missing value
 	INF
 	NAN
 	TRUE
 	FALSE
 
-	literal_end
+	constant_end
 
 	/* 3.1.4 Operators
 	   	   R contains a number of operators. They are listed in the table below.
@@ -239,8 +243,8 @@ var tokens = [...]string{
 
 	NULL:  "NULL",
 	NA:    "NA",
-	INF:   "INF",
-	NAN:   "NAN",
+	INF:   "Inf",
+	NAN:   "NaN",
 	TRUE:  "TRUE",
 	FALSE: "FALSE",
 
@@ -458,6 +462,9 @@ func init() {
 	for i := keyword_beg + 1; i < keyword_end; i++ {
 		keywords[tokens[i]] = i
 	}
+	for i := constant_beg + 1; i < constant_end; i++ {
+		keywords[tokens[i]] = i
+	}
 }
 
 // Lookup maps an identifier to its keyword token or IDENT (if not a keyword).
@@ -485,6 +492,8 @@ func (tok Token) IsOperator() bool { return operator_beg < tok && tok < operator
 // it returns false otherwise.
 //
 func (tok Token) IsKeyword() bool { return keyword_beg < tok && tok < keyword_end }
+
+func (tok Token) IsConstant() bool { return constant_beg < tok && tok < constant_end }
 
 // R predicates
 func IsAssignment(t Token) bool {
