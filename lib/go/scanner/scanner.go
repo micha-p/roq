@@ -669,15 +669,23 @@ scanAgain:
 			if s.ch == '-' {
 				s.next()
 				tok = token.LEFTASSIGNMENT
+			} else if s.ch == '=' {
+				s.next()
+				tok = token.LESSEQUAL
 			} else {
-				tok = s.switch4(token.LSS, token.LEQ, '<', token.SHL, token.ILLEGAL)
+				tok = token.LESS
 			}
 		case '>':
-			tok = s.switch4(token.GTR, token.GEQ, '>', token.SHR, token.ILLEGAL)
+			if s.ch == '=' {
+				s.next()
+				tok = token.GREATEREQUAL
+			} else {
+				tok = token.GREATER
+			}
 		case '=':
-			tok = s.switch2(token.SHORTASSIGNMENT, token.EQL)
+			tok = s.switch2(token.SHORTASSIGNMENT, token.EQUAL)
 		case '!':
-			tok = s.switch2(token.NOT, token.NEQ)
+			tok = s.switch2(token.NOT, token.UNEQUAL)
 		case '&':
 			if s.ch == '&' {
 				s.next()

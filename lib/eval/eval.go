@@ -387,7 +387,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXP {
 				}
 			}
 		default:
-			return EvalArithmeticOp(node.Op, EvalExpr(ev, node.X), EvalExpr(ev, node.Y))
+			return EvalOp(node.Op, EvalExpr(ev, node.X), EvalExpr(ev, node.Y))
 		}
 	case *ast.CallExpr:
 		ev.invisible=false
@@ -407,7 +407,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXP {
 	return &SEXP{Kind: token.ILLEGAL}
 }
 
-func EvalArithmeticOp(op token.Token, x *SEXP, y *SEXP) *SEXP {
+func EvalOp(op token.Token, x *SEXP, y *SEXP) *SEXP {
 	if x.Kind == token.ILLEGAL || y.Kind == token.ILLEGAL {
 		return &SEXP{Kind: token.ILLEGAL}
 	}
@@ -425,6 +425,21 @@ func EvalArithmeticOp(op token.Token, x *SEXP, y *SEXP) *SEXP {
 		val = math.Pow(x.Value, y.Value)
 	case token.MODULUS:
 		val = math.Mod(x.Value, y.Value)
+		
+	// returning values allows for concatenated comparisons
+	// TODO documentation of extension
+	case token.LESS:
+		if x.Value < y.Value {return x} else {return nil}
+	case token.LESSEQUAL:
+		if x.Value <= y.Value {return x} else {return nil}
+	case token.GREATER:
+		if x.Value > y.Value {return x} else {return nil}
+	case token.GREATEREQUAL:
+		if x.Value >= y.Value {return x} else {return nil}
+	case token.EQUAL:
+		if x.Value == y.Value {return x} else {return nil}
+	case token.UNEQUAL:
+		if x.Value != y.Value {return x} else {return nil}
 	default:
 		println("? Op: " + op.String())
 		return &SEXP{Kind: token.ILLEGAL}

@@ -113,34 +113,7 @@ const (
 
 	operator_beg
 	// Operators and delimiters
-	/*	ADD // +
-			SUB // -
-			MUL // *
-			QUO // /
-			REM // %
 
-		//	AND     // &
-		//	OR      // |
-			XOR     // ^*/
-	SHL     // <<
-	SHR     // >>
-	AND_NOT // &^
-
-	LAND // &&
-	LOR  // ||
-	//	ARROW // <-
-	INC // ++
-	DEC // --
-
-	EQL // ==
-	LSS // <
-	GTR // >
-	//	ASSIGN // =
-	//	NOT    // !
-
-	NEQ      // !=
-	LEQ      // <=
-	GEQ      // >=
 	ELLIPSIS // ...
 
 	// R Operators
@@ -278,34 +251,6 @@ var tokens = [...]string{
 	SLOT:                 "@",  // $	List subset, binary
 	DOUBLECOLON:          "::", // Namespace
 
-	/*	ADD: "+",
-			SUB: "-",
-			MUL: "*",
-			QUO: "/",
-			REM: "%",
-
-		//	AND:     "&",
-		//	OR:      "|",
-			XOR:     "^",*/
-	SHL:     "<<",
-	SHR:     ">>",
-	AND_NOT: "&^",
-
-	LAND: "&&",
-	LOR:  "||",
-	//	ARROW: "<-",
-	INC: "++",
-	DEC: "--",
-
-	EQL: "==",
-	LSS: "<",
-	GTR: ">",
-	//	ASSIGN: "=",
-	//	NOT:    "!",
-
-	NEQ:      "!=",
-	LEQ:      "<=",
-	GEQ:      ">=",
 	ELLIPSIS: "...",
 
 	LPAREN: "(",
@@ -408,17 +353,6 @@ const (
 //
 func (op Token) Precedence() int {
 	switch op {
-	case LOR:
-		return 5
-	case LAND:
-		return 7
-	case EQL, NEQ, LSS, LEQ, GTR, GEQ:
-		return 8
-		//	case ADD, SUB, /*OR,*/ XOR:
-		//		return 9
-	case /*MUL, QUO, REM,*/ SHL, SHR /* AND,*/, AND_NOT:
-		return 10
-		// R operators
 	case DOUBLECOLON:
 		return 16
 	case SUBSET, SLOT:
