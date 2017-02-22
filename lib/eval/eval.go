@@ -152,7 +152,7 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) *SEXP {
 		if TRACE {
 			println("repeatStmt")
 		}
-//		return EvalLoop(ev, s.(*ast.whileStmt),TRUE)
+//		return EvalLoop(ev,TRUE)
 	case *ast.ForStmt:
 		if TRACE {
 			println("forStmt")
