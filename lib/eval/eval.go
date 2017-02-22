@@ -104,9 +104,20 @@ func EvalInit(fset *token.FileSet, filename string, src interface{}, mode parser
 	return &e, err
 }
 
+
+// https://cran.r-project.org/doc/manuals/R-lang.html#if
+
+// If value1 is a logical vector with first element TRUE then statement2 is evaluated. 
+// If the first element of value1 is FALSE then statement3 is evaluated. 
+// If value1 is a numeric vector then statement3 is evaluated when the first element of value1 is zero and otherwise statement2 is evaluated. 
+// Only the first element of value1 is used. All other elements are ignored. 
+// If value1 has any type other than a logical or a numeric vector an error is signalled. 
+
+
 func isTrue(e *SEXP) bool {
-	if e.Kind == token.NULL {
-		return false
+	if e == nil {return false}
+	if e.Kind == token.TRUE {
+		return true
 	}
 	if e.Kind == token.FLOAT && e.Value != 0 {
 		return true
@@ -234,6 +245,8 @@ func PrintResult(ev *Evaluator, r *SEXP) {
 	if ev.invisible {
 		ev.invisible=false
 		return
+	} else if r==nil {
+		println("FALSE")
 	} else {
 		switch r.Kind {
 		case token.SEMICOLON:
@@ -348,7 +361,34 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXP {
 		if TRACE {
 			println("BinaryExpr " + " " + node.Op.String())
 		}
-		return EvalOp(node.Op, EvalExpr(ev, node.X), EvalExpr(ev, node.Y))
+		switch node.Op {
+		case token.AND,token.ANDVECTOR:
+			x := EvalExpr(ev, node.X)
+			if isTrue(x) {
+				y := EvalExpr(ev, node.Y)
+				if isTrue(y) {
+					return y 
+				} else {
+					return nil
+				}
+			} else {
+				return nil
+			}
+		case token.OR,token.ORVECTOR:
+			x := EvalExpr(ev, node.X)
+			if isTrue(x) {
+				return x 
+			} else {
+				y := EvalExpr(ev, node.Y)
+				if isTrue(y) {
+					return y
+				} else {
+					return nil
+				}
+			}
+		default:
+			return EvalArithmeticOp(node.Op, EvalExpr(ev, node.X), EvalExpr(ev, node.Y))
+		}
 	case *ast.CallExpr:
 		ev.invisible=false
 		return EvalCall(ev, ex.(*ast.CallExpr))
@@ -367,7 +407,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXP {
 	return &SEXP{Kind: token.ILLEGAL}
 }
 
-func EvalOp(op token.Token, x *SEXP, y *SEXP) *SEXP {
+func EvalArithmeticOp(op token.Token, x *SEXP, y *SEXP) *SEXP {
 	if x.Kind == token.ILLEGAL || y.Kind == token.ILLEGAL {
 		return &SEXP{Kind: token.ILLEGAL}
 	}

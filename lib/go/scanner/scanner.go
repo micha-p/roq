@@ -555,8 +555,9 @@ scanAgain:
 			// keywords are longer than one letter - avoid lookup otherwise
 			tok = token.Lookup(lit)
 			switch tok {
-			case token.IDENT, token.BREAK, token.CONTINUE, token.RETURN, token.NULL, token.NA, token.INF, token.NAN, token.TRUE, token.FALSE:
+			case token.BREAK, token.CONTINUE, token.RETURN, token.NULL, token.NA, token.INF, token.NAN, token.TRUE, token.FALSE:
 				insertSemi = true
+				return pos, tok, ""
 			}
 		} else {
 			insertSemi = true
@@ -678,9 +679,19 @@ scanAgain:
 		case '!':
 			tok = s.switch2(token.NOT, token.NEQ)
 		case '&':
-			tok = token.AND
+			if s.ch == '&' {
+				s.next()
+				tok = token.AND
+			} else {
+				tok = token.ANDVECTOR
+			}
 		case '|':
-			tok = token.OR
+			if s.ch == '|' {
+				s.next()
+				tok = token.OR
+			} else {
+				tok = token.ORVECTOR
+			}
 		default:
 			// next reports unexpected BOMs - don't repeat
 			if ch != bom {
