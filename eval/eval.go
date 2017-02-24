@@ -66,6 +66,7 @@ type LoopState int
 
 const (
 	normalState LoopState = iota
+	loopState
 	breakState
 	nextState
 )
@@ -157,7 +158,15 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) *SEXP {
 		if TRACE {
 			println("whileStmt")
 		}
+		e := s.(*ast.WhileStmt)
+		ev.state = loopState
 		//		return EvalLoop(ev, s.(*ast.whileStmt))
+		var r *SEXP
+		for (isTrue(EvalExpr(ev, e.Cond))){
+			r=EvalStmt(ev,e.Body)
+		}
+		ev.state = normalState
+		return r
 	case *ast.RepeatStmt:
 		if TRACE {
 			println("repeatStmt")
