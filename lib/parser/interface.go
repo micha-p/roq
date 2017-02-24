@@ -59,7 +59,6 @@ const (
 	AllErrors         = SpuriousErrors             // report all errors (not just the first 10 on different lines)
 )
 
-
 /*
 // ParseFile parses the source code of a single Go source file and returns
 // the corresponding ast.File node. The source code may be provided via
@@ -154,27 +153,25 @@ func ParseIter(p *parser) (s ast.Stmt, tok token.Token) {
 
 	// TODO resolve global identifiers within the same scope
 	/*
-	i := 0
+		i := 0
 
-	for _, ident := range p.unresolved {
+		for _, ident := range p.unresolved {
 
-		print("RESOLVE: ")
-		ast.Print(nil, ident)
+			print("RESOLVE: ")
+			ast.Print(nil, ident)
 
-		// i <= index for current ident
-		assert(ident.Obj == unresolved, "object already resolved")
-		ident.Obj = p.pkgScope.Lookup(ident.Name) // also removes unresolved sentinel
-		if ident.Obj == nil {
-			p.unresolved[i] = ident
-			i++
+			// i <= index for current ident
+			assert(ident.Obj == unresolved, "object already resolved")
+			ident.Obj = p.pkgScope.Lookup(ident.Name) // also removes unresolved sentinel
+			if ident.Obj == nil {
+				p.unresolved[i] = ident
+				i++
+			}
 		}
-	}
 	*/
 
 	return s, p.tok
 }
-
-
 
 // ParseExprFrom is a convenience function for parsing an expression.
 // The arguments have the same meaning as for Parse, but the source must

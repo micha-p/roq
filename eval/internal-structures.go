@@ -59,10 +59,10 @@ type SEXP struct {
 */
 
 type SEXP struct {
-	ValuePos  token.Pos    // literal position
-	Kind      token.Token  // token.INT, token.FLOAT, token.IMAG, token.CHAR, or token.STRING
-	Fieldlist []*ast.Field // only if function
-	Body      *ast.BlockStmt     // only if function: BlockStmt or single Stmt
+	ValuePos  token.Pos      // literal position
+	Kind      token.Token    // token.INT, token.FLOAT, token.IMAG, token.CHAR, or token.STRING
+	Fieldlist []*ast.Field   // only if function
+	Body      *ast.BlockStmt // only if function: BlockStmt or single Stmt
 	String    string
 	Value     float64
 }

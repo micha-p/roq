@@ -18,15 +18,14 @@ package parser
 
 import (
 	"fmt"
-	"strconv"
 	"lib/ast"
 	"lib/scanner"
 	"lib/token"
+	"strconv"
 )
 
-// Assignments might be Expressions or Stmts, the first return a SEXP during evaluation, 
+// Assignments might be Expressions or Stmts, the first return a SEXP during evaluation,
 // the latter an invisible object
-
 
 // The parser structure holds the parser's internal state.
 type parser struct {
@@ -569,7 +568,6 @@ func (p *parser) parseStructType() *ast.StructType {
 	}
 }
 
-
 // If the result is an identifier, it is not resolved.
 func (p *parser) tryVarType(isParam bool) ast.Expr {
 	if isParam && p.tok == token.ELLIPSIS {
@@ -763,7 +761,7 @@ func (p *parser) parseBody(scope *ast.Scope) *ast.BlockStmt {
 	if p.trace {
 		defer un(trace(p, "Body"))
 	}
-	
+
 	var r *ast.BlockStmt
 	p.topScope = scope
 	if p.tok == token.LBRACE {
@@ -834,7 +832,7 @@ func (p *parser) parseOperand(lhs bool) ast.Expr {
 		defer un(trace(p, "Operand"))
 	}
 
-	if p.tok.IsLiteral() ||  p.tok.IsConstant() {
+	if p.tok.IsLiteral() || p.tok.IsConstant() {
 		x := &ast.BasicLit{ValuePos: p.pos, Kind: p.tok, Value: p.lit}
 		p.next()
 		return x
@@ -1147,12 +1145,12 @@ func (p *parser) tokPrec() (token.Token, int) {
 // If lhs is set and the result is an identifier, it is not resolved.
 func (p *parser) parseBinaryExpr(lhs bool, prec1 int) ast.Expr {
 	if p.trace {
-		defer un(trace(p, "BinaryExpr "+  strconv.Itoa(prec1)))
+		defer un(trace(p, "BinaryExpr "+strconv.Itoa(prec1)))
 
 	}
 	x := p.parseUnaryExpr(lhs)
-//	for p.tok != token.RPAREN && p.tok != token.COMMA && p.tok != token.SEMICOLON && p.tok != token.ELSE{
-	for p.tok.IsOperator(){
+	//	for p.tok != token.RPAREN && p.tok != token.COMMA && p.tok != token.SEMICOLON && p.tok != token.ELSE{
+	for p.tok.IsOperator() {
 		operator, oprec := p.tokPrec()
 		if oprec < prec1 {
 			return x
@@ -1188,7 +1186,7 @@ func (p *parser) parseParameter() ast.Expr {
 }
 
 // If lhs is set and the result is an identifier, it is not resolved.
-// The result may be a type or even a raw type ([...]int). 
+// The result may be a type or even a raw type ([...]int).
 func (p *parser) parseExpr(lhs bool) ast.Expr {
 	if p.trace {
 		defer un(trace(p, "Expression or shortassignment"))
@@ -1288,7 +1286,7 @@ func (p *parser) parseIfStmt() *ast.IfStmt {
 	p.openScope()
 	defer p.closeScope()
 
-	var x ast.Expr  // TODO strict flag to insist on parentheses
+	var x ast.Expr // TODO strict flag to insist on parentheses
 	x = p.parseRhs()
 
 	var body *ast.BlockStmt
@@ -1333,7 +1331,7 @@ func (p *parser) parseWhileStmt() *ast.WhileStmt {
 	p.openScope()
 	defer p.closeScope()
 
-	var x ast.Expr  // TODO strict flag to insist on parentheses
+	var x ast.Expr // TODO strict flag to insist on parentheses
 	x = p.parseRhs()
 
 	var body *ast.BlockStmt
@@ -1394,10 +1392,10 @@ func (p *parser) parseForStmt() ast.Stmt {
 	p.expectSemi()
 
 	return &ast.ForStmt{
-		Keyword:  pos,
+		Keyword:   pos,
 		Parameter: id,
-		Iterable: vec,
-		Body: body,
+		Iterable:  vec,
+		Body:      body,
 	}
 }
 

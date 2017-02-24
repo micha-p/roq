@@ -145,10 +145,6 @@ func filterType(typ Expr, f Filter, export bool) bool {
 	return false
 }
 
-
-
-
-
 // FilterFile trims the AST for a Go file in place by removing all
 // names from top-level declarations (including struct field and
 // interface method names, but not from parameter lists) that don't
@@ -209,7 +205,6 @@ const (
 	FilterImportDuplicates
 )
 
-
 // MergePackageFiles creates a file AST by merging the ASTs of the
 // files belonging to a package. The mode flags control merging behavior.
 //
@@ -259,5 +254,5 @@ func MergePackageFiles(pkg *Package, mode MergeMode) *File {
 	}
 
 	// TODO(gri) need to compute unresolved identifiers!
-	return &File{pos, NewIdent(pkg.Name), decls, pkg.Scope, imports, nil, }
+	return &File{pos, NewIdent(pkg.Name), decls, pkg.Scope, imports, nil}
 }

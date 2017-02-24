@@ -7,9 +7,9 @@ package printer
 
 import (
 	"fmt"
+	"io"
 	"lib/ast"
 	"lib/token"
-	"io"
 	"os"
 	"strconv"
 	"strings"

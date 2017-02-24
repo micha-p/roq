@@ -9,10 +9,10 @@ package printer
 
 import (
 	"bytes"
-	"lib/ast"
-	"lib/parser"
 	"io"
 	"io/ioutil"
+	"lib/ast"
+	"lib/parser"
 	"log"
 	"testing"
 )

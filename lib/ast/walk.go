@@ -64,7 +64,7 @@ func Walk(v Visitor, node Node) {
 		if n.Tag != nil {
 			Walk(v, n.Tag)
 		}
-		
+
 	case *FieldList:
 		for _, f := range n.List {
 			Walk(v, f)
@@ -148,8 +148,8 @@ func Walk(v Visitor, node Node) {
 			Walk(v, n.Params)
 		}
 	/*	if n.Results != nil {
-			Walk(v, n.Results)
-		}*/
+		Walk(v, n.Results)
+	}*/
 
 	case *MapType:
 		Walk(v, n.Key)

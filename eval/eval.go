@@ -65,21 +65,20 @@ func (s *Frame) Insert(identifier string, obj *SEXP) (alt *SEXP) {
 type LoopState int
 
 const (
-	normalState LoopState=iota
+	normalState LoopState = iota
 	breakState
 	nextState
 )
-	
 
 // derived of type parser
 type Evaluator struct {
 
 	// Tracing/debugging
-	trace  bool
-	debug  bool
+	trace     bool
+	debug     bool
 	invisible bool
-	state LoopState
-	indent int // indentation used for tracing output
+	state     LoopState
+	indent    int // indentation used for tracing output
 
 	// frame
 	topFrame *Frame // top-most frame; may be pkgFrame
@@ -104,18 +103,18 @@ func EvalInit(fset *token.FileSet, filename string, src interface{}, mode parser
 	return &e, err
 }
 
-
 // https://cran.r-project.org/doc/manuals/R-lang.html#if
 
-// If value1 is a logical vector with first element TRUE then statement2 is evaluated. 
-// If the first element of value1 is FALSE then statement3 is evaluated. 
-// If value1 is a numeric vector then statement3 is evaluated when the first element of value1 is zero and otherwise statement2 is evaluated. 
-// Only the first element of value1 is used. All other elements are ignored. 
-// If value1 has any type other than a logical or a numeric vector an error is signalled. 
-
+// If value1 is a logical vector with first element TRUE then statement2 is evaluated.
+// If the first element of value1 is FALSE then statement3 is evaluated.
+// If value1 is a numeric vector then statement3 is evaluated when the first element of value1 is zero and otherwise statement2 is evaluated.
+// Only the first element of value1 is used. All other elements are ignored.
+// If value1 has any type other than a logical or a numeric vector an error is signalled.
 
 func isTrue(e *SEXP) bool {
-	if e == nil {return false}
+	if e == nil {
+		return false
+	}
 	if e.Kind == token.TRUE {
 		return true
 	}
@@ -158,17 +157,17 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) *SEXP {
 		if TRACE {
 			println("whileStmt")
 		}
-//		return EvalLoop(ev, s.(*ast.whileStmt))
+		//		return EvalLoop(ev, s.(*ast.whileStmt))
 	case *ast.RepeatStmt:
 		if TRACE {
 			println("repeatStmt")
 		}
-//		return EvalLoop(ev,TRUE)
+		//		return EvalLoop(ev,TRUE)
 	case *ast.ForStmt:
 		if TRACE {
 			println("forStmt")
 		}
-//		return EvalLoop(ev, s.(*ast.ForStmt))
+		//		return EvalLoop(ev, s.(*ast.ForStmt))
 	case *ast.BlockStmt:
 		if TRACE {
 			println("blockStmt")
@@ -204,7 +203,7 @@ func doAssignment(ev *Evaluator, identifier string, ex ast.Expr) *SEXP {
 		println(result.Kind.String())
 	}
 	ev.topFrame.Insert(identifier, result)
-	ev.invisible=true  // just for the following print
+	ev.invisible = true // just for the following print
 	return result
 }
 
@@ -231,10 +230,9 @@ func EvalAssignment(ev *Evaluator, e *ast.AssignStmt) *SEXP {
 	return doAssignment(ev, identifier, nodepointer)
 }
 
-
 // visibility is stored in the evaluator and unset after every print
 func PrintResult(ev *Evaluator, r *SEXP) {
-//	TRACE := ev.trace
+	//	TRACE := ev.trace
 	DEBUG := ev.debug
 
 	if DEBUG {
@@ -243,9 +241,9 @@ func PrintResult(ev *Evaluator, r *SEXP) {
 	}
 
 	if ev.invisible {
-		ev.invisible=false
+		ev.invisible = false
 		return
-	} else if r==nil {
+	} else if r == nil {
 		println("FALSE")
 	} else {
 		switch r.Kind {
@@ -311,7 +309,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXP {
 		}
 		return &SEXP{Kind: token.FUNCTION, Fieldlist: node.Type.Params.List, Body: node.Body}
 	case *ast.BasicLit:
-		ev.invisible=false
+		ev.invisible = false
 		node := ex.(*ast.BasicLit)
 		if TRACE {
 			print("BasicLit " + " " + node.Value + " (" + node.Kind.String() + "): ")
@@ -336,7 +334,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXP {
 			if TRACE {
 				println(v)
 			}
-			return &SEXP{ValuePos: node.ValuePos, Kind: node.Kind , Value: v}
+			return &SEXP{ValuePos: node.ValuePos, Kind: node.Kind, Value: v}
 		case token.STRING:
 			return &SEXP{ValuePos: node.ValuePos, Kind: node.Kind, String: node.Value}
 		case token.NULL, token.NA, token.INF, token.NAN, token.TRUE, token.FALSE:
@@ -356,28 +354,28 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXP {
 			println("Unknown node.kind")
 		}
 	case *ast.BinaryExpr:
-		ev.invisible=false
+		ev.invisible = false
 		node := ex.(*ast.BinaryExpr)
 		if TRACE {
 			println("BinaryExpr " + " " + node.Op.String())
 		}
 		switch node.Op {
-		case token.AND,token.ANDVECTOR:
+		case token.AND, token.ANDVECTOR:
 			x := EvalExpr(ev, node.X)
 			if isTrue(x) {
 				y := EvalExpr(ev, node.Y)
 				if isTrue(y) {
-					return y 
+					return y
 				} else {
 					return nil
 				}
 			} else {
 				return nil
 			}
-		case token.OR,token.ORVECTOR:
+		case token.OR, token.ORVECTOR:
 			x := EvalExpr(ev, node.X)
 			if isTrue(x) {
-				return x 
+				return x
 			} else {
 				y := EvalExpr(ev, node.Y)
 				if isTrue(y) {
@@ -390,17 +388,17 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXP {
 			return EvalOp(node.Op, EvalExpr(ev, node.X), EvalExpr(ev, node.Y))
 		}
 	case *ast.CallExpr:
-		ev.invisible=false
+		ev.invisible = false
 		return EvalCall(ev, ex.(*ast.CallExpr))
 	case *ast.ParenExpr:
-		ev.invisible=false
+		ev.invisible = false
 		node := ex.(*ast.ParenExpr)
 		if TRACE {
 			println("ParenExpr")
 		}
 		return EvalExpr(ev, node.X)
 	default:
-		ev.invisible=false
+		ev.invisible = false
 		givenType := reflect.TypeOf(ex)
 		println("?Expr:", givenType.String())
 	}
@@ -425,21 +423,45 @@ func EvalOp(op token.Token, x *SEXP, y *SEXP) *SEXP {
 		val = math.Pow(x.Value, y.Value)
 	case token.MODULUS:
 		val = math.Mod(x.Value, y.Value)
-		
+
 	// returning values allows for concatenated comparisons
 	// TODO documentation of extension
 	case token.LESS:
-		if x.Value < y.Value {return x} else {return nil}
+		if x.Value < y.Value {
+			return x
+		} else {
+			return nil
+		}
 	case token.LESSEQUAL:
-		if x.Value <= y.Value {return x} else {return nil}
+		if x.Value <= y.Value {
+			return x
+		} else {
+			return nil
+		}
 	case token.GREATER:
-		if x.Value > y.Value {return x} else {return nil}
+		if x.Value > y.Value {
+			return x
+		} else {
+			return nil
+		}
 	case token.GREATEREQUAL:
-		if x.Value >= y.Value {return x} else {return nil}
+		if x.Value >= y.Value {
+			return x
+		} else {
+			return nil
+		}
 	case token.EQUAL:
-		if x.Value == y.Value {return x} else {return nil}
+		if x.Value == y.Value {
+			return x
+		} else {
+			return nil
+		}
 	case token.UNEQUAL:
-		if x.Value != y.Value {return x} else {return nil}
+		if x.Value != y.Value {
+			return x
+		} else {
+			return nil
+		}
 	default:
 		println("? Op: " + op.String())
 		return &SEXP{Kind: token.ILLEGAL}

@@ -8,8 +8,8 @@ package ast
 
 import (
 	"fmt"
-	"lib/token"
 	"io"
+	"lib/token"
 	"os"
 	"reflect"
 )

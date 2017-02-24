@@ -6,10 +6,10 @@
 package eval
 
 import (
+	"fmt"
 	"lib/ast"
 	"lib/token"
 	"strings"
-	"fmt"
 )
 
 // argindex is running along the expected arguments taken from function definition
@@ -43,22 +43,23 @@ func EvalCat(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
 	}
 	for n := 0; n < len(node.Args); n++ {
 		r = EvalExpr(ev, node.Args[n])
-		if n>0 {print(" ")}
+		if n > 0 {
+			print(" ")
+		}
 		switch r.Kind {
-			case token.STRING:
-				print(strings.Replace(r.String,"\\n","\n",-1))  // needs strings.Map
-			case token.INT:
-				fmt.Printf("%g", r.Value)
-			case token.FLOAT:
-				fmt.Printf("%g", r.Value)
-			default:
-				println("?CAT",r.Kind.String())
+		case token.STRING:
+			print(strings.Replace(r.String, "\\n", "\n", -1)) // needs strings.Map
+		case token.INT:
+			fmt.Printf("%g", r.Value)
+		case token.FLOAT:
+			fmt.Printf("%g", r.Value)
+		default:
+			println("?CAT", r.Kind.String())
 		}
 	}
-	ev.invisible=true
+	ev.invisible = true
 	return
-}	
-
+}
 
 // TODO use results field of funcType
 func EvalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
@@ -71,11 +72,11 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
 	f := ev.topFrame.Lookup(funcname)
 	if f == nil {
 		switch funcname {
-			case "cat":
-				return EvalCat(ev,node)
-			default:
-				println("\nError: could not find function \"" + funcname + "\"")
-				return &SEXP{Kind: token.ILLEGAL}
+		case "cat":
+			return EvalCat(ev, node)
+		default:
+			println("\nError: could not find function \"" + funcname + "\"")
+			return &SEXP{Kind: token.ILLEGAL}
 		}
 	} else {
 		argNames := make(map[argindex]string)

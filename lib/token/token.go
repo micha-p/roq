@@ -44,13 +44,13 @@ const (
 
 	literal_end
 
-// https://cran.r-project.org/doc/manuals/R-lang.html#Literal-constants
-// 10.3.1 Literal constants
+	// https://cran.r-project.org/doc/manuals/R-lang.html#Literal-constants
+	// 10.3.1 Literal constants
 
 	constant_beg
 
 	NULL
-	NA   // TODO: extension documentation: Single dot is treated as missing value
+	NA // TODO: extension documentation: Single dot is treated as missing value
 	INF
 	NAN
 	TRUE
@@ -109,7 +109,6 @@ const (
 	RBRACK    // ]
 	RBRACE    // }
 	SEMICOLON // ;
-
 
 	operator_beg
 	// Operators and delimiters
@@ -183,7 +182,7 @@ const (
 	TYPE
 	VAR
 
-// 10.3.3 Reserved words
+	// 10.3.3 Reserved words
 	IF
 	ELSE
 	REPEAT
@@ -197,7 +196,7 @@ const (
 )
 
 var tokens = [...]string{
-	ILLEGAL:   "ILLEGAL",
+	ILLEGAL: "ILLEGAL",
 	EOF:     "EOF",
 	COMMENT: "COMMENT",
 
@@ -431,8 +430,8 @@ func (tok Token) IsConstant() bool { return constant_beg < tok && tok < constant
 
 // R predicates
 func IsAssignment(t Token) bool {
-	return t == SHORTASSIGNMENT || 
-	t == LEFTASSIGNMENT || t == RIGHTASSIGNMENT || t == SUPERLEFTASSIGNMENT || t == SUPERRIGHTASSIGNMENT
+	return t == SHORTASSIGNMENT ||
+		t == LEFTASSIGNMENT || t == RIGHTASSIGNMENT || t == SUPERLEFTASSIGNMENT || t == SUPERRIGHTASSIGNMENT
 }
 
 func isCONSTANT(t Token) bool {

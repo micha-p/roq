@@ -62,9 +62,9 @@ type Decl interface {
 // in a signature.
 //
 type Field struct {
-	Names   []*Ident      // field/method/parameter names; or nil if anonymous field
-	Type    Expr          // field/method/parameter type
-	Tag     *BasicLit     // field tag; or nil
+	Names []*Ident  // field/method/parameter names; or nil if anonymous field
+	Type  Expr      // field/method/parameter type
+	Tag   *BasicLit // field tag; or nil
 }
 
 func (f *Field) Pos() token.Pos {
@@ -243,12 +243,12 @@ type (
 	}
 
 	TaggedExpr struct {
-		X     Expr        // left operand
+		X     Expr // left operand
 		Tag   string
 		EqPos token.Pos // position of "="
 		Rhs   Expr
 	}
-	
+
 	// A KeyValueExpr node represents (key : value) pairs
 	// in composite literals.
 	//
@@ -282,8 +282,8 @@ type (
 
 	// A FuncType node represents a function type.
 	FuncType struct {
-		Func   token.Pos  // position of "func" keyword (token.NoPos if there is no "func")
-		Params *FieldList // (incoming) parameters; non-nil
+		Func    token.Pos  // position of "func" keyword (token.NoPos if there is no "func")
+		Params  *FieldList // (incoming) parameters; non-nil
 		Results *FieldList // (outgoing) results; or nil*/
 	}
 
@@ -470,58 +470,58 @@ type (
 	}
 
 	IfStmt struct {
-		Keyword   token.Pos // position of keyword
-		Cond Expr           // condition
-		Body *BlockStmt
-		Else Stmt           // else branch; or nil
+		Keyword token.Pos // position of keyword
+		Cond    Expr      // condition
+		Body    *BlockStmt
+		Else    Stmt // else branch; or nil
 	}
 	WhileStmt struct {
-		Keyword   token.Pos // position of keyword
-		Cond Expr           // condition
-		Body *BlockStmt
+		Keyword token.Pos // position of keyword
+		Cond    Expr      // condition
+		Body    *BlockStmt
 	}
 	RepeatStmt struct {
-		Keyword   token.Pos // position of keyword
-		Body *BlockStmt
+		Keyword token.Pos // position of keyword
+		Body    *BlockStmt
 	}
 	BreakStmt struct {
-		Keyword   token.Pos // position of keyword
+		Keyword token.Pos // position of keyword
 	}
 	NextStmt struct {
-		Keyword   token.Pos // position of keyword
+		Keyword token.Pos // position of keyword
 	}
 	ForStmt struct {
-		Keyword token.Pos   // position of keyword
+		Keyword   token.Pos // position of keyword
 		Parameter *Ident
-		Iterable Expr
-		Body *BlockStmt
+		Iterable  Expr
+		Body      *BlockStmt
 	}
 )
 
 // Pos and End implementations for statement nodes.
 
-func (s *BadStmt) Pos() token.Pos        { return s.From }
-func (s *EmptyStmt) Pos() token.Pos      { return s.Semicolon }
-func (s *ExprStmt) Pos() token.Pos       { return s.X.Pos() }
-func (s *AssignStmt) Pos() token.Pos     { return s.Lhs.Pos() }
-func (s *DeferStmt) Pos() token.Pos      { return s.Defer }
-func (s *ReturnStmt) Pos() token.Pos     { return s.Return }
-func (s *BlockStmt) Pos() token.Pos      { return s.Lbrace }
-func (s *IfStmt) Pos() token.Pos         { return s.Keyword }
-func (s *WhileStmt) Pos() token.Pos      { return s.Keyword }
-func (s *RepeatStmt) Pos() token.Pos     { return s.Keyword }
-func (s *BreakStmt) Pos() token.Pos      { return s.Keyword }
-func (s *NextStmt) Pos() token.Pos       { return s.Keyword }
-func (s *ForStmt) Pos() token.Pos        { return s.Keyword }
+func (s *BadStmt) Pos() token.Pos    { return s.From }
+func (s *EmptyStmt) Pos() token.Pos  { return s.Semicolon }
+func (s *ExprStmt) Pos() token.Pos   { return s.X.Pos() }
+func (s *AssignStmt) Pos() token.Pos { return s.Lhs.Pos() }
+func (s *DeferStmt) Pos() token.Pos  { return s.Defer }
+func (s *ReturnStmt) Pos() token.Pos { return s.Return }
+func (s *BlockStmt) Pos() token.Pos  { return s.Lbrace }
+func (s *IfStmt) Pos() token.Pos     { return s.Keyword }
+func (s *WhileStmt) Pos() token.Pos  { return s.Keyword }
+func (s *RepeatStmt) Pos() token.Pos { return s.Keyword }
+func (s *BreakStmt) Pos() token.Pos  { return s.Keyword }
+func (s *NextStmt) Pos() token.Pos   { return s.Keyword }
+func (s *ForStmt) Pos() token.Pos    { return s.Keyword }
 
-func (s *BadStmt) End() token.Pos  { return s.To }
+func (s *BadStmt) End() token.Pos { return s.To }
 func (s *EmptyStmt) End() token.Pos {
 	if s.Implicit {
 		return s.Semicolon
 	}
 	return s.Semicolon + 1 /* len(";") */
 }
-func (s *ExprStmt) End() token.Pos { return s.X.End() }
+func (s *ExprStmt) End() token.Pos   { return s.X.End() }
 func (s *AssignStmt) End() token.Pos { return s.Rhs.End() }
 func (s *DeferStmt) End() token.Pos  { return s.Call.End() }
 func (s *ReturnStmt) End() token.Pos {
@@ -538,28 +538,28 @@ func (s *IfStmt) End() token.Pos {
 	}
 	return s.Body.End()
 }
-func (s *WhileStmt) End() token.Pos    { return s.Body.End() }
-func (s *RepeatStmt) End() token.Pos    { return s.Body.End() }
-func (s *NextStmt) End() token.Pos    { return s.Keyword + 4 }
-func (s *BreakStmt) End() token.Pos    { return s.Keyword + 5 }
+func (s *WhileStmt) End() token.Pos  { return s.Body.End() }
+func (s *RepeatStmt) End() token.Pos { return s.Body.End() }
+func (s *NextStmt) End() token.Pos   { return s.Keyword + 4 }
+func (s *BreakStmt) End() token.Pos  { return s.Keyword + 5 }
 func (s *ForStmt) End() token.Pos    { return s.Body.End() }
 
 // stmtNode() ensures that only statement nodes can be
 // assigned to a Stmt.
 //
-func (*BadStmt) stmtNode()        {}
-func (*EmptyStmt) stmtNode()      {}
-func (*ExprStmt) stmtNode()       {}
-func (*AssignStmt) stmtNode()     {}
-func (*DeferStmt) stmtNode()      {}
-func (*ReturnStmt) stmtNode()     {}
-func (*BlockStmt) stmtNode()      {}
-func (*IfStmt) stmtNode()         {}
-func (*WhileStmt) stmtNode()      {}
-func (*RepeatStmt) stmtNode()     {}
-func (*BreakStmt) stmtNode()      {}
-func (*NextStmt) stmtNode()       {}
-func (*ForStmt) stmtNode()        {}
+func (*BadStmt) stmtNode()    {}
+func (*EmptyStmt) stmtNode()  {}
+func (*ExprStmt) stmtNode()   {}
+func (*AssignStmt) stmtNode() {}
+func (*DeferStmt) stmtNode()  {}
+func (*ReturnStmt) stmtNode() {}
+func (*BlockStmt) stmtNode()  {}
+func (*IfStmt) stmtNode()     {}
+func (*WhileStmt) stmtNode()  {}
+func (*RepeatStmt) stmtNode() {}
+func (*BreakStmt) stmtNode()  {}
+func (*NextStmt) stmtNode()   {}
+func (*ForStmt) stmtNode()    {}
 
 // ----------------------------------------------------------------------------
 // Declarations
@@ -576,9 +576,9 @@ type (
 
 	// An ImportSpec node represents a single package import.
 	ImportSpec struct {
-		Name    *Ident        // local package name (including "."); or nil
-		Path    *BasicLit     // import path
-		EndPos  token.Pos     // end of spec (overrides Path.Pos if nonzero)
+		Name   *Ident    // local package name (including "."); or nil
+		Path   *BasicLit // import path
+		EndPos token.Pos // end of spec (overrides Path.Pos if nonzero)
 	}
 )
 
@@ -597,7 +597,6 @@ func (s *ImportSpec) End() token.Pos {
 	return s.Path.End()
 }
 
-
 // specNode() ensures that only spec nodes can be
 // assigned to a Spec.
 //
@@ -613,12 +612,12 @@ func (*ImportSpec) specNode() {}
 // via Doc and Comment fields.
 //
 type File struct {
-	Package    token.Pos       // position of "package" keyword
-	Name       *Ident          // package name
-	Decls      []Decl          // top-level declarations; or nil
-	Scope      *Scope          // package scope (this file only)
-	Imports    []*ImportSpec   // imports in this file
-	Unresolved []*Ident        // unresolved identifiers in this file
+	Package    token.Pos     // position of "package" keyword
+	Name       *Ident        // package name
+	Decls      []Decl        // top-level declarations; or nil
+	Scope      *Scope        // package scope (this file only)
+	Imports    []*ImportSpec // imports in this file
+	Unresolved []*Ident      // unresolved identifiers in this file
 }
 
 func (f *File) Pos() token.Pos { return f.Package }
