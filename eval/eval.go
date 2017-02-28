@@ -130,6 +130,28 @@ func isTrue(e *SEXP) bool {
 // https://go-book.appspot.com/interfaces.html
 // an empty interface accepts all pointers
 
+func EvalLoop(ev *Evaluator, e *ast.BlockStmt, cond ast.Expr) *SEXP {
+		TRACE := ev.trace
+		if TRACE {
+			println("LoopBody")
+		}
+		var evloop Evaluator
+		evloop = *ev
+		evloop.state = loopState
+		var r *SEXP
+		var rstate LoopState
+		for (cond==nil || isTrue(EvalExpr(&evloop, cond))){
+			for _, stmt := range e.List {
+				r = EvalStmt(&evloop, stmt)
+				rstate = evloop.state
+				if rstate == nextState {break}
+			}
+			if rstate == nextState {continue}
+			if rstate == breakState {break}
+		}
+		return r
+}
+
 func EvalStmt(ev *Evaluator, s ast.Stmt) *SEXP {
 	TRACE := ev.trace
 	DEBUG := false
@@ -159,24 +181,26 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) *SEXP {
 			println("whileStmt")
 		}
 		e := s.(*ast.WhileStmt)
-		ev.state = loopState
-		//		return EvalLoop(ev, s.(*ast.whileStmt))
-		var r *SEXP
-		for (isTrue(EvalExpr(ev, e.Cond))){
-			r=EvalStmt(ev,e.Body)
-		}
-		ev.state = normalState
-		return r
+		return EvalLoop(ev, e.Body, e.Cond)
 	case *ast.RepeatStmt:
 		if TRACE {
 			println("repeatStmt")
 		}
-		//		return EvalLoop(ev,TRUE)
+		e := s.(*ast.WhileStmt)
+		return EvalLoop(ev, e.Body, nil)
 	case *ast.ForStmt:
 		if TRACE {
 			println("forStmt")
 		}
 		//		return EvalLoop(ev, s.(*ast.ForStmt))
+	case *ast.BreakStmt:
+		println("break")
+		ev.state=breakState
+		return &SEXP{Kind: token.BREAK}
+	case *ast.NextStmt:
+		println("next")
+		ev.state=nextState
+		return &SEXP{Kind: token.NEXT}
 	case *ast.BlockStmt:
 		if TRACE {
 			println("blockStmt")
@@ -393,6 +417,8 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXP {
 					return nil
 				}
 			}
+		case token.LESS, token.LESSEQUAL, token.GREATER, token.GREATEREQUAL, token.EQUAL, token.UNEQUAL:
+			return EvalComp(node.Op, EvalExpr(ev, node.X), EvalExpr(ev, node.Y))
 		default:
 			return EvalOp(node.Op, EvalExpr(ev, node.X), EvalExpr(ev, node.Y))
 		}
@@ -414,27 +440,23 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXP {
 	return &SEXP{Kind: token.ILLEGAL}
 }
 
-func EvalOp(op token.Token, x *SEXP, y *SEXP) *SEXP {
+
+	// returning values allows for concatenated comparisons
+	// No problem UNLESS X == 0!!!
+	// TODO documentation of extension
+	// Either treat zero as true, which will break existing R code
+	// or restrict such comparisons to inexact floats, where zero is not really existant
+	// and take zero in integer context as false:
+	// - This would enable zero one encoded vectors 
+	// - even then, checking integer ranges like 0<i<10 would not be possible
+	// TODO: 
+	// Final solution: detect concatenated comparisons during parsing and evaluate such multiple comparisons differently
+	
+func EvalComp(op token.Token, x *SEXP, y *SEXP) *SEXP {
 	if x.Kind == token.ILLEGAL || y.Kind == token.ILLEGAL {
 		return &SEXP{Kind: token.ILLEGAL}
 	}
-	var val float64
 	switch op {
-	case token.PLUS:
-		val = x.Value + y.Value
-	case token.MINUS:
-		val = x.Value - y.Value
-	case token.MULTIPLICATION:
-		val = x.Value * y.Value
-	case token.DIVISION:
-		val = x.Value / y.Value
-	case token.EXPONENTIATION:
-		val = math.Pow(x.Value, y.Value)
-	case token.MODULUS:
-		val = math.Mod(x.Value, y.Value)
-
-	// returning values allows for concatenated comparisons
-	// TODO documentation of extension
 	case token.LESS:
 		if x.Value < y.Value {
 			return x
@@ -472,7 +494,31 @@ func EvalOp(op token.Token, x *SEXP, y *SEXP) *SEXP {
 			return nil
 		}
 	default:
-		println("? Op: " + op.String())
+		println("?Comp: " + op.String())
+		return &SEXP{Kind: token.ILLEGAL}
+	}
+}
+
+func EvalOp(op token.Token, x *SEXP, y *SEXP) *SEXP {
+	if x.Kind == token.ILLEGAL || y.Kind == token.ILLEGAL {
+		return &SEXP{Kind: token.ILLEGAL}
+	}
+	var val float64
+	switch op {
+	case token.PLUS:
+		val = x.Value + y.Value
+	case token.MINUS:
+		val = x.Value - y.Value
+	case token.MULTIPLICATION:
+		val = x.Value * y.Value
+	case token.DIVISION:
+		val = x.Value / y.Value
+	case token.EXPONENTIATION:
+		val = math.Pow(x.Value, y.Value)
+	case token.MODULUS:
+		val = math.Mod(x.Value, y.Value)
+	default:
+		println("?Op: " + op.String())
 		return &SEXP{Kind: token.ILLEGAL}
 	}
 	return &SEXP{Kind: token.FLOAT, Value: val}
