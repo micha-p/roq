@@ -77,9 +77,10 @@ type Evaluator struct {
 	// Tracing/debugging
 	trace     bool
 	debug     bool
+	indent    int // indentation
+
 	invisible bool
 	state     LoopState
-	indent    int // indentation used for tracing output
 
 	// frame
 	topFrame *Frame // top-most frame; may be pkgFrame
@@ -91,6 +92,38 @@ func (e *Evaluator) openFrame() {
 
 func (e *Evaluator) closeFrame() {
 	e.topFrame = e.topFrame.Outer
+}
+
+
+
+func trace(e *Evaluator, args ...interface{}) *Evaluator {
+	if e.trace {
+		i := 2 * e.indent
+		for i > 0 {
+			print(" ")
+			i--
+		}
+		fmt.Print(args...)
+		print("\n")
+		e.indent++
+	}
+	return e
+}
+
+func traceff(e *Evaluator, args ...interface{}) *Evaluator {
+	if e.trace {
+		e.indent--
+		trace(e,args...)
+		e.indent++
+	}
+	return e
+}
+
+// Usage pattern: defer un(trace(p, "..."))
+func un(e *Evaluator) {
+	if e.trace {
+		e.indent--
+	}
 }
 
 func EvalInit(fset *token.FileSet, filename string, src interface{}, mode parser.Mode, traceflag bool, debugflag bool) (r *Evaluator, err error) {
@@ -122,7 +155,10 @@ func isTrue(e *SEXP) bool {
 	if e.Kind == token.FLOAT && e.Value != 0 {
 		return true
 	}
-
+//  TODO: better documentation on zero=true/false 
+	if e.Kind == token.FLOAT && e.Value == 0 {
+		return true
+	}
 	return false
 }
 
@@ -131,10 +167,7 @@ func isTrue(e *SEXP) bool {
 // an empty interface accepts all pointers
 
 func EvalLoop(ev *Evaluator, e *ast.BlockStmt, cond ast.Expr) *SEXP {
-		TRACE := ev.trace
-		if TRACE {
-			println("LoopBody")
-		}
+		defer un(trace(ev, "LoopBody"))
 		var evloop Evaluator
 		evloop = *ev
 		evloop.state = loopState
@@ -167,9 +200,7 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) *SEXP {
 		}
 		return &SEXP{Kind: token.SEMICOLON}
 	case *ast.IfStmt:
-		if TRACE {
-			println("ifStmt")
-		}
+		defer un(trace(ev, "ifStmt"))
 		e := s.(*ast.IfStmt)
 		if isTrue(EvalExpr(ev, e.Cond)) {
 			return EvalStmt(ev, e.Body)
@@ -177,21 +208,15 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) *SEXP {
 			return EvalStmt(ev, e.Else)
 		}
 	case *ast.WhileStmt:
-		if TRACE {
-			println("whileStmt")
-		}
+		defer un(trace(ev, "whileStmt"))
 		e := s.(*ast.WhileStmt)
 		return EvalLoop(ev, e.Body, e.Cond)
 	case *ast.RepeatStmt:
-		if TRACE {
-			println("repeatStmt")
-		}
+		defer un(trace(ev, "repeatStmt"))
 		e := s.(*ast.WhileStmt)
 		return EvalLoop(ev, e.Body, nil)
 	case *ast.ForStmt:
-		if TRACE {
-			println("forStmt")
-		}
+		defer un(trace(ev, "forStmt"))
 		//		return EvalLoop(ev, s.(*ast.ForStmt))
 	case *ast.BreakStmt:
 		println("break")
@@ -226,26 +251,19 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) *SEXP {
 }
 
 func doAssignment(ev *Evaluator, identifier string, ex ast.Expr) *SEXP {
-	TRACE := ev.trace
+	defer un(trace(ev, "assignment: " + identifier + " <- "))
 
-	if TRACE {
-		print("assignment: ", identifier, " <- ")
-	}
 	result := EvalExpr(ev, ex)
-	if TRACE {
-		println(result.Kind.String())
-	}
+	defer un(trace(ev, result.Value," ", result.Kind.String()))
+
 	ev.topFrame.Insert(identifier, result)
 	ev.invisible = true // just for the following print
 	return result
 }
 
 func EvalAssignment(ev *Evaluator, e *ast.AssignStmt) *SEXP {
-	TRACE := ev.trace
 
-	if TRACE {
-		println("assignStmt: ")
-	}
+//	defer un(trace(ev, "assignStmt"))
 
 	var identifier string
 	if e.Tok == token.RIGHTASSIGNMENT {
@@ -265,7 +283,7 @@ func EvalAssignment(ev *Evaluator, e *ast.AssignStmt) *SEXP {
 
 // visibility is stored in the evaluator and unset after every print
 func PrintResult(ev *Evaluator, r *SEXP) {
-	//	TRACE := ev.trace
+
 	DEBUG := ev.debug
 
 	if DEBUG {
@@ -330,23 +348,18 @@ func EvalExprOrShortAssign(ev *Evaluator, ex ast.Expr) *SEXP {
 }
 
 func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXP {
-	TRACE := ev.trace
-	if TRACE {
-		print("EvalExpr ")
-	}
+	DEBUG := ev.debug
+
+//	defer un(trace(ev, "EvalExpr"))
 	switch ex.(type) {
 	case *ast.FuncLit:
 		node := ex.(*ast.FuncLit)
-		if TRACE {
-			print("FuncLit")
-		}
+		defer un(trace(ev, "FuncLit"))
 		return &SEXP{Kind: token.FUNCTION, Fieldlist: node.Type.Params.List, Body: node.Body}
 	case *ast.BasicLit:
 		ev.invisible = false
 		node := ex.(*ast.BasicLit)
-		if TRACE {
-			print("BasicLit " + " " + node.Value + " (" + node.Kind.String() + "): ")
-		}
+		defer un(trace(ev, "BasicLit ", node.Kind.String()))
 		switch node.Kind {
 		case token.INT:
 			v, err := strconv.ParseFloat(node.Value, 64)
@@ -354,9 +367,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXP {
 				print("ERROR:")
 				println(err)
 			}
-			if TRACE {
-				println(v)
-			}
+			defer un(traceff(ev, v))
 			return &SEXP{ValuePos: node.ValuePos, Kind: token.FLOAT, Value: v}
 		case token.FLOAT:
 			v, err := strconv.ParseFloat(node.Value, 64) // TODO: support for all R formatted values
@@ -364,9 +375,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXP {
 				print("ERROR:")
 				println(err)
 			}
-			if TRACE {
-				println(v)
-			}
+			defer un(traceff(ev, v))
 			return &SEXP{ValuePos: node.ValuePos, Kind: node.Kind, Value: v}
 		case token.STRING:
 			return &SEXP{ValuePos: node.ValuePos, Kind: node.Kind, String: node.Value}
@@ -378,9 +387,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXP {
 				print("error: object '", node.Value, "' not found\n")
 				return &SEXP{ValuePos: node.ValuePos, Kind: token.ILLEGAL, Value: math.NaN()}
 			} else {
-				if TRACE {
-					fmt.Printf("%g\n", sexprec.Value)
-				}
+				defer un(traceff(ev, fmt.Sprintf("%g", sexprec.Value)))
 				return sexprec
 			}
 		default:
@@ -388,47 +395,14 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXP {
 		}
 	case *ast.BinaryExpr:
 		ev.invisible = false
-		node := ex.(*ast.BinaryExpr)
-		if TRACE {
-			println("BinaryExpr " + " " + node.Op.String())
-		}
-		switch node.Op {
-		case token.AND, token.ANDVECTOR:
-			x := EvalExpr(ev, node.X)
-			if isTrue(x) {
-				y := EvalExpr(ev, node.Y)
-				if isTrue(y) {
-					return y
-				} else {
-					return nil
-				}
-			} else {
-				return nil
-			}
-		case token.OR, token.ORVECTOR:
-			x := EvalExpr(ev, node.X)
-			if isTrue(x) {
-				return x
-			} else {
-				y := EvalExpr(ev, node.Y)
-				if isTrue(y) {
-					return y
-				} else {
-					return nil
-				}
-			}
-		case token.LESS, token.LESSEQUAL, token.GREATER, token.GREATEREQUAL, token.EQUAL, token.UNEQUAL:
-			return EvalComp(node.Op, EvalExpr(ev, node.X), EvalExpr(ev, node.Y))
-		default:
-			return EvalOp(node.Op, EvalExpr(ev, node.X), EvalExpr(ev, node.Y))
-		}
+		return evalBinary(ev,ex.(*ast.BinaryExpr))
 	case *ast.CallExpr:
 		ev.invisible = false
 		return EvalCall(ev, ex.(*ast.CallExpr))
 	case *ast.ParenExpr:
 		ev.invisible = false
 		node := ex.(*ast.ParenExpr)
-		if TRACE {
+		if DEBUG {
 			println("ParenExpr")
 		}
 		return EvalExpr(ev, node.X)
@@ -440,18 +414,40 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXP {
 	return &SEXP{Kind: token.ILLEGAL}
 }
 
+func evalBinary(ev *Evaluator,node *ast.BinaryExpr) *SEXP {
+		defer un(trace(ev, "BinaryExpr"))
+		x := EvalExpr(ev, node.X)
+		un(traceff(ev, node.Op.String()))
+		switch node.Op {
+		case token.AND, token.ANDVECTOR:
+			if isTrue(x) {
+				y := EvalExpr(ev, node.Y)
+				if isTrue(y) {
+					return y
+				} else {
+					return nil
+				}
+			} else {
+				return nil
+			}
+		case token.OR, token.ORVECTOR:
+			if isTrue(x) {
+				return x
+			} else {
+				y := EvalExpr(ev, node.Y)
+				if isTrue(y) {
+					return y
+				} else {
+					return nil
+				}
+			}
+		case token.LESS, token.LESSEQUAL, token.GREATER, token.GREATEREQUAL, token.EQUAL, token.UNEQUAL:
+			return EvalComp(node.Op, x, EvalExpr(ev, node.Y))
+		default:
+			return EvalOp(node.Op, x, EvalExpr(ev, node.Y))
+		}
+}
 
-	// returning values allows for concatenated comparisons
-	// No problem UNLESS X == 0!!!
-	// TODO documentation of extension
-	// Either treat zero as true, which will break existing R code
-	// or restrict such comparisons to inexact floats, where zero is not really existant
-	// and take zero in integer context as false:
-	// - This would enable zero one encoded vectors 
-	// - even then, checking integer ranges like 0<i<10 would not be possible
-	// TODO: 
-	// Final solution: detect concatenated comparisons during parsing and evaluate such multiple comparisons differently
-	
 func EvalComp(op token.Token, x *SEXP, y *SEXP) *SEXP {
 	if x.Kind == token.ILLEGAL || y.Kind == token.ILLEGAL {
 		return &SEXP{Kind: token.ILLEGAL}
