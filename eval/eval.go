@@ -171,18 +171,19 @@ func EvalLoop(ev *Evaluator, e *ast.BlockStmt, cond ast.Expr) *SEXP {
 		var evloop Evaluator
 		evloop = *ev
 		evloop.state = loopState
-		var r *SEXP
 		var rstate LoopState
 		for (cond==nil || isTrue(EvalExpr(&evloop, cond))){
-			for _, stmt := range e.List {
-				r = EvalStmt(&evloop, stmt)
+			evloop.state=loopState
+			for n := 0; n<len(e.List); n++ {
+				EvalStmt(&evloop, e.List[n])
 				rstate = evloop.state
 				if rstate == nextState {break}
 			}
 			if rstate == nextState {continue}
 			if rstate == breakState {break}
 		}
-		return r
+		ev.invisible = true
+		return &SEXP{Kind: token.NULL}
 }
 
 func EvalStmt(ev *Evaluator, s ast.Stmt) *SEXP {
@@ -213,17 +214,15 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) *SEXP {
 		return EvalLoop(ev, e.Body, e.Cond)
 	case *ast.RepeatStmt:
 		defer un(trace(ev, "repeatStmt"))
-		e := s.(*ast.WhileStmt)
+		e := s.(*ast.RepeatStmt)
 		return EvalLoop(ev, e.Body, nil)
 	case *ast.ForStmt:
 		defer un(trace(ev, "forStmt"))
 		//		return EvalLoop(ev, s.(*ast.ForStmt))
 	case *ast.BreakStmt:
-		println("break")
 		ev.state=breakState
 		return &SEXP{Kind: token.BREAK}
 	case *ast.NextStmt:
-		println("next")
 		ev.state=nextState
 		return &SEXP{Kind: token.NEXT}
 	case *ast.BlockStmt:

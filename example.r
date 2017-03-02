@@ -6,3 +6,11 @@ while(n<=7){
 	cat("\n")
 	if (n==5) {break}
 }
+
+m=10
+repeat{
+	m<-m+1
+	cat(m)
+	cat("\n")
+	if (m==15) {break}
+}
