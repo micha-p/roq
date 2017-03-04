@@ -192,6 +192,10 @@ const (
 	IN
 	NEXT
 	BREAK
+	
+	// special command
+	VERSION
+	
 	keyword_end
 )
 
@@ -294,6 +298,7 @@ var tokens = [...]string{
 	IN:       "in",
 	NEXT:     "next",
 	BREAK:    "break",
+	VERSION:  "version",
 }
 
 // String returns the string corresponding to the token tok.

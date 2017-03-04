@@ -242,6 +242,9 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) *SEXP {
 			println("return: ", r.Kind.String())
 		}
 		return r
+	case *ast.VersionStmt:
+		ev.state=nextState
+		return &SEXP{Kind: token.VERSION}
 	default:
 		givenType := reflect.TypeOf(s)
 		println("?Stmt:", givenType.String())
@@ -322,6 +325,8 @@ func PrintResult(ev *Evaluator, r *SEXP) {
 				}
 				println(")")
 			}
+		case token.VERSION:
+			printVersion()
 		default:
 			if DEBUG {
 				println("default print")

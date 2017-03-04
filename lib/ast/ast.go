@@ -496,23 +496,27 @@ type (
 		Iterable  Expr
 		Body      *BlockStmt
 	}
+	VersionStmt struct {
+		Keyword token.Pos // position of keyword
+	}
 )
 
 // Pos and End implementations for statement nodes.
 
-func (s *BadStmt) Pos() token.Pos    { return s.From }
-func (s *EmptyStmt) Pos() token.Pos  { return s.Semicolon }
-func (s *ExprStmt) Pos() token.Pos   { return s.X.Pos() }
-func (s *AssignStmt) Pos() token.Pos { return s.Lhs.Pos() }
-func (s *DeferStmt) Pos() token.Pos  { return s.Defer }
-func (s *ReturnStmt) Pos() token.Pos { return s.Return }
-func (s *BlockStmt) Pos() token.Pos  { return s.Lbrace }
-func (s *IfStmt) Pos() token.Pos     { return s.Keyword }
-func (s *WhileStmt) Pos() token.Pos  { return s.Keyword }
-func (s *RepeatStmt) Pos() token.Pos { return s.Keyword }
-func (s *BreakStmt) Pos() token.Pos  { return s.Keyword }
-func (s *NextStmt) Pos() token.Pos   { return s.Keyword }
-func (s *ForStmt) Pos() token.Pos    { return s.Keyword }
+func (s *BadStmt) Pos() token.Pos     { return s.From }
+func (s *EmptyStmt) Pos() token.Pos   { return s.Semicolon }
+func (s *ExprStmt) Pos() token.Pos    { return s.X.Pos() }
+func (s *AssignStmt) Pos() token.Pos  { return s.Lhs.Pos() }
+func (s *DeferStmt) Pos() token.Pos   { return s.Defer }
+func (s *ReturnStmt) Pos() token.Pos  { return s.Return }
+func (s *BlockStmt) Pos() token.Pos   { return s.Lbrace }
+func (s *IfStmt) Pos() token.Pos      { return s.Keyword }
+func (s *WhileStmt) Pos() token.Pos   { return s.Keyword }
+func (s *RepeatStmt) Pos() token.Pos  { return s.Keyword }
+func (s *BreakStmt) Pos() token.Pos   { return s.Keyword }
+func (s *NextStmt) Pos() token.Pos    { return s.Keyword }
+func (s *ForStmt) Pos() token.Pos     { return s.Keyword }
+func (s *VersionStmt) Pos() token.Pos { return s.Keyword }
 
 func (s *BadStmt) End() token.Pos { return s.To }
 func (s *EmptyStmt) End() token.Pos {
@@ -538,28 +542,30 @@ func (s *IfStmt) End() token.Pos {
 	}
 	return s.Body.End()
 }
-func (s *WhileStmt) End() token.Pos  { return s.Body.End() }
-func (s *RepeatStmt) End() token.Pos { return s.Body.End() }
-func (s *NextStmt) End() token.Pos   { return s.Keyword + 4 }
-func (s *BreakStmt) End() token.Pos  { return s.Keyword + 5 }
-func (s *ForStmt) End() token.Pos    { return s.Body.End() }
+func (s *WhileStmt) End() token.Pos   { return s.Body.End() }
+func (s *RepeatStmt) End() token.Pos  { return s.Body.End() }
+func (s *NextStmt) End() token.Pos    { return s.Keyword + 4 }
+func (s *BreakStmt) End() token.Pos   { return s.Keyword + 5 }
+func (s *VersionStmt) End() token.Pos { return s.Keyword + 7 }
+func (s *ForStmt) End() token.Pos     { return s.Body.End() }
 
 // stmtNode() ensures that only statement nodes can be
 // assigned to a Stmt.
 //
-func (*BadStmt) stmtNode()    {}
-func (*EmptyStmt) stmtNode()  {}
-func (*ExprStmt) stmtNode()   {}
-func (*AssignStmt) stmtNode() {}
-func (*DeferStmt) stmtNode()  {}
-func (*ReturnStmt) stmtNode() {}
-func (*BlockStmt) stmtNode()  {}
-func (*IfStmt) stmtNode()     {}
-func (*WhileStmt) stmtNode()  {}
-func (*RepeatStmt) stmtNode() {}
-func (*BreakStmt) stmtNode()  {}
-func (*NextStmt) stmtNode()   {}
-func (*ForStmt) stmtNode()    {}
+func (*BadStmt) stmtNode()     {}
+func (*EmptyStmt) stmtNode()   {}
+func (*ExprStmt) stmtNode()    {}
+func (*AssignStmt) stmtNode()  {}
+func (*DeferStmt) stmtNode()   {}
+func (*ReturnStmt) stmtNode()  {}
+func (*BlockStmt) stmtNode()   {}
+func (*IfStmt) stmtNode()      {}
+func (*WhileStmt) stmtNode()   {}
+func (*RepeatStmt) stmtNode()  {}
+func (*BreakStmt) stmtNode()   {}
+func (*NextStmt) stmtNode()    {}
+func (*ForStmt) stmtNode()     {}
+func (*VersionStmt) stmtNode() {}
 
 // ----------------------------------------------------------------------------
 // Declarations

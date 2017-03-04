@@ -1430,6 +1430,9 @@ func (p *parser) parseStmt() (s ast.Stmt) {
 	case token.NEXT:
 		s = &ast.NextStmt{Keyword: p.pos}
 		p.next()
+	case token.VERSION:
+		s = &ast.VersionStmt{Keyword: p.pos}
+		p.next()
 	case token.FOR:
 		s = p.parseForStmt()
 	case token.SEMICOLON:
