@@ -35,6 +35,8 @@ const (
 	S4SXP             //	25	S4 classes not of simple type
 )
 
+
+
 type sxpinfo_struct struct {
 	sexptype SEXPTYPE //  5;  /* discussed above */
 	obj      bool     //  1;  /* is this an object with a class attribute? */
@@ -60,10 +62,11 @@ type SEXP struct {
 
 type SEXP struct {
 	ValuePos  token.Pos      // literal position
+	TypeOf    SEXPTYPE
 	Kind      token.Token    // token.INT, token.FLOAT, token.IMAG, token.CHAR, or token.STRING
 	Fieldlist []*ast.Field   // only if function
 	Body      *ast.BlockStmt // only if function: BlockStmt or single Stmt
 	String    string
-	Value     float64        // single values
-	Array     []float64      // vectors
+	Immediate float64        // single values
+	Array     *[]float64     // vectors
 }

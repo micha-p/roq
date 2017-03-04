@@ -75,9 +75,9 @@ const (
 type Evaluator struct {
 
 	// Tracing/debugging
-	trace     bool
-	debug     bool
-	indent    int // indentation
+	trace  bool
+	debug  bool
+	indent int // indentation
 
 	invisible bool
 	state     LoopState
@@ -93,8 +93,6 @@ func (e *Evaluator) openFrame() {
 func (e *Evaluator) closeFrame() {
 	e.topFrame = e.topFrame.Outer
 }
-
-
 
 func trace(e *Evaluator, args ...interface{}) *Evaluator {
 	if e.trace {
@@ -113,7 +111,7 @@ func trace(e *Evaluator, args ...interface{}) *Evaluator {
 func traceff(e *Evaluator, args ...interface{}) *Evaluator {
 	if e.trace {
 		e.indent--
-		trace(e,args...)
+		trace(e, args...)
 		e.indent++
 	}
 	return e
@@ -152,11 +150,20 @@ func isTrue(e *SEXP) bool {
 	if e.Kind == token.TRUE {
 		return true
 	}
-	if e.Kind == token.FLOAT && e.Value != 0 {
+	if e.Kind == token.FLOAT && e.Immediate != 0 {
 		return true
 	}
-//  TODO: better documentation on zero=true/false 
-	if e.Kind == token.FLOAT && e.Value == 0 {
+	if e.Kind == token.FLOAT && e.Array != nil && len(*e.Array)>0 {
+		a := * e.Array
+		if a[0] == 0 {
+			return false
+		} else {
+			return true
+		}
+	}
+
+	//  TODO: better documentation on zero=true/false
+	if e.Kind == token.FLOAT && e.Immediate == 0 {
 		return true
 	}
 	return false
@@ -167,23 +174,29 @@ func isTrue(e *SEXP) bool {
 // an empty interface accepts all pointers
 
 func EvalLoop(ev *Evaluator, e *ast.BlockStmt, cond ast.Expr) *SEXP {
-		defer un(trace(ev, "LoopBody"))
-		var evloop Evaluator
-		evloop = *ev
+	defer un(trace(ev, "LoopBody"))
+	var evloop Evaluator
+	evloop = *ev
+	evloop.state = loopState
+	var rstate LoopState
+	for cond == nil || isTrue(EvalExpr(&evloop, cond)) {
 		evloop.state = loopState
-		var rstate LoopState
-		for (cond==nil || isTrue(EvalExpr(&evloop, cond))){
-			evloop.state=loopState
-			for n := 0; n<len(e.List); n++ {
-				EvalStmt(&evloop, e.List[n])
-				rstate = evloop.state
-				if rstate == nextState {break}
+		for n := 0; n < len(e.List); n++ {
+			EvalStmt(&evloop, e.List[n])
+			rstate = evloop.state
+			if rstate == nextState {
+				break
 			}
-			if rstate == nextState {continue}
-			if rstate == breakState {break}
 		}
-		ev.invisible = true
-		return &SEXP{Kind: token.NULL}
+		if rstate == nextState {
+			continue
+		}
+		if rstate == breakState {
+			break
+		}
+	}
+	ev.invisible = true
+	return &SEXP{Kind: token.NULL}
 }
 
 func EvalStmt(ev *Evaluator, s ast.Stmt) *SEXP {
@@ -194,7 +207,7 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) *SEXP {
 		return EvalAssignment(ev, s.(*ast.AssignStmt))
 	case *ast.ExprStmt:
 		e := s.(*ast.ExprStmt)
-		return EvalExprOrShortAssign(ev, e.X)
+		return EvalExprOrAssignment(ev, e.X)
 	case *ast.EmptyStmt:
 		if DEBUG {
 			println("emptyStmt")
@@ -220,10 +233,10 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) *SEXP {
 		defer un(trace(ev, "forStmt"))
 		//		return EvalLoop(ev, s.(*ast.ForStmt))
 	case *ast.BreakStmt:
-		ev.state=breakState
+		ev.state = breakState
 		return &SEXP{Kind: token.BREAK}
 	case *ast.NextStmt:
-		ev.state=nextState
+		ev.state = nextState
 		return &SEXP{Kind: token.NEXT}
 	case *ast.BlockStmt:
 		if TRACE {
@@ -243,7 +256,7 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) *SEXP {
 		}
 		return r
 	case *ast.VersionStmt:
-		ev.state=nextState
+		ev.state = nextState
 		return &SEXP{Kind: token.VERSION}
 	default:
 		givenType := reflect.TypeOf(s)
@@ -253,10 +266,10 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) *SEXP {
 }
 
 func doAssignment(ev *Evaluator, identifier string, ex ast.Expr) *SEXP {
-	defer un(trace(ev, "assignment: " + identifier + " <- "))
+	defer un(trace(ev, "assignment: "+identifier+" <- "))
 
 	result := EvalExpr(ev, ex)
-	defer un(trace(ev, result.Value," ", result.Kind.String()))
+	defer un(trace(ev, result.Immediate, " ", result.Kind.String()))
 
 	ev.topFrame.Insert(identifier, result)
 	ev.invisible = true // just for the following print
@@ -265,19 +278,15 @@ func doAssignment(ev *Evaluator, identifier string, ex ast.Expr) *SEXP {
 
 func EvalAssignment(ev *Evaluator, e *ast.AssignStmt) *SEXP {
 
-//	defer un(trace(ev, "assignStmt"))
+	//	defer un(trace(ev, "assignStmt"))
 
 	var identifier string
-	if e.Tok == token.RIGHTASSIGNMENT {
-		identifier = getIdent(ev, e.Rhs)
-	} else {
-		identifier = getIdent(ev, e.Lhs)
-	}
-
 	var nodepointer ast.Expr
 	if e.Tok == token.RIGHTASSIGNMENT {
+		identifier = getIdent(ev, e.Rhs)
 		nodepointer = e.Lhs
 	} else {
+		identifier = getIdent(ev, e.Lhs)
 		nodepointer = e.Rhs
 	}
 	return doAssignment(ev, identifier, nodepointer)
@@ -309,9 +318,13 @@ func PrintResult(ev *Evaluator, r *SEXP) {
 				println("ILLEGAL RESULT")
 			}
 		case token.FLOAT:
-			print("[",len(r.Array),"]")
-			for _,v := range r.Array {
-				fmt.Printf(" %g", v)		// R has small e for exponential format
+			if r.Array==nil {
+				fmt.Printf("[1] %g", r.Immediate) // R has small e for exponential format
+			} else {
+				print("[", len(*r.Array), "]")
+				for _, v := range *r.Array {
+					fmt.Printf(" %g", v) // R has small e for exponential format
+				}
 			}
 			println()
 		case token.FUNCTION:
@@ -340,16 +353,21 @@ func PrintResult(ev *Evaluator, r *SEXP) {
 	}
 }
 
-func EvalExprOrShortAssign(ev *Evaluator, ex ast.Expr) *SEXP {
+func EvalExprOrAssignment(ev *Evaluator, ex ast.Expr) *SEXP {
 	TRACE := ev.trace
 	if TRACE {
-		println("Expr or short assignment:")
+		println("Expr or assignment:")
 	}
 	switch ex.(type) {
 	case *ast.BinaryExpr:
 		node := ex.(*ast.BinaryExpr)
-		if node.Op == token.SHORTASSIGNMENT {
+		switch node.Op {
+		case token.SHORTASSIGNMENT:
 			return doAssignment(ev, getIdent(ev, node.X), node.Y)
+		case token.LEFTASSIGNMENT:
+			return doAssignment(ev, getIdent(ev, node.X), node.Y)
+		case token.RIGHTASSIGNMENT:
+			return doAssignment(ev, getIdent(ev, node.Y), node.X)
 		}
 	}
 	return EvalExpr(ev, ex)
@@ -358,7 +376,7 @@ func EvalExprOrShortAssign(ev *Evaluator, ex ast.Expr) *SEXP {
 func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXP {
 	DEBUG := ev.debug
 
-//	defer un(trace(ev, "EvalExpr"))
+	//	defer un(trace(ev, "EvalExpr"))
 	switch ex.(type) {
 	case *ast.FuncLit:
 		node := ex.(*ast.FuncLit)
@@ -369,22 +387,13 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXP {
 		node := ex.(*ast.BasicLit)
 		defer un(trace(ev, "BasicLit ", node.Kind.String()))
 		switch node.Kind {
-		case token.INT:
-			v, err := strconv.ParseFloat(node.Value, 64)
-			if err != nil {
-				print("ERROR:")
-				println(err)
-			}
-			defer un(traceff(ev, v))
-			return &SEXP{ValuePos: node.ValuePos, Kind: token.FLOAT, Value: v}
-		case token.FLOAT:
+		case token.INT, token.FLOAT:
 			v, err := strconv.ParseFloat(node.Value, 64) // TODO: support for all R formatted values
 			if err != nil {
 				print("ERROR:")
 				println(err)
 			}
-			defer un(traceff(ev, v))
-			return &SEXP{ValuePos: node.ValuePos, Kind: node.Kind, Value: v}
+			return &SEXP{ValuePos: node.ValuePos, Kind: node.Kind, Immediate: v}
 		case token.STRING:
 			return &SEXP{ValuePos: node.ValuePos, Kind: node.Kind, String: node.Value}
 		case token.NULL, token.NA, token.INF, token.NAN, token.TRUE, token.FALSE:
@@ -393,9 +402,8 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXP {
 			sexprec := ev.topFrame.Recursive(node.Value)
 			if sexprec == nil {
 				print("error: object '", node.Value, "' not found\n")
-				return &SEXP{ValuePos: node.ValuePos, Kind: token.ILLEGAL, Value: math.NaN()}
+				return &SEXP{ValuePos: node.ValuePos, Kind: token.ILLEGAL, Immediate: math.NaN()}
 			} else {
-				defer un(traceff(ev, fmt.Sprintf("%g", sexprec.Value)))
 				return sexprec
 			}
 		default:
@@ -403,7 +411,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXP {
 		}
 	case *ast.BinaryExpr:
 		ev.invisible = false
-		return evalBinary(ev,ex.(*ast.BinaryExpr))
+		return evalBinary(ev, ex.(*ast.BinaryExpr))
 	case *ast.CallExpr:
 		ev.invisible = false
 		return EvalCall(ev, ex.(*ast.CallExpr))
@@ -422,77 +430,79 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXP {
 	return &SEXP{Kind: token.ILLEGAL}
 }
 
-func evalBinary(ev *Evaluator,node *ast.BinaryExpr) *SEXP {
-		defer un(trace(ev, "BinaryExpr"))
-		x := EvalExpr(ev, node.X)
-		un(traceff(ev, node.Op.String()))
-		switch node.Op {
-		case token.AND, token.ANDVECTOR:
-			if isTrue(x) {
-				y := EvalExpr(ev, node.Y)
-				if isTrue(y) {
-					return y
-				} else {
-					return nil
-				}
+func evalBinary(ev *Evaluator, node *ast.BinaryExpr) *SEXP {
+	defer un(trace(ev, "BinaryExpr"))
+	x := EvalExpr(ev, node.X)
+	un(traceff(ev, node.Op.String()))
+	switch node.Op {
+	case token.AND, token.ANDVECTOR:
+		if isTrue(x) {
+			y := EvalExpr(ev, node.Y)
+			if isTrue(y) {
+				return y
 			} else {
 				return nil
 			}
-		case token.OR, token.ORVECTOR:
-			if isTrue(x) {
-				return x
-			} else {
-				y := EvalExpr(ev, node.Y)
-				if isTrue(y) {
-					return y
-				} else {
-					return nil
-				}
-			}
-		case token.LESS, token.LESSEQUAL, token.GREATER, token.GREATEREQUAL, token.EQUAL, token.UNEQUAL:
-			return EvalComp(node.Op, x, EvalExpr(ev, node.Y))
-		default:
-			return EvalOp(node.Op, x, EvalExpr(ev, node.Y))
+		} else {
+			return nil
 		}
+	case token.OR, token.ORVECTOR:
+		if isTrue(x) {
+			return x
+		} else {
+			y := EvalExpr(ev, node.Y)
+			if isTrue(y) {
+				return y
+			} else {
+				return nil
+			}
+		}
+	case token.LESS, token.LESSEQUAL, token.GREATER, token.GREATEREQUAL, token.EQUAL, token.UNEQUAL:
+		return EvalComp(node.Op, x, EvalExpr(ev, node.Y))
+	default:
+		return EvalOp(node.Op, x, EvalExpr(ev, node.Y))
+	}
 }
 
 func EvalComp(op token.Token, x *SEXP, y *SEXP) *SEXP {
 	if x.Kind == token.ILLEGAL || y.Kind == token.ILLEGAL {
 		return &SEXP{Kind: token.ILLEGAL}
 	}
+	o1 := x.Immediate
+	o2 := y.Immediate
 	switch op {
 	case token.LESS:
-		if x.Value < y.Value {
+		if o1 < o2 {
 			return x
 		} else {
 			return nil
 		}
 	case token.LESSEQUAL:
-		if x.Value <= y.Value {
+		if o1 <= o2 {
 			return x
 		} else {
 			return nil
 		}
 	case token.GREATER:
-		if x.Value > y.Value {
+		if o1 > o2 {
 			return x
 		} else {
 			return nil
 		}
 	case token.GREATEREQUAL:
-		if x.Value >= y.Value {
+		if o1 >= o2 {
 			return x
 		} else {
 			return nil
 		}
 	case token.EQUAL:
-		if x.Value == y.Value {
+		if o1 == o2 {
 			return x
 		} else {
 			return nil
 		}
 	case token.UNEQUAL:
-		if x.Value != y.Value {
+		if o1 != o2 {
 			return x
 		} else {
 			return nil
@@ -507,23 +517,25 @@ func EvalOp(op token.Token, x *SEXP, y *SEXP) *SEXP {
 	if x.Kind == token.ILLEGAL || y.Kind == token.ILLEGAL {
 		return &SEXP{Kind: token.ILLEGAL}
 	}
+	o1 := x.Immediate
+	o2 := y.Immediate
 	var val float64
 	switch op {
 	case token.PLUS:
-		val = x.Value + y.Value
+		val = o1 + o2
 	case token.MINUS:
-		val = x.Value - y.Value
+		val = o1 - o2 
 	case token.MULTIPLICATION:
-		val = x.Value * y.Value
+		val = o1 * o2
 	case token.DIVISION:
-		val = x.Value / y.Value
+		val = o1 / o2
 	case token.EXPONENTIATION:
-		val = math.Pow(x.Value, y.Value)
+		val = math.Pow(o1, o2)
 	case token.MODULUS:
-		val = math.Mod(x.Value, y.Value)
+		val = math.Mod(o1, o2)
 	default:
 		println("?Op: " + op.String())
 		return &SEXP{Kind: token.ILLEGAL}
 	}
-	return &SEXP{Kind: token.FLOAT, Value: val}
+	return &SEXP{Kind: token.FLOAT, Immediate: val}
 }

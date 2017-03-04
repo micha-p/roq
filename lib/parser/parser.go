@@ -1192,9 +1192,8 @@ func (p *parser) parseBinaryExpr(lhs bool, prec1 int) ast.Expr {
 func (p *parser) parseParameter() ast.Expr {
 	if p.trace {
 		defer un(trace(p, "Parameter"))
-
 	}
-	x := p.parseBinaryExpr(false, 3)
+	x := p.parseBinaryExpr(false, 1)
 	switch x.(type) {
 	case *ast.BinaryExpr:
 		e := x.(*ast.BinaryExpr)

@@ -50,9 +50,18 @@ func EvalCat(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
 		case token.STRING:
 			print(strings.Replace(r.String, "\\n", "\n", -1)) // needs strings.Map
 		case token.INT:
-			fmt.Printf("%g", r.Value)
+			fmt.Printf("%g", r.Immediate)
 		case token.FLOAT:
-			fmt.Printf("%g", r.Value)
+			if r.Array==nil {
+				print(r.Immediate)
+			} else {
+				for n, v := range *r.Array {
+					if n>0 {
+						print(" ")
+					}
+					fmt.Printf(" %g", v) // R has small e for exponential format
+				}
+			}
 		default:
 			println("?CAT", r.Kind.String())
 		}

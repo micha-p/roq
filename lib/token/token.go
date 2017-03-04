@@ -192,10 +192,10 @@ const (
 	IN
 	NEXT
 	BREAK
-	
+
 	// special command
 	VERSION
-	
+
 	keyword_end
 )
 

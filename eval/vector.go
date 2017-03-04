@@ -18,13 +18,13 @@ func EvalC(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
 
 	evaluatedArgs := make(map[int]float64)
 	for n, v := range node.Args { // TODO: strictly left to right
-		val := EvalExpr(ev, v)
-		evaluatedArgs[n] = val.Value
+		val := EvalExprOrAssignment(ev, v)
+		evaluatedArgs[n] = val.Immediate
 	}
 	c := make([]float64, len(evaluatedArgs))
 	for n,v := range evaluatedArgs {
 		c[n] = v
 	}
 
-	return &SEXP{ValuePos: node.Fun.Pos(), Kind: token.FLOAT, Array: c}
+	return &SEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, Kind: token.FLOAT, Array: &c}
 }
