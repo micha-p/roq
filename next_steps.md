@@ -1,13 +1,24 @@
+release 0.2.1
+
 - vectors
+- operators on vectors
+- vector recycling
 - for statement
 
-release
+release 0.2.2
 
+- indexing
 - iterators
+- ranges
 - subsetting
 - dim
 
-release
+release 0.2.3
+
+- matrices
+- operators on matrices
+
+release 0.3
 
 - lists
 - names
@@ -24,4 +35,8 @@ release
 - class
 - dispatching
 
-public
+release
+
+- reading base-package
+
+public release

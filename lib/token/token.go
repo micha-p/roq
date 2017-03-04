@@ -22,6 +22,7 @@ const (
 	ILLEGAL Token = iota
 	EOF
 	COMMENT
+	COLUMN
 
 	literal_beg
 	// Identifiers and basic type literals
@@ -203,6 +204,7 @@ var tokens = [...]string{
 	ILLEGAL: "ILLEGAL",
 	EOF:     "EOF",
 	COMMENT: "COMMENT",
+	COLUMN:  "COLUMN",
 
 	IDENT: "IDENT",
 	INT:   "INT",

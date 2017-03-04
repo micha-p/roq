@@ -559,6 +559,9 @@ scanAgain:
 				insertSemi = true
 				return pos, tok, ""
 			}
+		} else if lit=="c"{
+			insertSemi = true
+			tok = token.COLUMN
 		} else {
 			insertSemi = true
 			tok = token.IDENT

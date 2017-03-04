@@ -310,6 +310,12 @@ func PrintResult(ev *Evaluator, r *SEXP) {
 			}
 		case token.FLOAT:
 			fmt.Printf("[1] %g\n", r.Value) // R has small e for exponential format
+		case token.COLUMN:
+			print("[",len(r.Array),"]")
+			for _,v := range r.Array {
+				fmt.Printf(" %g", v)
+			}
+			println()
 		case token.FUNCTION:
 			if DEBUG {
 				print("function(")
@@ -403,6 +409,9 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXP {
 	case *ast.CallExpr:
 		ev.invisible = false
 		return EvalCall(ev, ex.(*ast.CallExpr))
+	case *ast.VectorExpr:
+		ev.invisible = false
+		return EvalVector(ev, ex.(*ast.VectorExpr))
 	case *ast.ParenExpr:
 		ev.invisible = false
 		node := ex.(*ast.ParenExpr)

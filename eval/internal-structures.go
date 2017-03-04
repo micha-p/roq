@@ -64,5 +64,6 @@ type SEXP struct {
 	Fieldlist []*ast.Field   // only if function
 	Body      *ast.BlockStmt // only if function: BlockStmt or single Stmt
 	String    string
-	Value     float64
+	Value     float64        // single values
+	Array     []float64      // vectors
 }

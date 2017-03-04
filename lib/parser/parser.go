@@ -838,6 +838,9 @@ func (p *parser) parseOperand(lhs bool) ast.Expr {
 		return x
 	} else {
 		switch p.tok {
+		case token.COLUMN:
+			x := p.parseIdent()
+			return x
 		case token.IDENT:
 			x := p.parseIdent()
 			if !lhs {
@@ -951,6 +954,28 @@ func (p *parser) parseCall(fun ast.Expr) *ast.CallExpr {
 	rparen := p.expectClosing(token.RPAREN, "argument list")
 
 	return &ast.CallExpr{Fun: fun, Lparen: lparen, Args: list, Ellipsis: ellipsis, Rparen: rparen}
+}
+
+// TODO vector literals consisting just of floats
+// TODO allowing for non flat vectors RECURSIVE = TRUE/FALSE
+
+func (p *parser) parseVector(start token.Pos) *ast.VectorExpr {
+	if p.trace {
+		defer un(trace(p, "Vector"))
+	}
+	lparen := p.expect(token.LPAREN)
+	p.exprLev++
+	var list []ast.Expr
+	for p.tok != token.RPAREN && p.tok != token.EOF {
+		list = append(list, p.parseParameter())
+		if !p.atComma("vector element list", token.RPAREN) {
+			break
+		}
+		p.next()
+	}
+	p.exprLev--
+	rparen := p.expectClosing(token.RPAREN, "vector element list")
+	return &ast.VectorExpr{Start: start, Lparen: lparen, Args: list, Rparen: rparen}
 }
 
 func (p *parser) parseValue(keyOk bool) ast.Expr {
@@ -1072,7 +1097,7 @@ func (p *parser) parsePrimaryExpr(lhs bool) ast.Expr {
 	if p.trace {
 		defer un(trace(p, "PrimaryExpr"))
 	}
-
+	
 	x := p.parseOperand(lhs)
 L:
 	for {
@@ -1132,6 +1157,9 @@ func (p *parser) parseUnaryExpr(lhs bool) ast.Expr {
 		p.next()
 		x := p.parseUnaryExpr(false)
 		return &ast.UnaryExpr{OpPos: pos, Op: op, X: x}
+	case token.COLUMN:
+		p.next()
+		return p.parseVector(p.pos)
 	}
 
 	return p.parsePrimaryExpr(lhs)
@@ -1191,7 +1219,6 @@ func (p *parser) parseExpr(lhs bool) ast.Expr {
 	if p.trace {
 		defer un(trace(p, "Expression or shortassignment"))
 	}
-
 	return p.parseBinaryExpr(lhs, 3)
 }
 
@@ -1407,7 +1434,7 @@ func (p *parser) parseStmt() (s ast.Stmt) {
 	switch p.tok {
 	case
 		// tokens that may start an expression
-		token.IDENT, token.INT, token.FLOAT, token.IMAG, token.STRING, token.FUNCTION, token.LPAREN, // operands
+		token.IDENT, token.COLUMN, token.INT, token.FLOAT, token.IMAG, token.STRING, token.FUNCTION, token.LPAREN, // operands
 		token.NULL, token.NA, token.INF, token.NAN, token.TRUE, token.FALSE, // constants
 		token.LBRACK, token.STRUCT, token.MAP, token.CHAN, token.INTERFACE, // composite types
 		token.PLUS, token.MINUS, token.MULTIPLICATION, token.AND, token.NOT: // unary operators

@@ -5,8 +5,9 @@ import "runtime"
 func printVersion() {
 	print("arch           "); println(runtime.GOARCH)
 	print("os             "); println(runtime.GOOS)
+	print("status         "); println("proof of concept")
 	print("major          "); println("0")
-	print("minor          "); println("0.0")
+	print("minor          "); println("2.0")
 	print("language       "); println("R")
 }
 
