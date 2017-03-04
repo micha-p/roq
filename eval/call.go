@@ -72,6 +72,8 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
 	f := ev.topFrame.Lookup(funcname)
 	if f == nil {
 		switch funcname {
+		case "c":
+			return EvalC(ev, node)
 		case "cat":
 			return EvalCat(ev, node)
 		default:

@@ -226,14 +226,6 @@ type (
 		Rparen   token.Pos // position of ")"
 	}
 
-	// A VectorExpr node represents a call to c(...)
-	VectorExpr struct {
-		Start    token.Pos // position of "c"
-		Lparen   token.Pos // position of "("
-		Args     []Expr    // function arguments; or nil
-		Rparen   token.Pos // position of ")"
-	}
-
 	// A UnaryExpr node represents a unary expression.
 	//
 	UnaryExpr struct {
@@ -322,7 +314,6 @@ func (x *IndexExpr) Pos() token.Pos      { return x.X.Pos() }
 func (x *SliceExpr) Pos() token.Pos      { return x.X.Pos() }
 func (x *TypeAssertExpr) Pos() token.Pos { return x.X.Pos() }
 func (x *CallExpr) Pos() token.Pos       { return x.Fun.Pos() }
-func (x *VectorExpr) Pos() token.Pos     { return x.Start }
 func (x *UnaryExpr) Pos() token.Pos      { return x.OpPos }
 func (x *BinaryExpr) Pos() token.Pos     { return x.X.Pos() }
 func (x *TaggedExpr) Pos() token.Pos     { return x.X.Pos() }
@@ -353,7 +344,6 @@ func (x *IndexExpr) End() token.Pos      { return x.Rbrack + 1 }
 func (x *SliceExpr) End() token.Pos      { return x.Rbrack + 1 }
 func (x *TypeAssertExpr) End() token.Pos { return x.Rparen + 1 }
 func (x *CallExpr) End() token.Pos       { return x.Rparen + 1 }
-func (x *VectorExpr) End() token.Pos     { return x.Rparen + 1 }
 func (x *UnaryExpr) End() token.Pos      { return x.X.End() }
 func (x *BinaryExpr) End() token.Pos     { return x.Y.End() }
 func (x *TaggedExpr) End() token.Pos     { return x.Rhs.End() }
@@ -383,7 +373,6 @@ func (*IndexExpr) exprNode()      {}
 func (*SliceExpr) exprNode()      {}
 func (*TypeAssertExpr) exprNode() {}
 func (*CallExpr) exprNode()       {}
-func (*VectorExpr) exprNode()     {}
 func (*UnaryExpr) exprNode()      {}
 func (*BinaryExpr) exprNode()     {}
 func (*TaggedExpr) exprNode()     {}

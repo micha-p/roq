@@ -10,7 +10,7 @@ import (
 // TODO recursive=TRUE/FALSE
 // TODO faster vector literals, composed just of floats
 
-func EvalVector(ev *Evaluator, node *ast.VectorExpr) (r *SEXP) {
+func EvalC(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
 	TRACE := ev.trace
 	if TRACE {
 		println("VectorExpr")
@@ -26,5 +26,5 @@ func EvalVector(ev *Evaluator, node *ast.VectorExpr) (r *SEXP) {
 		c[n] = v
 	}
 
-	return &SEXP{ValuePos: node.Start, Kind: token.COLUMN, Array: c}
+	return &SEXP{ValuePos: node.Fun.Pos(), Kind: token.FLOAT, Array: c}
 }
