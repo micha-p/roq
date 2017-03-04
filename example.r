@@ -1,8 +1,11 @@
-c(1,2,3)
+f<-function(a,b,d){
+cat(a)
+cat(b)
+cat(d)
 cat("\n")
+}
 
-c(1,1+1,3)
-cat("\n")
+f(1,2,3)
 
 #b=1
 #b

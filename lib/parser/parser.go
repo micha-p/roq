@@ -35,6 +35,7 @@ type parser struct {
 
 	// Tracing/debugging
 	trace  bool // == (mode & Trace != 0)
+	debug  bool // == (mode & Trace != 0)
 	indent int  // indentation used for tracing output
 
 	// Next token
@@ -67,6 +68,7 @@ func (p *parser) init(fset *token.FileSet, filename string, src []byte, mode Mod
 	p.scanner.Init(p.file, src, eh)
 
 	p.trace = mode&Trace != 0 // for convenience (p.trace is used frequently)
+	p.debug = mode&Debug != 0 // for convenience (p.debug is used frequently)
 
 	p.next()
 }
@@ -226,7 +228,7 @@ func (p *parser) errorExpected(pos token.Pos, msg string) {
 }
 
 func (p *parser) expect(tok token.Token) token.Pos {
-	if p.trace {
+	if p.debug {
 		defer trace0(p, "EXPECT: "+tok.String()+"  GIVEN: "+p.tok.String())
 	}
 
@@ -746,7 +748,7 @@ func (p *parser) tryType() ast.Expr {
 // Blocks
 
 func (p *parser) parseStmtList() (list []ast.Stmt) {
-	if p.trace {
+	if p.debug {
 		defer un(trace(p, "StatementList"))
 	}
 
@@ -1094,7 +1096,7 @@ func unparen(x ast.Expr) ast.Expr {
 
 // If lhs is set and the result is an identifier, it is not resolved.
 func (p *parser) parsePrimaryExpr(lhs bool) ast.Expr {
-	if p.trace {
+	if p.trace && p.debug {
 		defer un(trace(p, "PrimaryExpr"))
 	}
 	
@@ -1147,7 +1149,7 @@ L:
 
 // If lhs is set and the result is an identifier, it is not resolved.
 func (p *parser) parseUnaryExpr(lhs bool) ast.Expr {
-	if p.trace {
+	if p.trace && p.debug {
 		defer un(trace(p, "UnaryExpr"))
 	}
 

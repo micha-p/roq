@@ -30,8 +30,8 @@ func main() {
 	parsePtr := flag.Bool("parse", false, "parse")
 	traceLongPtr := flag.Bool("trace", false, "trace")
 	traceFlagPtr := flag.Bool("T", false, "trace")
-	debugLongPtr := flag.Bool("debug", false, "trace")
-	debugFlagPtr := flag.Bool("D", false, "trace")
+	debugLongPtr := flag.Bool("debug", false, "debug")
+	debugFlagPtr := flag.Bool("D", false, "debug")
 	filePtr := flag.String("file", "example.src", "filename to process")
 	flag.Parse()
 
@@ -56,14 +56,16 @@ func main() {
 	} else if *parsePtr {
 
 		var parserOpts parser.Mode
+		parserOpts = parser.AllErrors
+		
 		if TRACE {
-			parserOpts = parser.AllErrors | parser.Trace
-		} else {
-			parserOpts = parser.AllErrors
+			parserOpts = parserOpts | parser.Trace
+		}
+		if DEBUG {
+			parserOpts = parserOpts | parser.Debug
 		}
 
 		p, err := parser.ParseInit(fset, *filePtr, nil, parserOpts)
-
 		if err != nil {
 			fmt.Println(err)
 			return

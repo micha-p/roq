@@ -54,6 +54,7 @@ const (
 	ImportsOnly                                    // stop parsing after import declarations
 	ParseComments                                  // parse comments and add them to AST
 	Trace                                          // print a trace of parsed productions
+	Debug                                          // print expected tokens etc
 	DeclarationErrors                              // report declaration errors
 	SpuriousErrors                                 // same as AllErrors, for backward-compatibility
 	AllErrors         = SpuriousErrors             // report all errors (not just the first 10 on different lines)
