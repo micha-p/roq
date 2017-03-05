@@ -517,25 +517,21 @@ func EvalOp(op token.Token, x *SEXP, y *SEXP) *SEXP {
 	if x.Kind == token.ILLEGAL || y.Kind == token.ILLEGAL {
 		return &SEXP{Kind: token.ILLEGAL}
 	}
-	o1 := x.Immediate
-	o2 := y.Immediate
-	var val float64
 	switch op {
 	case token.PLUS:
-		val = o1 + o2
+		return EvalVectorOp(x,y,fPLUS)
 	case token.MINUS:
-		val = o1 - o2 
+		return EvalVectorOp(x,y,fMINUS)
 	case token.MULTIPLICATION:
-		val = o1 * o2
+		return EvalVectorOp(x,y,fMULTIPLICATION)
 	case token.DIVISION:
-		val = o1 / o2
+		return EvalVectorOp(x,y,fDIVISION)
 	case token.EXPONENTIATION:
-		val = math.Pow(o1, o2)
+		return EvalVectorOp(x,y,fEXPONENTIATION)
 	case token.MODULUS:
-		val = math.Mod(o1, o2)
+		return EvalVectorOp(x,y,fMODULUS)
 	default:
 		println("?Op: " + op.String())
 		return &SEXP{Kind: token.ILLEGAL}
 	}
-	return &SEXP{Kind: token.FLOAT, Immediate: val}
 }
