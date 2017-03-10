@@ -66,9 +66,27 @@ func fEXPONENTIATION(x float64, y float64) float64 {
 	return math.Pow(x, y)
 }
 
-func EvalVectorOp(x *SEXP, y *SEXP, FUN func(float64, float64) float64) *SEXP {
-	xv := *x.Array
-	yv := *y.Array
+func mapIA(FUN func(float64, float64) float64, x float64, y *[]float64) *[]float64 {
+	resultLen := len(*y)
+	r := make([]float64,resultLen)
+	for n,value := range *y {
+		r[n]=FUN(x,value)
+	}
+	return &r
+}
+
+func mapAI(FUN func(float64, float64) float64, x *[]float64, y float64) *[]float64 {
+	resultLen := len(*x)
+	r := make([]float64,resultLen)
+	for n,value := range *x {
+		r[n]=FUN(value,y)
+	}
+	return &r
+}
+
+func mapAA(FUN func(float64, float64) float64, x *[]float64, y *[]float64) *[]float64 {
+	xv := *x
+	yv := *y
 	lenx := len(xv)
 	leny := len(yv)
 	sliceLen := intMin(len(xv),len(yv))
@@ -81,7 +99,19 @@ func EvalVectorOp(x *SEXP, y *SEXP, FUN func(float64, float64) float64) *SEXP {
 			r[i] = FUN(xv[i % lenx], yv[i % leny])
 		}
 	}
-	return &SEXP{Kind: token.FLOAT, Array: &r}
+	return &r
+}
+
+func EvalVectorOp(x *SEXP, y *SEXP, FUN func(float64, float64) float64) *SEXP {
+	if x.Array==nil && y.Array==nil {
+		return &SEXP{Kind: token.FLOAT, Immediate: FUN(x.Immediate,y.Immediate)}
+	} else if x.Array==nil {
+		return &SEXP{Kind: token.FLOAT, Array: mapIA(FUN,x.Immediate,y.Array)}
+	} else if y.Array==nil {
+		return &SEXP{Kind: token.FLOAT, Array: mapAI(FUN,x.Array,y.Immediate)}
+	} else {
+		return &SEXP{Kind: token.FLOAT, Array: mapAA(FUN,x.Array,y.Array)}
+	}
 }
 
 func EvalComp(op token.Token, x *SEXP, y *SEXP) *SEXP {
