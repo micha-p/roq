@@ -82,7 +82,7 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
 	if f == nil {
 		switch funcname {
 		case "c":
-			return EvalC(ev, node)
+			return EvalCombine(ev, node)
 		case "cat":
 			return EvalCat(ev, node)
 		default:

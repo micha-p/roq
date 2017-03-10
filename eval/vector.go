@@ -11,7 +11,7 @@ import (
 // TODO recursive=TRUE/FALSE
 // TODO faster vector literals, composed just of floats
 
-func EvalC(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
+func EvalCombine(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
 	TRACE := ev.trace
 	if TRACE {
 		println("VectorExpr")
@@ -82,4 +82,76 @@ func EvalVectorOp(x *SEXP, y *SEXP, FUN func(float64, float64) float64) *SEXP {
 		}
 	}
 	return &SEXP{Kind: token.FLOAT, Array: &r}
+}
+
+func EvalComp(op token.Token, x *SEXP, y *SEXP) *SEXP {
+	if x.Kind == token.ILLEGAL || y.Kind == token.ILLEGAL {
+		return &SEXP{Kind: token.ILLEGAL}
+	}
+	o1 := x.Immediate
+	o2 := y.Immediate
+	switch op {
+	case token.LESS:
+		if o1 < o2 {
+			return x
+		} else {
+			return nil
+		}
+	case token.LESSEQUAL:
+		if o1 <= o2 {
+			return x
+		} else {
+			return nil
+		}
+	case token.GREATER:
+		if o1 > o2 {
+			return x
+		} else {
+			return nil
+		}
+	case token.GREATEREQUAL:
+		if o1 >= o2 {
+			return x
+		} else {
+			return nil
+		}
+	case token.EQUAL:
+		if o1 == o2 {
+			return x
+		} else {
+			return nil
+		}
+	case token.UNEQUAL:
+		if o1 != o2 {
+			return x
+		} else {
+			return nil
+		}
+	default:
+		println("?Comp: " + op.String())
+		return &SEXP{Kind: token.ILLEGAL}
+	}
+}
+
+func EvalOp(op token.Token, x *SEXP, y *SEXP) *SEXP {
+	if x.Kind == token.ILLEGAL || y.Kind == token.ILLEGAL {
+		return &SEXP{Kind: token.ILLEGAL}
+	}
+	switch op {
+	case token.PLUS:
+		return EvalVectorOp(x,y,fPLUS)
+	case token.MINUS:
+		return EvalVectorOp(x,y,fMINUS)
+	case token.MULTIPLICATION:
+		return EvalVectorOp(x,y,fMULTIPLICATION)
+	case token.DIVISION:
+		return EvalVectorOp(x,y,fDIVISION)
+	case token.EXPONENTIATION:
+		return EvalVectorOp(x,y,fEXPONENTIATION)
+	case token.MODULUS:
+		return EvalVectorOp(x,y,fMODULUS)
+	default:
+		println("?Op: " + op.String())
+		return &SEXP{Kind: token.ILLEGAL}
+	}
 }
