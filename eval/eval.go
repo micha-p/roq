@@ -316,7 +316,7 @@ func PrintResult(ev *Evaluator, r *SEXP) {
 			if DEBUG {
 				println("ILLEGAL RESULT")
 			}
-		case token.FLOAT:
+		case token.FLOAT, token.INT:
 			if r.Slice==nil {
 				fmt.Printf("[1] %g", r.Immediate) // R has small e for exponential format
 			} else {

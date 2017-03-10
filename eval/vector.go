@@ -112,7 +112,14 @@ func EvalVectorOp(x *SEXP, y *SEXP, FUN func(float64, float64) float64) *SEXP {
 	}
 }
 
+// FALSE is counted as zero, 
+// TRUE as 1 in comparisons (this will cause different behaviour; TODO: Warnings
+
 func EvalComp(op token.Token, x *SEXP, y *SEXP) *SEXP {
+	// false and true are not really the same. false is rather the base level.
+	if x == nil || y == nil {
+		return nil
+	}
 	if x.Kind == token.ILLEGAL || y.Kind == token.ILLEGAL {
 		return &SEXP{Kind: token.ILLEGAL}
 	}
@@ -120,14 +127,14 @@ func EvalComp(op token.Token, x *SEXP, y *SEXP) *SEXP {
 	if x.Slice==nil {
 		o1 = x.Immediate
 	} else {
-		o2 = y.Slice[0]
+		o1 = x.Slice[0]
 	}
 	if y.Slice==nil {
 		o2 = y.Immediate
 	} else {
 		o2 = y.Slice[0]
 	}
-	println(x.Kind.String(),o1,o2)
+	// println("?",o1,op.String(),o2)
 	switch op {
 	case token.LESS:
 		if o1 < o2 {
