@@ -27,7 +27,7 @@ func EvalCombine(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
 		c[n] = v
 	}
 
-	return &SEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, Kind: token.FLOAT, Array: &c}
+	return &SEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, Kind: token.FLOAT, Slice: c}
 }
 
 func intMin(x int, y int) int {
@@ -66,51 +66,49 @@ func fEXPONENTIATION(x float64, y float64) float64 {
 	return math.Pow(x, y)
 }
 
-func mapIA(FUN func(float64, float64) float64, x float64, y *[]float64) *[]float64 {
-	resultLen := len(*y)
+func mapIA(FUN func(float64, float64) float64, x float64, y []float64) []float64 {
+	resultLen := len(y)
 	r := make([]float64,resultLen)
-	for n,value := range *y {
+	for n,value := range y {
 		r[n]=FUN(x,value)
 	}
-	return &r
+	return r
 }
 
-func mapAI(FUN func(float64, float64) float64, x *[]float64, y float64) *[]float64 {
-	resultLen := len(*x)
+func mapAI(FUN func(float64, float64) float64, x []float64, y float64) []float64 {
+	resultLen := len(x)
 	r := make([]float64,resultLen)
-	for n,value := range *x {
+	for n,value := range x {
 		r[n]=FUN(value,y)
 	}
-	return &r
+	return r
 }
 
-func mapAA(FUN func(float64, float64) float64, x *[]float64, y *[]float64) *[]float64 {
-	xv := *x
-	yv := *y
-	lenx := len(xv)
-	leny := len(yv)
-	sliceLen := intMin(len(xv),len(yv))
-	resultLen := intMax(len(xv),len(yv))
+func mapAA(FUN func(float64, float64) float64, x []float64, y []float64) []float64 {
+	lenx := len(x)
+	leny := len(y)
+	sliceLen := intMin(lenx,leny)
+	resultLen := intMax(lenx,leny)
 	
 	r := make([]float64,resultLen)
 
 	for base := 0; base < resultLen; base += sliceLen {
 		for i := base ; (i < (base+sliceLen) && i < resultLen); i++ {
-			r[i] = FUN(xv[i % lenx], yv[i % leny])
+			r[i] = FUN(x[i % lenx], y[i % leny])
 		}
 	}
-	return &r
+	return r
 }
 
 func EvalVectorOp(x *SEXP, y *SEXP, FUN func(float64, float64) float64) *SEXP {
-	if x.Array==nil && y.Array==nil {
+	if x.Slice==nil && y.Slice==nil {
 		return &SEXP{Kind: token.FLOAT, Immediate: FUN(x.Immediate,y.Immediate)}
-	} else if x.Array==nil {
-		return &SEXP{Kind: token.FLOAT, Array: mapIA(FUN,x.Immediate,y.Array)}
-	} else if y.Array==nil {
-		return &SEXP{Kind: token.FLOAT, Array: mapAI(FUN,x.Array,y.Immediate)}
+	} else if x.Slice==nil {
+		return &SEXP{Kind: token.FLOAT, Slice: mapIA(FUN,x.Immediate,y.Slice)}
+	} else if y.Slice==nil {
+		return &SEXP{Kind: token.FLOAT, Slice: mapAI(FUN,x.Slice,y.Immediate)}
 	} else {
-		return &SEXP{Kind: token.FLOAT, Array: mapAA(FUN,x.Array,y.Array)}
+		return &SEXP{Kind: token.FLOAT, Slice: mapAA(FUN,x.Slice,y.Slice)}
 	}
 }
 
@@ -118,8 +116,18 @@ func EvalComp(op token.Token, x *SEXP, y *SEXP) *SEXP {
 	if x.Kind == token.ILLEGAL || y.Kind == token.ILLEGAL {
 		return &SEXP{Kind: token.ILLEGAL}
 	}
-	o1 := x.Immediate
-	o2 := y.Immediate
+	var o1,o2 float64
+	if x.Slice==nil {
+		o1 = x.Immediate
+	} else {
+		o2 = y.Slice[0]
+	}
+	if y.Slice==nil {
+		o2 = y.Immediate
+	} else {
+		o2 = y.Slice[0]
+	}
+	println(x.Kind.String(),o1,o2)
 	switch op {
 	case token.LESS:
 		if o1 < o2 {

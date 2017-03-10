@@ -153,9 +153,8 @@ func isTrue(e *SEXP) bool {
 	if e.Kind == token.FLOAT && e.Immediate != 0 {
 		return true
 	}
-	if e.Kind == token.FLOAT && e.Array != nil && len(*e.Array)>0 {
-		a := * e.Array
-		if a[0] == 0 {
+	if e.Kind == token.FLOAT && e.Slice != nil && len(e.Slice)>0 {
+		if e.Slice[0] == 0 {
 			return false
 		} else {
 			return true
@@ -318,11 +317,11 @@ func PrintResult(ev *Evaluator, r *SEXP) {
 				println("ILLEGAL RESULT")
 			}
 		case token.FLOAT:
-			if r.Array==nil {
+			if r.Slice==nil {
 				fmt.Printf("[1] %g", r.Immediate) // R has small e for exponential format
 			} else {
-				print("[", len(*r.Array), "]")
-				for _, v := range *r.Array {
+				print("[", len(r.Slice), "]")
+				for _, v := range r.Slice {
 					fmt.Printf(" %g", v) // R has small e for exponential format
 				}
 			}

@@ -52,10 +52,10 @@ func EvalCat(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
 		case token.INT:
 			fmt.Printf("%g", r.Immediate)
 		case token.FLOAT:
-			if r.Array==nil {
+			if r.Slice==nil {
 				print(r.Immediate)
 			} else {
-				for n, v := range *r.Array {
+				for n, v := range r.Slice {
 					if n>0 {
 						print(" ")
 					}

@@ -68,5 +68,5 @@ type SEXP struct {
 	Body      *ast.BlockStmt // only if function: BlockStmt or single Stmt
 	String    string
 	Immediate float64        // single values
-	Array     *[]float64     // vectors
+	Slice     []float64      // "A slice is a refernece to an array"
 }
