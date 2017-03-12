@@ -4,21 +4,18 @@ release 0.2.1
 - operators on vectors
 - vector recycling
 - for statement
-
-release 0.2.2
-
 - indexing
 - iterators
 - ranges
 - subsetting
+
+release 0.2.2
+
 - dim
-
-release 0.2.3
-
 - matrices
 - operators on matrices
 
-release 0.3
+release 0.2.3
 
 - lists
 - names

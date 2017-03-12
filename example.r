@@ -1,11 +1,14 @@
-1 < 2
-1 > 2
-c(1,2,3) < c(4,5,6)
-c(1,2,3) > c(4,5,6)
-1 < c(4,5,6)
-1 > c(4,5,6)
-
-cat("\n")
-1 < 2 < 3
-1 > 2 < 3 # 1>2 is FALSE; 0 would be < 3
-3 > c(2,2) == 2
+n<-0
+repeat{
+	cat(n)
+	cat("\n")
+	if(n==3)break
+	n=n+1
+}
+	cat("\n")
+for (n in c(1,2,3,4,5,6)) {
+	if(n==3)next
+	cat(n)
+	cat("\n")
+	if(n==5)break
+}

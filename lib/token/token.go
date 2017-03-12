@@ -166,7 +166,6 @@ const (
 	CASE
 	CHAN
 	CONST
-	CONTINUE
 
 	IMPORT
 
@@ -268,11 +267,9 @@ var tokens = [...]string{
 	SEMICOLON: ";",
 	//	COLON:     ":",
 
-	//	BREAK:    "break",
 	CASE:     "case",
 	CHAN:     "chan",
 	CONST:    "const",
-	CONTINUE: "continue",
 
 	IMPORT: "import",
 

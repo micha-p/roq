@@ -197,6 +197,36 @@ func EvalLoop(ev *Evaluator, e *ast.BlockStmt, cond ast.Expr) *SEXP {
 	ev.invisible = true
 	return &SEXP{Kind: token.NULL}
 }
+func EvalFor(ev *Evaluator, e *ast.BlockStmt, identifier string, iterable *SEXP) *SEXP {
+	if iterable.Slice == nil {
+		panic("Vector expected")
+	}
+	defer un(trace(ev, "LoopBody"))
+	var evloop Evaluator
+	evloop = *ev
+	evloop.state = loopState
+	var rstate LoopState
+	for _,v := range iterable.Slice {
+		evloop.state = loopState
+		// TODO: make use of cached position in map
+		ev.topFrame.Insert(identifier, &SEXP{Kind: token.FLOAT, Immediate: v})
+		for n := 0; n < len(e.List); n++ {
+			EvalStmt(&evloop, e.List[n])
+			rstate = evloop.state
+			if rstate == nextState {
+				break
+			}
+		}
+		if rstate == nextState {
+			continue
+		}
+		if rstate == breakState {
+			break
+		}
+	}
+	ev.invisible = true
+	return &SEXP{Kind: token.NULL}
+}
 
 func EvalStmt(ev *Evaluator, s ast.Stmt) *SEXP {
 	TRACE := ev.trace
@@ -230,7 +260,8 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) *SEXP {
 		return EvalLoop(ev, e.Body, nil)
 	case *ast.ForStmt:
 		defer un(trace(ev, "forStmt"))
-		//		return EvalLoop(ev, s.(*ast.ForStmt))
+		e := s.(*ast.ForStmt)
+		return EvalFor(ev, e.Body, e.Parameter.String(), EvalExpr(ev, e.Iterable))
 	case *ast.BreakStmt:
 		ev.state = breakState
 		return &SEXP{Kind: token.BREAK}

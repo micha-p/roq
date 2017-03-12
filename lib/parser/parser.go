@@ -295,7 +295,7 @@ func assert(cond bool, msg string) {
 func syncStmt(p *parser) {
 	for {
 		switch p.tok {
-		case token.BREAK, token.CONST, token.CONTINUE, token.FOR,
+		case token.BREAK, token.CONST, token.NEXT, token.FOR,
 			token.IF, token.RETURN, token.SELECT, token.SWITCH,
 			token.TYPE, token.VAR:
 			// Return only if parser made some progress since last
