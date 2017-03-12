@@ -114,6 +114,7 @@ func EvalVectorOp(x *SEXP, y *SEXP, FUN func(float64, float64) float64) *SEXP {
 
 // FALSE is counted as zero, 
 // TRUE as 1 in comparisons (this will cause different behaviour; TODO: Warnings
+// as evaluation is from left to right, y value has to be returned
 
 func EvalComp(op token.Token, x *SEXP, y *SEXP) *SEXP {
 	// false and true are not really the same. false is rather the base level.
@@ -138,37 +139,37 @@ func EvalComp(op token.Token, x *SEXP, y *SEXP) *SEXP {
 	switch op {
 	case token.LESS:
 		if o1 < o2 {
-			return x
+			return y
 		} else {
 			return nil
 		}
 	case token.LESSEQUAL:
 		if o1 <= o2 {
-			return x
+			return y
 		} else {
 			return nil
 		}
 	case token.GREATER:
 		if o1 > o2 {
-			return x
+			return y
 		} else {
 			return nil
 		}
 	case token.GREATEREQUAL:
 		if o1 >= o2 {
-			return x
+			return y
 		} else {
 			return nil
 		}
 	case token.EQUAL:
 		if o1 == o2 {
-			return x
+			return y
 		} else {
 			return nil
 		}
 	case token.UNEQUAL:
 		if o1 != o2 {
-			return x
+			return y
 		} else {
 			return nil
 		}
