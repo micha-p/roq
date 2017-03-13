@@ -892,15 +892,15 @@ func (p *parser) parseIndexOrSlice(x ast.Expr) ast.Expr {
 	p.exprLev++
 	var index [N]ast.Expr
 	var colons [N - 1]token.Pos
-	/*if p.tok != token.COLON {
+	if p.tok != token.SEQUENCE {
 		index[0] = p.parseRhs()
-	}*/
+	}
 	ncolons := 0
-	for /*p.tok == token.COLON &&*/ ncolons < len(colons) {
+	for p.tok == token.SEQUENCE && ncolons < len(colons) {
 		colons[ncolons] = p.pos
 		ncolons++
 		p.next()
-		if /*p.tok != token.COLON &&*/ p.tok != token.RBRACK && p.tok != token.EOF {
+		if p.tok != token.SEQUENCE && p.tok != token.RBRACK && p.tok != token.EOF {
 			index[ncolons] = p.parseRhs()
 		}
 	}

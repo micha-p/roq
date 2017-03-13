@@ -417,13 +417,27 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXP {
 		node := ex.(*ast.BasicLit)
 		defer un(trace(ev, "BasicLit ", node.Kind.String()))
 		switch node.Kind {
-		case token.INT, token.FLOAT:
-			v, err := strconv.ParseFloat(node.Value, 64) // TODO: support for all R formatted values
+		case token.FLOAT:
+			vfloat, err := strconv.ParseFloat(node.Value, 64) // TODO: support for all R formatted values
 			if err != nil {
 				print("ERROR:")
 				println(err)
 			}
-			return &SEXP{ValuePos: node.ValuePos, Kind: node.Kind, Immediate: v}
+			// TODO check conversion to integer
+			return &SEXP{ValuePos: node.ValuePos, Kind: node.Kind, Offset: int(math.Floor(vfloat))-1, Immediate: vfloat}
+		case token.INT:
+			vint, err := strconv.Atoi(node.Value)
+			if err != nil {
+				print("ERROR:")
+				println(err)
+			}
+			var vfloat float64
+			vfloat, err = strconv.ParseFloat(node.Value, 64) // TODO: support for all R formatted values
+			if err != nil {
+				print("ERROR:")
+				println(err)
+			}
+			return &SEXP{ValuePos: node.ValuePos, Kind: node.Kind, Offset: vint - 1, Immediate: vfloat}
 		case token.STRING:
 			return &SEXP{ValuePos: node.ValuePos, Kind: node.Kind, String: node.Value}
 		case token.NULL, token.NA, token.INF, token.NAN, token.TRUE, token.FALSE:
@@ -445,6 +459,9 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXP {
 	case *ast.CallExpr:
 		ev.invisible = false
 		return EvalCall(ev, ex.(*ast.CallExpr))
+	case *ast.IndexExpr:
+		ev.invisible = false
+		return EvalIndexExpr(ev, ex.(*ast.IndexExpr))
 	case *ast.ParenExpr:
 		ev.invisible = false
 		node := ex.(*ast.ParenExpr)

@@ -114,7 +114,9 @@ func EvalVectorOp(x *SEXP, y *SEXP, FUN func(float64, float64) float64) *SEXP {
 
 // FALSE is counted as zero, 
 // TRUE as 1 in comparisons (this will cause different behaviour; TODO: Warnings
-// as evaluation is from left to right, y value has to be returned
+//
+// Concatenation of comparisons:
+// As evaluation is from left to right, y value has to be returned
 
 func EvalComp(op token.Token, x *SEXP, y *SEXP) *SEXP {
 	// false and true are not really the same. false is rather the base level.

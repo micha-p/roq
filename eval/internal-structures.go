@@ -67,6 +67,7 @@ type SEXP struct {
 	Fieldlist []*ast.Field   // only if function
 	Body      *ast.BlockStmt // only if function: BlockStmt or single Stmt
 	String    string
-	Immediate float64        // single values
+	Immediate float64        // single value FLOAT
+	Offset    int            // single value INT; TODO change to uint in indexdomain?
 	Slice     []float64      // "A slice is a refernece to an array"
 }
