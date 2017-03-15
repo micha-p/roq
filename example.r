@@ -1,8 +1,9 @@
 a=c(11,22,33)
-b=c(1,2)
-d=c(1,3)
-a[1]
-a[2.2]
-a[1:3]
-a[b]
-a[d]
+length(a)
+length(c(1,2))
+length(c(1,2),c(1,3))
+length()
+length(a[1])
+length(a[2.2])
+length(a[1:2])
+length(a[1:3])

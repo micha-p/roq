@@ -14,7 +14,7 @@ import (
 func EvalCombine(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
 	TRACE := ev.trace
 	if TRACE {
-		println("VectorExpr")
+		println("Combine")
 	}
 
 	evaluatedArgs := make(map[int]float64)
@@ -28,6 +28,26 @@ func EvalCombine(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
 	}
 
 	return &SEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, Kind: token.FLOAT, Slice: c}
+}
+
+func EvalLength(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
+	TRACE := ev.trace
+	if TRACE {
+		println("Length")
+	}
+
+	l:=len(node.Args)
+	if l == 1 {
+		val := EvalExpr(ev,node.Args[0])
+		if val.Slice ==nil {
+			return &SEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, Kind: token.FLOAT, Immediate: 1}
+		} else {
+			return &SEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, Kind: token.FLOAT, Immediate: float64(len(val.Slice))}
+		}
+	} else {
+		println(l,"arguments passed to 'length' which requires 1") 
+		return &SEXP{Kind: token.ILLEGAL}
+	}
 }
 
 func intMin(x int, y int) int {

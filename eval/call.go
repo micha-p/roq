@@ -85,6 +85,8 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
 			return EvalCombine(ev, node)
 		case "cat":
 			return EvalCat(ev, node)
+		case "length":
+			return EvalLength(ev, node)
 		default:
 			println("\nError: could not find function \"" + funcname + "\"")
 			return &SEXP{Kind: token.ILLEGAL}
