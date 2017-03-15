@@ -326,7 +326,6 @@ func EvalAssignment(ev *Evaluator, e *ast.AssignStmt) *SEXP {
 func PrintResult(ev *Evaluator, r *SEXP) {
 
 	DEBUG := ev.debug
-
 	if DEBUG {
 		givenType := reflect.TypeOf(r)
 		print("print: ", givenType.String(), ": ", r.Kind.String(), ": ")

@@ -97,20 +97,8 @@ func Walk(v Visitor, node Node) {
 		Walk(v, n.Sel)
 
 	case *IndexExpr:
-		Walk(v, n.X)
+		Walk(v, n.Array)
 		Walk(v, n.Index)
-
-	case *SliceExpr:
-		Walk(v, n.X)
-		if n.Low != nil {
-			Walk(v, n.Low)
-		}
-		if n.High != nil {
-			Walk(v, n.High)
-		}
-		if n.Max != nil {
-			Walk(v, n.Max)
-		}
 
 	case *TypeAssertExpr:
 		Walk(v, n.X)

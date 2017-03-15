@@ -190,20 +190,9 @@ type (
 
 	// An IndexExpr node represents an expression followed by an index.
 	IndexExpr struct {
-		X      Expr      // expression
+		Array  Expr      // expression
 		Lbrack token.Pos // position of "["
 		Index  Expr      // index expression
-		Rbrack token.Pos // position of "]"
-	}
-
-	// An SliceExpr node represents an expression followed by slice indices.
-	SliceExpr struct {
-		X      Expr      // expression
-		Lbrack token.Pos // position of "["
-		Low    Expr      // begin of slice range; or nil
-		High   Expr      // end of slice range; or nil
-		Max    Expr      // maximum capacity of slice; or nil
-		Slice3 bool      // true if 3-index slice (2 colons present)
 		Rbrack token.Pos // position of "]"
 	}
 
@@ -310,8 +299,7 @@ func (x *CompositeLit) Pos() token.Pos {
 }
 func (x *ParenExpr) Pos() token.Pos      { return x.Lparen }
 func (x *SelectorExpr) Pos() token.Pos   { return x.X.Pos() }
-func (x *IndexExpr) Pos() token.Pos      { return x.X.Pos() }
-func (x *SliceExpr) Pos() token.Pos      { return x.X.Pos() }
+func (x *IndexExpr) Pos() token.Pos      { return x.Array.Pos() }
 func (x *TypeAssertExpr) Pos() token.Pos { return x.X.Pos() }
 func (x *CallExpr) Pos() token.Pos       { return x.Fun.Pos() }
 func (x *UnaryExpr) Pos() token.Pos      { return x.OpPos }
@@ -341,7 +329,6 @@ func (x *CompositeLit) End() token.Pos   { return x.Rbrace + 1 }
 func (x *ParenExpr) End() token.Pos      { return x.Rparen + 1 }
 func (x *SelectorExpr) End() token.Pos   { return x.Sel.End() }
 func (x *IndexExpr) End() token.Pos      { return x.Rbrack + 1 }
-func (x *SliceExpr) End() token.Pos      { return x.Rbrack + 1 }
 func (x *TypeAssertExpr) End() token.Pos { return x.Rparen + 1 }
 func (x *CallExpr) End() token.Pos       { return x.Rparen + 1 }
 func (x *UnaryExpr) End() token.Pos      { return x.X.End() }
@@ -370,7 +357,6 @@ func (*CompositeLit) exprNode()   {}
 func (*ParenExpr) exprNode()      {}
 func (*SelectorExpr) exprNode()   {}
 func (*IndexExpr) exprNode()      {}
-func (*SliceExpr) exprNode()      {}
 func (*TypeAssertExpr) exprNode() {}
 func (*CallExpr) exprNode()       {}
 func (*UnaryExpr) exprNode()      {}
