@@ -346,7 +346,7 @@ func PrintResult(ev *Evaluator, r *SEXP) {
 			if DEBUG {
 				println("ILLEGAL RESULT")
 			}
-		case token.FLOAT, token.INT:
+		case token.FLOAT:
 			if r.Slice==nil {
 				fmt.Printf("[1] %g", r.Immediate) // R has small e for exponential format
 			} else {
@@ -356,6 +356,8 @@ func PrintResult(ev *Evaluator, r *SEXP) {
 				}
 			}
 			println()
+		case token.INT:
+			println("[1]", r.Offset)
 		case token.FUNCTION:
 			if DEBUG {
 				print("function(")

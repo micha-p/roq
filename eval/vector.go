@@ -1,54 +1,10 @@
 package eval
 
 import (
-	"lib/ast"
 	"lib/token"
 	"math"
 )
 
-// strongly stripped down call to c()
-// Therefore, all elements are evaluated withon the context of the call
-// TODO recursive=TRUE/FALSE
-// TODO faster vector literals, composed just of floats
-
-func EvalCombine(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
-	TRACE := ev.trace
-	if TRACE {
-		println("Combine")
-	}
-
-	evaluatedArgs := make(map[int]float64)
-	for n, v := range node.Args { // TODO: strictly left to right
-		val := EvalExprOrAssignment(ev, v)
-		evaluatedArgs[n] = val.Immediate
-	}
-	c := make([]float64, len(evaluatedArgs))
-	for n,v := range evaluatedArgs {
-		c[n] = v
-	}
-
-	return &SEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, Kind: token.FLOAT, Slice: c}
-}
-
-func EvalLength(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
-	TRACE := ev.trace
-	if TRACE {
-		println("Length")
-	}
-
-	l:=len(node.Args)
-	if l == 1 {
-		val := EvalExpr(ev,node.Args[0])
-		if val.Slice ==nil {
-			return &SEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, Kind: token.FLOAT, Immediate: 1}
-		} else {
-			return &SEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, Kind: token.FLOAT, Immediate: float64(len(val.Slice))}
-		}
-	} else {
-		println(l,"arguments passed to 'length' which requires 1") 
-		return &SEXP{Kind: token.ILLEGAL}
-	}
-}
 
 func intMin(x int, y int) int {
 	if x < y {

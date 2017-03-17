@@ -6,7 +6,6 @@
 package eval
 
 import (
-	"fmt"
 	"lib/ast"
 	"lib/token"
 	"strings"
@@ -36,39 +35,6 @@ func tryPartialMatch(partial string, argNames map[argindex]string, bound map[arg
 	return matches
 }
 
-func EvalCat(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
-	TRACE := ev.trace
-	if TRACE {
-		println("PrintExpr")
-	}
-	for n := 0; n < len(node.Args); n++ {
-		r = EvalExpr(ev, node.Args[n])
-		if n > 0 {
-			print(" ")
-		}
-		switch r.Kind {
-		case token.STRING:
-			print(strings.Replace(r.String, "\\n", "\n", -1)) // needs strings.Map
-		case token.INT:
-			fmt.Printf("%g", r.Immediate)
-		case token.FLOAT:
-			if r.Slice==nil {
-				print(r.Immediate)
-			} else {
-				for n, v := range r.Slice {
-					if n>0 {
-						print(" ")
-					}
-					fmt.Printf(" %g", v) // R has small e for exponential format
-				}
-			}
-		default:
-			println("?CAT", r.Kind.String())
-		}
-	}
-	ev.invisible = true
-	return
-}
 
 // TODO use results field of funcType
 func EvalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {

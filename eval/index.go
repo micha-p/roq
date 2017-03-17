@@ -106,7 +106,7 @@ func (x *EmptyIterator) Next() int {
 
 func IndexDomainEvalRange(ev *Evaluator, a *SEXP, b *SEXP) IteratorItf {
 	r := new(RangeIterator)
-	r.Start = a.Offset
+	r.Start = a.Offset-1
 	r.Counter = a.Offset -1
 	r.End = b.Offset -1
 	return r
