@@ -117,7 +117,7 @@ func IndexDomainEval(ev *Evaluator, ex ast.Expr) IteratorItf {
 	defer un(trace(ev, "IndexDomainEval"))
 	switch ex.(type) {
 	case *ast.BasicLit:
-		ev.invisible = false
+		ev.Invisible = false
 		node := ex.(*ast.BasicLit)
 		defer un(trace(ev, "BasicLit ", node.Kind.String()))
 		switch node.Kind {
@@ -159,7 +159,7 @@ func IndexDomainEval(ev *Evaluator, ex ast.Expr) IteratorItf {
 			println("Unknown node.kind")
 		}
     case *ast.BinaryExpr:
-		ev.invisible = false
+		ev.Invisible = false
 		node := ex.(*ast.BinaryExpr)
 		if node.Op == token.SEQUENCE {
 			return IndexDomainEvalRange(ev, EvalExpr(ev,node.X),EvalExpr(ev,node.Y))
@@ -169,20 +169,20 @@ func IndexDomainEval(ev *Evaluator, ex ast.Expr) IteratorItf {
 			return r
 		}
 	/*case *ast.CallExpr:
-		ev.invisible = false
+		ev.Invisible = false
 		return EvalCall(ev, ex.(*ast.CallExpr))
 	case *ast.IndexExpr:
-		ev.invisible = false
+		ev.Invisible = false
 		return EvalIndexExpr(ev, ex.(*ast.IndexExpr))
 	case *ast.ParenExpr:
-		ev.invisible = false
+		ev.Invisible = false
 		node := ex.(*ast.ParenExpr)
 		if DEBUG {
 			println("ParenExpr")
 		}
 		return EvalExpr(ev, node.X) */
 	default:
-		ev.invisible = false
+		ev.Invisible = false
 		givenType := reflect.TypeOf(ex)
 		println("?IndexExpr:", givenType.String())
 	}
@@ -196,6 +196,9 @@ func IndexDomainEval(ev *Evaluator, ex ast.Expr) IteratorItf {
 // x[0] is an empty vector and otherwise including zeros among positive or 
 // negative indices has the same effect as if they were omitted.
 
+
+// TODO consistant naming for index, value and toplevel domain:
+// evalExprI -> ISEXPR
 func EvalIndexExpr(ev *Evaluator, node *ast.IndexExpr) *SEXP {
 	arrayPart := node.Array.(*ast.BasicLit)
 	array := ev.topFrame.Recursive(arrayPart.Value)

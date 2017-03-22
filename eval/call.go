@@ -38,7 +38,7 @@ func tryPartialMatch(partial string, argNames map[argindex]string, bound map[arg
 
 // TODO use results field of funcType
 func EvalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
-	TRACE := ev.trace
+	TRACE := ev.Trace
 	funcobject := node.Fun
 	funcname := funcobject.(*ast.BasicLit).Value
 	if TRACE {

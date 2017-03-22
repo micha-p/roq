@@ -8,7 +8,7 @@ import (
 )
 	
 func EvalLength(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
-	TRACE := ev.trace
+	TRACE := ev.Trace
 	if TRACE {
 		println("Length")
 	}
@@ -34,7 +34,7 @@ func EvalLength(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
 }
 
 func EvalCat(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
-	TRACE := ev.trace
+	TRACE := ev.Trace
 	if TRACE {
 		println("PrintExpr")
 	}
@@ -63,7 +63,7 @@ func EvalCat(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
 			println("?CAT", r.Kind.String())
 		}
 	}
-	ev.invisible = true
+	ev.Invisible = true
 	return
 }
 
@@ -73,7 +73,7 @@ func EvalCat(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
 // TODO faster vector literals, composed just of floats
 
 func EvalCombine(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
-	TRACE := ev.trace
+	TRACE := ev.Trace
 	if TRACE {
 		println("Combine")
 	}

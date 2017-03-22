@@ -8,11 +8,11 @@
 package eval
 
 import (
-	"fmt"
 	"lib/ast"
 	"lib/parser"
 	"lib/token"
 	"math"
+	"fmt"
 	"reflect"
 	"strconv"
 )
@@ -75,11 +75,11 @@ const (
 type Evaluator struct {
 
 	// Tracing/debugging
-	trace  bool
-	debug  bool
+	Trace  bool
+	Debug  bool
 	indent int // indentation
 
-	invisible bool
+	Invisible bool
 	state     LoopState
 
 	// frame
@@ -95,7 +95,7 @@ func (e *Evaluator) closeFrame() {
 }
 
 func trace(e *Evaluator, args ...interface{}) *Evaluator {
-	if e.trace {
+	if e.Trace {
 		i := 2 * e.indent
 		for i > 0 {
 			print(" ")
@@ -109,7 +109,7 @@ func trace(e *Evaluator, args ...interface{}) *Evaluator {
 }
 
 func traceff(e *Evaluator, args ...interface{}) *Evaluator {
-	if e.trace {
+	if e.Trace {
 		e.indent--
 		trace(e, args...)
 		e.indent++
@@ -119,7 +119,7 @@ func traceff(e *Evaluator, args ...interface{}) *Evaluator {
 
 // Usage pattern: defer un(trace(p, "..."))
 func un(e *Evaluator) {
-	if e.trace {
+	if e.Trace {
 		e.indent--
 	}
 }
@@ -130,7 +130,7 @@ func EvalInit(fset *token.FileSet, filename string, src interface{}, mode parser
 		panic("eval.evalInit: no token.FileSet provided (fset == nil)")
 	}
 
-	e := Evaluator{trace: traceflag, debug: debugflag, indent: 0, topFrame: nil}
+	e := Evaluator{Trace: traceflag, Debug: debugflag, indent: 0, topFrame: nil}
 	e.topFrame = NewFrame(e.topFrame)
 	return &e, err
 }
@@ -194,7 +194,7 @@ func EvalLoop(ev *Evaluator, e *ast.BlockStmt, cond ast.Expr) *SEXP {
 			break
 		}
 	}
-	ev.invisible = true
+	ev.Invisible = true
 	return &SEXP{Kind: token.NULL}
 }
 func EvalFor(ev *Evaluator, e *ast.BlockStmt, identifier string, iterable *SEXP) *SEXP {
@@ -224,13 +224,13 @@ func EvalFor(ev *Evaluator, e *ast.BlockStmt, identifier string, iterable *SEXP)
 			break
 		}
 	}
-	ev.invisible = true
+	ev.Invisible = true
 	return &SEXP{Kind: token.NULL}
 }
 
 func EvalStmt(ev *Evaluator, s ast.Stmt) *SEXP {
-	TRACE := ev.trace
-	DEBUG := false
+	TRACE := ev.Trace
+	DEBUG := ev.Debug
 	switch s.(type) {
 	case *ast.AssignStmt:
 		return EvalAssignment(ev, s.(*ast.AssignStmt))
@@ -312,7 +312,7 @@ func doAttributeReplacement(ev *Evaluator,lhs *ast.CallExpr, rhs ast.Expr) *SEXP
 		}
 		object.Dim=dim
 	}
-	ev.invisible = true // just for the following print
+	ev.Invisible = true // just for the following print
 	return nil
 }
 
@@ -328,7 +328,7 @@ func doAssignment(ev *Evaluator,lhs ast.Expr, rhs ast.Expr) *SEXP {
 		defer un(trace(ev, value.Immediate, " ", value.Kind.String()))
 		ev.topFrame.Insert(target, value)
 	}
-	ev.invisible = true // just for the following print
+	ev.Invisible = true // just for the following print
 	return value
 }
 func EvalAssignment(ev *Evaluator, e *ast.AssignStmt) *SEXP {
@@ -346,78 +346,9 @@ func EvalAssignment(ev *Evaluator, e *ast.AssignStmt) *SEXP {
 	return doAssignment(ev, target, value)
 }
 
-// visibility is stored in the evaluator and unset after every print
-func PrintResult(ev *Evaluator, r *SEXP) {
-
-	DEBUG := ev.debug
-	if DEBUG {
-		givenType := reflect.TypeOf(r)
-		print("print: ", givenType.String(), ": ", r.Kind.String(), ": ")
-	}
-
-	if ev.invisible {
-		ev.invisible = false
-		return
-	} else if r == nil {
-		println("FALSE")
-	} else {
-		switch r.Kind {
-		case token.SEMICOLON:
-			if DEBUG {
-				println("Semicolon")
-			}
-		case token.ILLEGAL:
-			if DEBUG {
-				println("ILLEGAL RESULT")
-			}
-		case token.FLOAT:
-			if r.Slice==nil {
-				fmt.Printf("[1] %g", r.Immediate) // R has small e for exponential format
-			} else {
-				print("[", len(r.Slice), "]")
-				for _, v := range r.Slice {
-					fmt.Printf(" %g", v) // R has small e for exponential format
-				}
-			}
-			println()
-		case token.INT:
-			if r.Dim==nil {
-				println("[1]", r.Offset)
-			} else {
-				print("[", len(r.Dim), "]")
-				for _, v := range r.Dim {
-					fmt.Printf(" %d", v)
-				}
-			}
-			println()
-		case token.FUNCTION:
-			if DEBUG {
-				print("function(")
-				for n, field := range r.Fieldlist {
-					//for _,ident := range field.Names {
-					//	print(ident)
-					//}
-					identifier := field.Type.(*ast.Ident)
-					if n > 0 {
-						print(",")
-					}
-					print(identifier.Name)
-				}
-				println(")")
-			}
-		case token.VERSION:
-			printVersion()
-		default:
-			if DEBUG {
-				println("default print")
-			}
-			println(r.Kind.String())
-		}
-	}
-}
 
 func EvalExprOrAssignment(ev *Evaluator, ex ast.Expr) *SEXP {
-	TRACE := ev.trace
+	TRACE := ev.Trace
 	if TRACE {
 		println("Expr or assignment:")
 	}
@@ -437,7 +368,7 @@ func EvalExprOrAssignment(ev *Evaluator, ex ast.Expr) *SEXP {
 }
 
 func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXP {
-	DEBUG := ev.debug
+	DEBUG := ev.Debug
 
 	//	defer un(trace(ev, "EvalExpr"))
 	switch ex.(type) {
@@ -446,7 +377,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXP {
 		defer un(trace(ev, "FuncLit"))
 		return &SEXP{Kind: token.FUNCTION, Fieldlist: node.Type.Params.List, Body: node.Body}
 	case *ast.BasicLit:
-		ev.invisible = false
+		ev.Invisible = false
 		node := ex.(*ast.BasicLit)
 		defer un(trace(ev, "BasicLit ", node.Kind.String()))
 		switch node.Kind {
@@ -457,7 +388,8 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXP {
 				println(err)
 			}
 			// TODO check conversion to integer
-			return &SEXP{ValuePos: node.ValuePos, Kind: node.Kind, Offset: int(math.Floor(vfloat))-1, Immediate: vfloat}
+			vint := int(math.Floor(vfloat))
+			return &SEXP{ValuePos: node.ValuePos, Kind: node.Kind, Integer: vint, Offset: vint-1, Immediate: vfloat}
 		case token.INT:
 			vint, err := strconv.Atoi(node.Value)
 			if err != nil {
@@ -470,7 +402,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXP {
 				print("ERROR:")
 				println(err)
 			}
-			return &SEXP{ValuePos: node.ValuePos, Kind: node.Kind, Offset: vint - 1, Immediate: vfloat}
+			return &SEXP{ValuePos: node.ValuePos, Kind: node.Kind, Integer: vint, Offset: vint - 1, Immediate: vfloat}
 		case token.STRING:
 			return &SEXP{ValuePos: node.ValuePos, Kind: node.Kind, String: node.Value}
 		case token.NULL, token.NA, token.INF, token.NAN, token.TRUE, token.FALSE:
@@ -487,23 +419,23 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXP {
 			println("Unknown node.kind")
 		}
 	case *ast.BinaryExpr:
-		ev.invisible = false
+		ev.Invisible = false
 		return evalBinary(ev, ex.(*ast.BinaryExpr))
 	case *ast.CallExpr:
-		ev.invisible = false
+		ev.Invisible = false
 		return EvalCall(ev, ex.(*ast.CallExpr))
 	case *ast.IndexExpr:
-		ev.invisible = false
+		ev.Invisible = false
 		return EvalIndexExpr(ev, ex.(*ast.IndexExpr))
 	case *ast.ParenExpr:
-		ev.invisible = false
+		ev.Invisible = false
 		node := ex.(*ast.ParenExpr)
 		if DEBUG {
 			println("ParenExpr")
 		}
 		return EvalExpr(ev, node.X)
 	default:
-		ev.invisible = false
+		ev.Invisible = false
 		givenType := reflect.TypeOf(ex)
 		println("?Expr:", givenType.String())
 	}
@@ -537,6 +469,17 @@ func evalBinary(ev *Evaluator, node *ast.BinaryExpr) *SEXP {
 				return nil
 			}
 		}
+	case token.SEQUENCE:
+		// TODO: same for INDEXDOMAIN
+		low := EvalExpr(ev, node.X).Integer
+		start := EvalExpr(ev, node.X).Immediate
+		high := EvalExpr(ev, node.Y).Integer
+		slice := make([]float64,1+high-low)
+		for n,_ := range slice {
+			slice[n]=start
+			start++
+		}
+		return &SEXP{Kind: token.FLOAT, Slice: slice}
 	case token.LESS, token.LESSEQUAL, token.GREATER, token.GREATEREQUAL, token.EQUAL, token.UNEQUAL:
 		return EvalComp(node.Op, x, EvalExpr(ev, node.Y))
 	default:
