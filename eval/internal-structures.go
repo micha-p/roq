@@ -60,6 +60,7 @@ type SEXP struct {
 }
 */
 
+// TODO split into several types 
 type SEXP struct {
 	ValuePos  token.Pos      // literal position
 	TypeOf    SEXPTYPE
@@ -69,5 +70,8 @@ type SEXP struct {
 	String    string
 	Immediate float64        // single value FLOAT
 	Offset    int            // single value INT; TODO change to uint in indexdomain?
-	Slice     []float64      // "A slice is a refernece to an array"
+	Slice     []float64      // "A slice is a reference to an array"
+	Dim       []int
+	Names     []string
+	Dimnames  []string 
 }

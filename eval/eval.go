@@ -295,31 +295,55 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) *SEXP {
 	return &SEXP{Kind: token.ILLEGAL}
 }
 
-func doAssignment(ev *Evaluator, identifier string, ex ast.Expr) *SEXP {
-	defer un(trace(ev, "assignment: "+identifier+" <- "))
-
-	result := EvalExpr(ev, ex)
-	defer un(trace(ev, result.Immediate, " ", result.Kind.String()))
-
-	ev.topFrame.Insert(identifier, result)
+func doAttributeReplacement(ev *Evaluator,lhs *ast.CallExpr, rhs ast.Expr) *SEXP {
+	funcobject := lhs.Fun
+	attribute := funcobject.(*ast.BasicLit).Value
+	defer un(trace(ev, attribute + "<-"))
+	// TODO len(lhs.Args) != 1
+	identifier := getIdent(ev, lhs.Args[0])
+	object := ev.topFrame.Lookup(identifier)
+	value := EvalExpr(ev, rhs)
+	switch attribute{
+	case "dim":
+		// TODO instead of converting to float and back, parsing should support ints
+		dim := make([]int,len(value.Slice))
+		for n,v := range value.Slice {
+			dim[n]=int(v)
+		}
+		object.Dim=dim
+	}
 	ev.invisible = true // just for the following print
-	return result
+	return nil
 }
 
+func doAssignment(ev *Evaluator,lhs ast.Expr, rhs ast.Expr) *SEXP {
+	var value *SEXP
+	switch lhs.(type){
+	case *ast.CallExpr:
+		doAttributeReplacement(ev,lhs.(*ast.CallExpr),rhs)
+	case *ast.BasicLit:
+		target := getIdent(ev, lhs)
+		defer un(trace(ev, "assignment: "+target+" <- "))
+		value = EvalExpr(ev, rhs)
+		defer un(trace(ev, value.Immediate, " ", value.Kind.String()))
+		ev.topFrame.Insert(target, value)
+	}
+	ev.invisible = true // just for the following print
+	return value
+}
 func EvalAssignment(ev *Evaluator, e *ast.AssignStmt) *SEXP {
 
 	//	defer un(trace(ev, "assignStmt"))
 
-	var identifier string
-	var nodepointer ast.Expr
+	var target,value ast.Expr
 	if e.Tok == token.RIGHTASSIGNMENT {
-		identifier = getIdent(ev, e.Rhs)
-		nodepointer = e.Lhs
+		target = e.Rhs
+		value = e.Lhs
 	} else {
-		identifier = getIdent(ev, e.Lhs)
-		nodepointer = e.Rhs
+		target = e.Lhs
+		value = e.Rhs
 	}
-	return doAssignment(ev, identifier, nodepointer)
+	return doAssignment(ev, target, value)
 }
 
 // visibility is stored in the evaluator and unset after every print
@@ -357,7 +381,15 @@ func PrintResult(ev *Evaluator, r *SEXP) {
 			}
 			println()
 		case token.INT:
-			println("[1]", r.Offset)
+			if r.Dim==nil {
+				println("[1]", r.Offset)
+			} else {
+				print("[", len(r.Dim), "]")
+				for _, v := range r.Dim {
+					fmt.Printf(" %d", v)
+				}
+			}
+			println()
 		case token.FUNCTION:
 			if DEBUG {
 				print("function(")
@@ -394,11 +426,11 @@ func EvalExprOrAssignment(ev *Evaluator, ex ast.Expr) *SEXP {
 		node := ex.(*ast.BinaryExpr)
 		switch node.Op {
 		case token.SHORTASSIGNMENT:
-			return doAssignment(ev, getIdent(ev, node.X), node.Y)
+			return doAssignment(ev, node.X, node.Y)
 		case token.LEFTASSIGNMENT:
-			return doAssignment(ev, getIdent(ev, node.X), node.Y)
+			return doAssignment(ev, node.X, node.Y)
 		case token.RIGHTASSIGNMENT:
-			return doAssignment(ev, getIdent(ev, node.Y), node.X)
+			return doAssignment(ev, node.X, node.Y)
 		}
 	}
 	return EvalExpr(ev, ex)

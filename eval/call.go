@@ -53,6 +53,11 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
 			return EvalCat(ev, node)
 		case "length":
 			return EvalLength(ev, node)
+		case "dim":
+			// TODO len(Args) != 1
+			identifier := getIdent(ev, node.Args[0])
+			object := ev.topFrame.Lookup(identifier)
+			return &SEXP{Kind: token.INT, Dim: object.Dim}
 		default:
 			println("\nError: could not find function \"" + funcname + "\"")
 			return &SEXP{Kind: token.ILLEGAL}
