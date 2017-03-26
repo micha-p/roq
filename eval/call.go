@@ -57,16 +57,17 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 			// TODO len(Args) != 1
 			identifier := getIdent(ev, node.Args[0])
 			object := ev.topFrame.Lookup(identifier)
-			return &SEXP{kind: token.INT, dim: object.Dim()}
+			return &VSEXP{kind: token.INT, dim: object.Dim()}
 		default:
 			println("\nError: could not find function \"" + funcname + "\"")
-			return &SEXP{kind: token.ILLEGAL}
+			return &VSEXP{kind: token.ILLEGAL}
 		}
 	} else {
 		argNames := make(map[argindex]string)
 
+
 		// collect field names
-		for n, field := range f.(*SEXP).Fieldlist {
+		for n, field := range f.(*VSEXP).Fieldlist {
 			i := argindex(n)
 			identifier := field.Type.(*ast.Ident)
 			argNames[i] = identifier.Name
@@ -136,7 +137,7 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 				start = false
 			}
 			print(")\n")
-			return &SEXP{kind: token.ILLEGAL}
+			return &VSEXP{kind: token.ILLEGAL}
 		}
 
 		// match positional arguments
@@ -167,7 +168,7 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 				start = false
 			}
 			print(")\n")
-			return &SEXP{kind: token.ILLEGAL}
+			return &VSEXP{kind: token.ILLEGAL}
 		}
 
 		// eval args
@@ -189,7 +190,7 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 				value := evaluatedArgs[n]
 				ev.topFrame.Insert(v, value)
 			}
-			r = EvalStmt(ev, f.(*SEXP).Body)
+			r = EvalStmt(ev, f.(*VSEXP).Body)
 		}
 		ev.closeFrame()
 	}

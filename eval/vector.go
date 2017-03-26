@@ -76,15 +76,15 @@ func mapAA(FUN func(float64, float64) float64, x []float64, y []float64) []float
 	return r
 }
 
-func EvalVectorOp(x *SEXP, y *SEXP, FUN func(float64, float64) float64) *SEXP {
+func EvalVectorOp(x *VSEXP, y *VSEXP, FUN func(float64, float64) float64) *VSEXP {
 	if x.Slice==nil && y.Slice==nil {
-		return &SEXP{kind: token.FLOAT, Immediate: FUN(x.Immediate,y.Immediate)}
+		return &VSEXP{kind: token.FLOAT, Immediate: FUN(x.Immediate,y.Immediate)}
 	} else if x.Slice==nil {
-		return &SEXP{kind: token.FLOAT, Slice: mapIA(FUN,x.Atom().(float64),y.Slice)}
+		return &VSEXP{kind: token.FLOAT, Slice: mapIA(FUN,x.Atom().(float64),y.Slice)}
 	} else if y.Slice==nil {
-		return &SEXP{kind: token.FLOAT, Slice: mapAI(FUN,x.Slice,y.Atom().(float64))}
+		return &VSEXP{kind: token.FLOAT, Slice: mapAI(FUN,x.Slice,y.Atom().(float64))}
 	} else {
-		return &SEXP{kind: token.FLOAT, Slice: mapAA(FUN,x.Slice,y.Slice)}
+		return &VSEXP{kind: token.FLOAT, Slice: mapAA(FUN,x.Slice,y.Slice)}
 	}
 }
 
@@ -94,13 +94,13 @@ func EvalVectorOp(x *SEXP, y *SEXP, FUN func(float64, float64) float64) *SEXP {
 // Concatenation of comparisons:
 // As evaluation is from left to right, y value has to be returned
 
-func EvalComp(op token.Token, x *SEXP, y *SEXP) *SEXP {
+func EvalComp(op token.Token, x *VSEXP, y *VSEXP) *VSEXP {
 	// false and true are not really the same. false is rather the base level.
 	if x == nil || y == nil {
 		return nil
 	}
 	if x.Kind() == token.ILLEGAL || y.Kind() == token.ILLEGAL {
-		return &SEXP{kind: token.ILLEGAL}
+		return &VSEXP{kind: token.ILLEGAL}
 	}
 	var o1,o2 float64
 	if x.Slice==nil {
@@ -153,13 +153,13 @@ func EvalComp(op token.Token, x *SEXP, y *SEXP) *SEXP {
 		}
 	default:
 		println("?Comp: " + op.String())
-		return &SEXP{kind: token.ILLEGAL}
+		return &VSEXP{kind: token.ILLEGAL}
 	}
 }
 
-func EvalOp(op token.Token, x *SEXP, y *SEXP) *SEXP {
+func EvalOp(op token.Token, x *VSEXP, y *VSEXP) *VSEXP {
 	if x.Kind() == token.ILLEGAL || y.Kind() == token.ILLEGAL {
-		return &SEXP{kind: token.ILLEGAL}
+		return &VSEXP{kind: token.ILLEGAL}
 	}
 	switch op {
 	case token.PLUS:
@@ -176,6 +176,6 @@ func EvalOp(op token.Token, x *SEXP, y *SEXP) *SEXP {
 		return EvalVectorOp(x,y,fMODULUS)
 	default:
 		println("?Op: " + op.String())
-		return &SEXP{kind: token.ILLEGAL}
+		return &VSEXP{kind: token.ILLEGAL}
 	}
 }

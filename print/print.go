@@ -10,7 +10,7 @@ import (
 
 // visibility is stored in the evaluator and unset after every print
 // TODO typeswitch should depend on Kind
-func PrintResult(ev *eval.Evaluator, r *eval.SEXP) {
+func PrintResult(ev *eval.Evaluator, r *eval.VSEXP) {
 
 	DEBUG := ev.Debug
 	if DEBUG {

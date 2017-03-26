@@ -70,7 +70,9 @@ type SEXPItf interface {
 }
 
 // TODO split into several types 
-type SEXP struct {
+
+// value domain
+type VSEXP struct {
 	ValuePos  token.Pos
 	TypeOf    SEXPTYPE
 	kind      token.Token    // token.INT, token.FLOAT, token.IMAG, token.CHAR, or token.STRING
@@ -88,21 +90,6 @@ type SEXP struct {
 	Slice     []float64      // "A slice is a reference to an array"
 }
 
-
-// value domain
-type VSEXP struct {
-	TypeOf    SEXPTYPE
-	kind      token.Token    // token.INT, token.FLOAT, token.IMAG, token.CHAR, or token.STRING
-
-	Names     []string
-	dim       []int
-	Dimnames  [][]string 
-
-	Fieldlist []*ast.Field   // only if function
-	Body      *ast.BlockStmt // only if function: BlockStmt or single Stmt
-	Immediate float64        // single value FLOAT
-	slice     []float64      // "A slice is a reference to an array"
-}
 
 // index domain
 type ISEXP struct {
@@ -127,30 +114,24 @@ type RSEXP struct {
 	dim			[]int
 	Dimnames	[][]string 
 
-	CAR			*SEXP
-	CDR			*SEXP
-	TAG			*SEXP
-	slice		[]*SEXP
+	CAR			SEXPItf
+	CDR			SEXPItf
+	TAG			SEXPItf
+	slice		[]*SEXPItf
 }
 
-func (x *SEXP) Pos() token.Pos {
+func (x *VSEXP) Pos() token.Pos {
 	return x.Pos()
 }
-
-func (x *SEXP) Atom() interface{} {
+func (x *VSEXP) Atom() interface{} {
 	return x.Immediate
 }
-func (x *SEXP) Dim() []int {
+func (x *VSEXP) Dim() []int {
 	return x.dim
 }
-/*
-func (x *SEXP) Slice() []interface{} {
-	return x.slice.([]interface{})
-}
-*/
-func (x *SEXP) Length() int {
+func (x *VSEXP) Length() int {
 	return len(x.Slice)
 }
-func (x *SEXP) Kind() token.Token {
+func (x *VSEXP) Kind() token.Token {
 	return x.kind
 }

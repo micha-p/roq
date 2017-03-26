@@ -24,9 +24,6 @@ import (
 	"strconv"
 )
 
-// Assignments might be Expressions or Stmts, the first return a SEXP during evaluation,
-// the latter an invisible object
-
 // The parser structure holds the parser's internal state.
 type parser struct {
 	file    *token.File

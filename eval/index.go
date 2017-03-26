@@ -104,7 +104,7 @@ func (x *EmptyIterator) Next() int {
 
 
 
-func IndexDomainEvalRange(ev *Evaluator, a *SEXP, b *SEXP) IteratorItf {
+func IndexDomainEvalRange(ev *Evaluator, a *VSEXP, b *VSEXP) IteratorItf {
 	r := new(RangeIterator)
 	r.Start = a.Offset-1
 	r.Counter = a.Offset -1
@@ -151,7 +151,7 @@ func IndexDomainEval(ev *Evaluator, ex ast.Expr) IteratorItf {
 				return r
 			} else {
 				r := new(ArrayIterator)
-				r.Slice = obj.(*SEXP).Slice // TODO: check this
+				r.Slice = obj.(*VSEXP).Slice // TODO: check this
 				r.Len=r.Length()
 				return r
 			}
@@ -162,7 +162,7 @@ func IndexDomainEval(ev *Evaluator, ex ast.Expr) IteratorItf {
 		ev.Invisible = false
 		node := ex.(*ast.BinaryExpr)
 		if node.Op == token.SEQUENCE {
-			return IndexDomainEvalRange(ev, EvalExpr(ev,node.X).(*SEXP),EvalExpr(ev,node.Y).(*SEXP))
+			return IndexDomainEvalRange(ev, EvalExpr(ev,node.X).(*VSEXP),EvalExpr(ev,node.Y).(*VSEXP))
 		} else {
 			r := new(EmptyIterator)
 			return r
@@ -185,12 +185,12 @@ func IndexDomainEval(ev *Evaluator, ex ast.Expr) IteratorItf {
 
 // TODO consistant naming for index, value and toplevel domain:
 // evalExprI -> ISEXPR
-func EvalIndexExpr(ev *Evaluator, node *ast.IndexExpr) *SEXP {
+func EvalIndexExpr(ev *Evaluator, node *ast.IndexExpr) *VSEXP {
 	arrayPart := node.Array.(*ast.BasicLit)
 	array := ev.topFrame.Recursive(arrayPart.Value)
 	if array == nil {
 		print("error: object '", arrayPart.Value, "' not found\n")
-		return &SEXP{ValuePos: arrayPart.ValuePos, kind: token.ILLEGAL, Immediate: math.NaN()}
+		return &VSEXP{ValuePos: arrayPart.ValuePos, kind: token.ILLEGAL, Immediate: math.NaN()}
 	} else {
 		iterator := IndexDomainEval(ev, node.Index)
 		r := make([]float64,0,array.Length())
@@ -198,12 +198,12 @@ func EvalIndexExpr(ev *Evaluator, node *ast.IndexExpr) *SEXP {
 		for true {
 			n = iterator.Next()
 			if n >= 0 {
-				element := array.(*SEXP).Slice[n]
+				element := array.(*VSEXP).Slice[n]
 				r = append(r,element)
 			} else {
 				break
 			}
 		}  
-		return &SEXP{ValuePos: arrayPart.ValuePos, kind: token.FLOAT, Slice:r}
+		return &VSEXP{ValuePos: arrayPart.ValuePos, kind: token.FLOAT, Slice:r}
 	}
 }

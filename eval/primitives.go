@@ -7,7 +7,7 @@ import (
 	"lib/token"
 )
 	
-func EvalLength(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
+func EvalLength(ev *Evaluator, node *ast.CallExpr) (r *VSEXP) {
 	TRACE := ev.Trace
 	if TRACE {
 		println("Length")
@@ -18,28 +18,28 @@ func EvalLength(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
 		switch ex.(type) {
 		case *ast.IndexExpr:
 			iterator := IndexDomainEval(ev, ex.(*ast.IndexExpr).Index)
-			return &SEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, kind: token.INT, Offset: iterator.Length()}
+			return &VSEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, kind: token.INT, Offset: iterator.Length()}
 		default:
 			val := EvalExpr(ev,node.Args[0])
-			if val.(*SEXP).Slice ==nil {
-				return &SEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, kind: token.INT, Offset: 1}
+			if val.(*VSEXP).Slice ==nil {
+				return &VSEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, kind: token.INT, Offset: 1}
 			} else {
-				return &SEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, kind: token.INT, Offset: val.Length()}
+				return &VSEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, kind: token.INT, Offset: val.Length()}
 			}
 		}
 	} else {
 		println(l,"arguments passed to 'length' which requires 1") 
-		return &SEXP{kind: token.ILLEGAL}
+		return &VSEXP{kind: token.ILLEGAL}
 	}
 }
 
-func EvalCat(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
+func EvalCat(ev *Evaluator, node *ast.CallExpr) (r *VSEXP) {
 	TRACE := ev.Trace
 	if TRACE {
 		println("PrintExpr")
 	}
 	for n := 0; n < len(node.Args); n++ {
-		r = EvalExpr(ev, node.Args[n]).(*SEXP)
+		r = EvalExpr(ev, node.Args[n]).(*VSEXP)
 		if n > 0 {
 			print(" ")
 		}
@@ -72,7 +72,7 @@ func EvalCat(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
 // TODO recursive=TRUE/FALSE
 // TODO faster vector literals, composed just of floats
 
-func EvalCombine(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
+func EvalCombine(ev *Evaluator, node *ast.CallExpr) (r *VSEXP) {
 	TRACE := ev.Trace
 	if TRACE {
 		println("Combine")
@@ -88,5 +88,5 @@ func EvalCombine(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
 		c[n] = v
 	}
 
-	return &SEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, kind: token.FLOAT, Slice: c}
+	return &VSEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, kind: token.FLOAT, Slice: c}
 }
