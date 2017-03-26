@@ -78,13 +78,13 @@ func mapAA(FUN func(float64, float64) float64, x []float64, y []float64) []float
 
 func EvalVectorOp(x *SEXP, y *SEXP, FUN func(float64, float64) float64) *SEXP {
 	if x.Slice==nil && y.Slice==nil {
-		return &SEXP{Kind: token.FLOAT, Immediate: FUN(x.Immediate,y.Immediate)}
+		return &SEXP{kind: token.FLOAT, Immediate: FUN(x.Immediate,y.Immediate)}
 	} else if x.Slice==nil {
-		return &SEXP{Kind: token.FLOAT, Slice: mapIA(FUN,x.Immediate,y.Slice)}
+		return &SEXP{kind: token.FLOAT, Slice: mapIA(FUN,x.Atom().(float64),y.Slice)}
 	} else if y.Slice==nil {
-		return &SEXP{Kind: token.FLOAT, Slice: mapAI(FUN,x.Slice,y.Immediate)}
+		return &SEXP{kind: token.FLOAT, Slice: mapAI(FUN,x.Slice,y.Atom().(float64))}
 	} else {
-		return &SEXP{Kind: token.FLOAT, Slice: mapAA(FUN,x.Slice,y.Slice)}
+		return &SEXP{kind: token.FLOAT, Slice: mapAA(FUN,x.Slice,y.Slice)}
 	}
 }
 
@@ -99,8 +99,8 @@ func EvalComp(op token.Token, x *SEXP, y *SEXP) *SEXP {
 	if x == nil || y == nil {
 		return nil
 	}
-	if x.Kind == token.ILLEGAL || y.Kind == token.ILLEGAL {
-		return &SEXP{Kind: token.ILLEGAL}
+	if x.Kind() == token.ILLEGAL || y.Kind() == token.ILLEGAL {
+		return &SEXP{kind: token.ILLEGAL}
 	}
 	var o1,o2 float64
 	if x.Slice==nil {
@@ -153,13 +153,13 @@ func EvalComp(op token.Token, x *SEXP, y *SEXP) *SEXP {
 		}
 	default:
 		println("?Comp: " + op.String())
-		return &SEXP{Kind: token.ILLEGAL}
+		return &SEXP{kind: token.ILLEGAL}
 	}
 }
 
 func EvalOp(op token.Token, x *SEXP, y *SEXP) *SEXP {
-	if x.Kind == token.ILLEGAL || y.Kind == token.ILLEGAL {
-		return &SEXP{Kind: token.ILLEGAL}
+	if x.Kind() == token.ILLEGAL || y.Kind() == token.ILLEGAL {
+		return &SEXP{kind: token.ILLEGAL}
 	}
 	switch op {
 	case token.PLUS:
@@ -176,6 +176,6 @@ func EvalOp(op token.Token, x *SEXP, y *SEXP) *SEXP {
 		return EvalVectorOp(x,y,fMODULUS)
 	default:
 		println("?Op: " + op.String())
-		return &SEXP{Kind: token.ILLEGAL}
+		return &SEXP{kind: token.ILLEGAL}
 	}
 }

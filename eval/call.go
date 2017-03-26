@@ -37,7 +37,7 @@ func tryPartialMatch(partial string, argNames map[argindex]string, bound map[arg
 
 
 // TODO use results field of funcType
-func EvalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
+func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 	TRACE := ev.Trace
 	funcobject := node.Fun
 	funcname := funcobject.(*ast.BasicLit).Value
@@ -57,16 +57,16 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
 			// TODO len(Args) != 1
 			identifier := getIdent(ev, node.Args[0])
 			object := ev.topFrame.Lookup(identifier)
-			return &SEXP{Kind: token.INT, Dim: object.Dim}
+			return &SEXP{kind: token.INT, dim: object.Dim()}
 		default:
 			println("\nError: could not find function \"" + funcname + "\"")
-			return &SEXP{Kind: token.ILLEGAL}
+			return &SEXP{kind: token.ILLEGAL}
 		}
 	} else {
 		argNames := make(map[argindex]string)
 
 		// collect field names
-		for n, field := range f.Fieldlist {
+		for n, field := range f.(*SEXP).Fieldlist {
 			i := argindex(n)
 			identifier := field.Type.(*ast.Ident)
 			argNames[i] = identifier.Name
@@ -77,7 +77,7 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
 		// might be downgarded to arrays
 		boundArgs := make(map[argindex]bool, argnum)
 		collectedArgs := make(map[argindex]ast.Expr, argnum) // ast.Expr contains pointers to ast.nodes
-		evaluatedArgs := make(map[argindex]*SEXP, argnum)
+		evaluatedArgs := make(map[argindex]SEXPItf, argnum)
 
 		// collect tagged and untagged arguments (unevaluated)
 		taggedArgs := make(map[string]ast.Expr, argnum)
@@ -136,7 +136,7 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
 				start = false
 			}
 			print(")\n")
-			return &SEXP{Kind: token.ILLEGAL}
+			return &SEXP{kind: token.ILLEGAL}
 		}
 
 		// match positional arguments
@@ -167,7 +167,7 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
 				start = false
 			}
 			print(")\n")
-			return &SEXP{Kind: token.ILLEGAL}
+			return &SEXP{kind: token.ILLEGAL}
 		}
 
 		// eval args
@@ -189,7 +189,7 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
 				value := evaluatedArgs[n]
 				ev.topFrame.Insert(v, value)
 			}
-			r = EvalStmt(ev, f.Body)
+			r = EvalStmt(ev, f.(*SEXP).Body)
 		}
 		ev.closeFrame()
 	}

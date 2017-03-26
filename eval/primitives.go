@@ -18,18 +18,18 @@ func EvalLength(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
 		switch ex.(type) {
 		case *ast.IndexExpr:
 			iterator := IndexDomainEval(ev, ex.(*ast.IndexExpr).Index)
-			return &SEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, Kind: token.INT, Offset: iterator.Length()}
+			return &SEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, kind: token.INT, Offset: iterator.Length()}
 		default:
 			val := EvalExpr(ev,node.Args[0])
-			if val.Slice ==nil {
-				return &SEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, Kind: token.INT, Offset: 1}
+			if val.(*SEXP).Slice ==nil {
+				return &SEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, kind: token.INT, Offset: 1}
 			} else {
-				return &SEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, Kind: token.INT, Offset: len(val.Slice)}
+				return &SEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, kind: token.INT, Offset: val.Length()}
 			}
 		}
 	} else {
 		println(l,"arguments passed to 'length' which requires 1") 
-		return &SEXP{Kind: token.ILLEGAL}
+		return &SEXP{kind: token.ILLEGAL}
 	}
 }
 
@@ -39,11 +39,11 @@ func EvalCat(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
 		println("PrintExpr")
 	}
 	for n := 0; n < len(node.Args); n++ {
-		r = EvalExpr(ev, node.Args[n])
+		r = EvalExpr(ev, node.Args[n]).(*SEXP)
 		if n > 0 {
 			print(" ")
 		}
-		switch r.Kind {
+		switch r.Kind() {
 		case token.STRING:
 			print(strings.Replace(r.String, "\\n", "\n", -1)) // needs strings.Map
 		case token.INT:
@@ -60,7 +60,7 @@ func EvalCat(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
 				}
 			}
 		default:
-			println("?CAT", r.Kind.String())
+			println("?CAT", r.Kind().String())
 		}
 	}
 	ev.Invisible = true
@@ -81,12 +81,12 @@ func EvalCombine(ev *Evaluator, node *ast.CallExpr) (r *SEXP) {
 	evaluatedArgs := make(map[int]float64)
 	for n, v := range node.Args { // TODO: strictly left to right
 		val := EvalExprOrAssignment(ev, v)
-		evaluatedArgs[n] = val.Immediate
+		evaluatedArgs[n] = val.Atom().(float64)
 	}
 	c := make([]float64, len(evaluatedArgs))
 	for n,v := range evaluatedArgs {
 		c[n] = v
 	}
 
-	return &SEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, Kind: token.FLOAT, Slice: c}
+	return &SEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, kind: token.FLOAT, Slice: c}
 }

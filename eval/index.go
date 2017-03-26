@@ -55,7 +55,7 @@ func (x *RangeIterator) Length() int {
 	return 1+(x.End - x.Start)
 }
 func (x *ArrayIterator) Length() int {
-	return len(x.Slice)
+	return x.Length()
 }
 func (x *OnceIterator) Length() int { 
 	return 1
@@ -83,7 +83,7 @@ func (x *RangeIterator) Next() int {
 func (x *ArrayIterator) Next() int {
 	a := x.Slice
 	if (x.Counter < len(a)){ 
-			i := int(a[x.Counter])
+			i := int(a[x.Counter]) // TODO ISEXP
 			x.Counter +=1
 			return i-1
 	} else {
@@ -144,15 +144,15 @@ func IndexDomainEval(ev *Evaluator, ex ast.Expr) IteratorItf {
 			r := new(EmptyIterator)
 			return r
 		case token.IDENT:
-			sexprec := ev.topFrame.Recursive(node.Value)
-			if sexprec == nil {
+			obj := ev.topFrame.Recursive(node.Value)
+			if obj == nil {
 				print("error: object '", node.Value, "' not found\n")
 				r := new(EmptyIterator)
 				return r
 			} else {
 				r := new(ArrayIterator)
-				r.Slice = sexprec.Slice
-				r.Len=len(sexprec.Slice)
+				r.Slice = obj.(*SEXP).Slice // TODO: check this
+				r.Len=r.Length()
 				return r
 			}
 		default:
@@ -162,25 +162,11 @@ func IndexDomainEval(ev *Evaluator, ex ast.Expr) IteratorItf {
 		ev.Invisible = false
 		node := ex.(*ast.BinaryExpr)
 		if node.Op == token.SEQUENCE {
-			return IndexDomainEvalRange(ev, EvalExpr(ev,node.X),EvalExpr(ev,node.Y))
+			return IndexDomainEvalRange(ev, EvalExpr(ev,node.X).(*SEXP),EvalExpr(ev,node.Y).(*SEXP))
 		} else {
-//			return sexp2iterator(evalBinary(ev, ex.(*ast.BinaryExpr)))
 			r := new(EmptyIterator)
 			return r
 		}
-	/*case *ast.CallExpr:
-		ev.Invisible = false
-		return EvalCall(ev, ex.(*ast.CallExpr))
-	case *ast.IndexExpr:
-		ev.Invisible = false
-		return EvalIndexExpr(ev, ex.(*ast.IndexExpr))
-	case *ast.ParenExpr:
-		ev.Invisible = false
-		node := ex.(*ast.ParenExpr)
-		if DEBUG {
-			println("ParenExpr")
-		}
-		return EvalExpr(ev, node.X) */
 	default:
 		ev.Invisible = false
 		givenType := reflect.TypeOf(ex)
@@ -204,20 +190,20 @@ func EvalIndexExpr(ev *Evaluator, node *ast.IndexExpr) *SEXP {
 	array := ev.topFrame.Recursive(arrayPart.Value)
 	if array == nil {
 		print("error: object '", arrayPart.Value, "' not found\n")
-		return &SEXP{ValuePos: arrayPart.ValuePos, Kind: token.ILLEGAL, Immediate: math.NaN()}
+		return &SEXP{ValuePos: arrayPart.ValuePos, kind: token.ILLEGAL, Immediate: math.NaN()}
 	} else {
 		iterator := IndexDomainEval(ev, node.Index)
-		r := make([]float64,0,len(array.Slice))
+		r := make([]float64,0,array.Length())
 		var n int
 		for true {
 			n = iterator.Next()
 			if n >= 0 {
-				element := array.Slice[n]
+				element := array.(*SEXP).Slice[n]
 				r = append(r,element)
 			} else {
 				break
 			}
 		}  
-		return &SEXP{ValuePos: arrayPart.ValuePos, Kind: token.FLOAT, Slice:r}
+		return &SEXP{ValuePos: arrayPart.ValuePos, kind: token.FLOAT, Slice:r}
 	}
 }

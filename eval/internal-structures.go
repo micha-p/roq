@@ -60,11 +60,25 @@ type SEXP struct {
 }
 */
 
+// generic -> should be changed to SEXP
+type SEXPItf interface {
+	Pos()		token.Pos
+	Kind()		token.Token
+	Dim()		[]int
+	Atom()		interface{}
+	Length()	int
+}
+
 // TODO split into several types 
 type SEXP struct {
-	ValuePos  token.Pos      // literal position
+	ValuePos  token.Pos
 	TypeOf    SEXPTYPE
-	Kind      token.Token    // token.INT, token.FLOAT, token.IMAG, token.CHAR, or token.STRING
+	kind      token.Token    // token.INT, token.FLOAT, token.IMAG, token.CHAR, or token.STRING
+
+	Names     []string
+	dim       []int
+	Dimnames  [][]string 
+
 	Fieldlist []*ast.Field   // only if function
 	Body      *ast.BlockStmt // only if function: BlockStmt or single Stmt
 	String    string
@@ -72,7 +86,71 @@ type SEXP struct {
 	Integer   int            // single value INT
 	Offset    int            // single value INT (zerobased); TODO change to uint in indexdomain?
 	Slice     []float64      // "A slice is a reference to an array"
-	Dim       []int
+}
+
+
+// value domain
+type VSEXP struct {
+	TypeOf    SEXPTYPE
+	kind      token.Token    // token.INT, token.FLOAT, token.IMAG, token.CHAR, or token.STRING
+
 	Names     []string
-	Dimnames  []string 
+	dim       []int
+	Dimnames  [][]string 
+
+	Fieldlist []*ast.Field   // only if function
+	Body      *ast.BlockStmt // only if function: BlockStmt or single Stmt
+	Immediate float64        // single value FLOAT
+	slice     []float64      // "A slice is a reference to an array"
+}
+
+// index domain
+type ISEXP struct {
+	TypeOf    SEXPTYPE
+	kind      token.Token    // token.INT, token.FLOAT, token.IMAG, token.CHAR, or token.STRING
+
+	Names     []string
+	dim       []int
+	Dimnames  [][]string 
+
+	Integer   int            // single value INT
+	Offset    int            // single value INT (zerobased); TODO change to uint in indexdomain?
+	slice     []float64      // "A slice is a reference to an array"
+}
+
+// recursive domain
+type RSEXP struct {
+	TypeOf		SEXPTYPE
+	kind		token.Token    // token.INT, token.FLOAT, token.IMAG, token.CHAR, or token.STRING
+
+	Names		[]string
+	dim			[]int
+	Dimnames	[][]string 
+
+	CAR			*SEXP
+	CDR			*SEXP
+	TAG			*SEXP
+	slice		[]*SEXP
+}
+
+func (x *SEXP) Pos() token.Pos {
+	return x.Pos()
+}
+
+func (x *SEXP) Atom() interface{} {
+	return x.Immediate
+}
+func (x *SEXP) Dim() []int {
+	return x.dim
+}
+/*
+func (x *SEXP) Slice() []interface{} {
+	return x.slice.([]interface{})
+}
+*/
+func (x *SEXP) Length() int {
+	return len(x.Slice)
+}
+func (x *SEXP) Kind() token.Token {
+	return x.kind
 }

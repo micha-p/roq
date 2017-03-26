@@ -23,24 +23,24 @@ import (
 
 type Frame struct {
 	Outer   *Frame
-	Objects map[string]*SEXP
+	Objects map[string] SEXPItf
 }
 
 // NewFrame creates a new scope nested in the outer scope.
 func NewFrame(outer *Frame) *Frame {
 	const n = 4 // initial frame capacity
-	return &Frame{outer, make(map[string]*SEXP, n)}
+	return &Frame{outer, make(map[string]SEXPItf, n)}
 }
 
 // Lookup returns the object with the given name if it is
 // found in frame s, otherwise it returns nil. Outer frames
 // are ignored. TODO!!!
 //
-func (f *Frame) Lookup(name string) *SEXP {
+func (f *Frame) Lookup(name string) SEXPItf {
 	return f.Objects[name]
 }
 
-func (f *Frame) Recursive(name string) (r *SEXP) {
+func (f *Frame) Recursive(name string) (r SEXPItf) {
 	r = f.Objects[name]
 	if r == nil {
 		if f.Outer != nil {
@@ -57,7 +57,7 @@ func getIdent(ev *Evaluator, ex ast.Expr) string {
 
 // Insert attempts to insert a named object obj into the frame s.
 // If the frame already contains an object alt with the same name, this object is overwritten
-func (s *Frame) Insert(identifier string, obj *SEXP) (alt *SEXP) {
+func (s *Frame) Insert(identifier string, obj SEXPItf) (alt SEXPItf) {
 	s.Objects[identifier] = obj
 	return
 }
@@ -143,18 +143,18 @@ func EvalInit(fset *token.FileSet, filename string, src interface{}, mode parser
 // Only the first element of value1 is used. All other elements are ignored.
 // If value1 has any type other than a logical or a numeric vector an error is signalled.
 
-func isTrue(e *SEXP) bool {
+func isTrue(e SEXPItf) bool {
 	if e == nil {
 		return false
 	}
-	if e.Kind == token.TRUE {
+	if e.Kind() == token.TRUE {
 		return true
 	}
-	if e.Kind == token.FLOAT && e.Immediate != 0 {
+	if e.Kind() == token.FLOAT && e.Atom() != 0 {
 		return true
 	}
-	if e.Kind == token.FLOAT && e.Slice != nil && len(e.Slice)>0 {
-		if e.Slice[0] == 0 {
+	if e.Kind() == token.FLOAT && e.(*SEXP).Slice != nil && e.Length()>0 {
+		if e.(*SEXP).Slice[0] == 0 {
 			return false
 		} else {
 			return true
@@ -162,7 +162,7 @@ func isTrue(e *SEXP) bool {
 	}
 
 	//  TODO: better documentation on zero=true/false
-	if e.Kind == token.FLOAT && e.Immediate == 0 {
+	if e.Kind() == token.FLOAT && e.Atom() == 0 {
 		return true
 	}
 	return false
@@ -172,7 +172,7 @@ func isTrue(e *SEXP) bool {
 // https://go-book.appspot.com/interfaces.html
 // an empty interface accepts all pointers
 
-func EvalLoop(ev *Evaluator, e *ast.BlockStmt, cond ast.Expr) *SEXP {
+func EvalLoop(ev *Evaluator, e *ast.BlockStmt, cond ast.Expr) SEXPItf {
 	defer un(trace(ev, "LoopBody"))
 	var evloop Evaluator
 	evloop = *ev
@@ -195,10 +195,10 @@ func EvalLoop(ev *Evaluator, e *ast.BlockStmt, cond ast.Expr) *SEXP {
 		}
 	}
 	ev.Invisible = true
-	return &SEXP{Kind: token.NULL}
+	return &SEXP{kind: token.NULL}
 }
-func EvalFor(ev *Evaluator, e *ast.BlockStmt, identifier string, iterable *SEXP) *SEXP {
-	if iterable.Slice == nil {
+func EvalFor(ev *Evaluator, e *ast.BlockStmt, identifier string, iterable SEXPItf) SEXPItf {
+	if iterable.(*SEXP).Slice == nil {
 		panic("Vector expected")
 	}
 	defer un(trace(ev, "LoopBody"))
@@ -206,10 +206,10 @@ func EvalFor(ev *Evaluator, e *ast.BlockStmt, identifier string, iterable *SEXP)
 	evloop = *ev
 	evloop.state = loopState
 	var rstate LoopState
-	for _,v := range iterable.Slice {
+	for _,v := range iterable.(*SEXP).Slice {
 		evloop.state = loopState
 		// TODO: make use of cached position in map
-		ev.topFrame.Insert(identifier, &SEXP{Kind: token.FLOAT, Immediate: v})
+		ev.topFrame.Insert(identifier, &SEXP{kind: token.FLOAT, Immediate: v})
 		for n := 0; n < len(e.List); n++ {
 			EvalStmt(&evloop, e.List[n])
 			rstate = evloop.state
@@ -225,10 +225,10 @@ func EvalFor(ev *Evaluator, e *ast.BlockStmt, identifier string, iterable *SEXP)
 		}
 	}
 	ev.Invisible = true
-	return &SEXP{Kind: token.NULL}
+	return &SEXP{kind: token.NULL}
 }
 
-func EvalStmt(ev *Evaluator, s ast.Stmt) *SEXP {
+func EvalStmt(ev *Evaluator, s ast.Stmt) (r SEXPItf) {
 	TRACE := ev.Trace
 	DEBUG := ev.Debug
 	switch s.(type) {
@@ -241,7 +241,7 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) *SEXP {
 		if DEBUG {
 			println("emptyStmt")
 		}
-		return &SEXP{Kind: token.SEMICOLON}
+		return &SEXP{kind: token.SEMICOLON}
 	case *ast.IfStmt:
 		defer un(trace(ev, "ifStmt"))
 		e := s.(*ast.IfStmt)
@@ -264,16 +264,15 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) *SEXP {
 		return EvalFor(ev, e.Body, e.Parameter.String(), EvalExpr(ev, e.Iterable))
 	case *ast.BreakStmt:
 		ev.state = breakState
-		return &SEXP{Kind: token.BREAK}
+		return &SEXP{kind: token.BREAK}
 	case *ast.NextStmt:
 		ev.state = nextState
-		return &SEXP{Kind: token.NEXT}
+		return &SEXP{kind: token.NEXT}
 	case *ast.BlockStmt:
 		if TRACE {
 			println("blockStmt")
 		}
 		e := s.(*ast.BlockStmt)
-		var r *SEXP
 		for _, stmt := range e.List {
 			switch stmt.(type) {
 			case *ast.EmptyStmt:
@@ -282,20 +281,20 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) *SEXP {
 			}
 		}
 		if TRACE {
-			println("return: ", r.Kind.String())
+			println("return: ", r.Kind().String())
 		}
 		return r
 	case *ast.VersionStmt:
 		ev.state = nextState
-		return &SEXP{Kind: token.VERSION}
+		return &SEXP{kind: token.VERSION}
 	default:
 		givenType := reflect.TypeOf(s)
 		println("?Stmt:", givenType.String())
 	}
-	return &SEXP{Kind: token.ILLEGAL}
+	return &SEXP{kind: token.ILLEGAL}
 }
 
-func doAttributeReplacement(ev *Evaluator,lhs *ast.CallExpr, rhs ast.Expr) *SEXP {
+func doAttributeReplacement(ev *Evaluator,lhs *ast.CallExpr, rhs ast.Expr) SEXPItf {
 	funcobject := lhs.Fun
 	attribute := funcobject.(*ast.BasicLit).Value
 	defer un(trace(ev, attribute + "<-"))
@@ -306,18 +305,18 @@ func doAttributeReplacement(ev *Evaluator,lhs *ast.CallExpr, rhs ast.Expr) *SEXP
 	switch attribute{
 	case "dim":
 		// TODO instead of converting to float and back, parsing should support ints
-		dim := make([]int,len(value.Slice))
-		for n,v := range value.Slice {
+		dim := make([]int,value.Length())
+		for n,v := range value.(*SEXP).Slice {
 			dim[n]=int(v)
 		}
-		object.Dim=dim
+		object.(*SEXP).dim=dim
 	}
 	ev.Invisible = true // just for the following print
 	return nil
 }
 
-func doAssignment(ev *Evaluator,lhs ast.Expr, rhs ast.Expr) *SEXP {
-	var value *SEXP
+func doAssignment(ev *Evaluator,lhs ast.Expr, rhs ast.Expr) SEXPItf {
+	var value SEXPItf
 	switch lhs.(type){
 	case *ast.CallExpr:
 		doAttributeReplacement(ev,lhs.(*ast.CallExpr),rhs)
@@ -325,13 +324,13 @@ func doAssignment(ev *Evaluator,lhs ast.Expr, rhs ast.Expr) *SEXP {
 		target := getIdent(ev, lhs)
 		defer un(trace(ev, "assignment: "+target+" <- "))
 		value = EvalExpr(ev, rhs)
-		defer un(trace(ev, value.Immediate, " ", value.Kind.String()))
+		defer un(trace(ev, value.(*SEXP).Immediate, " ", value.Kind().String()))
 		ev.topFrame.Insert(target, value)
 	}
 	ev.Invisible = true // just for the following print
 	return value
 }
-func EvalAssignment(ev *Evaluator, e *ast.AssignStmt) *SEXP {
+func EvalAssignment(ev *Evaluator, e *ast.AssignStmt) SEXPItf {
 
 	//	defer un(trace(ev, "assignStmt"))
 
@@ -347,7 +346,7 @@ func EvalAssignment(ev *Evaluator, e *ast.AssignStmt) *SEXP {
 }
 
 
-func EvalExprOrAssignment(ev *Evaluator, ex ast.Expr) *SEXP {
+func EvalExprOrAssignment(ev *Evaluator, ex ast.Expr) SEXPItf {
 	TRACE := ev.Trace
 	if TRACE {
 		println("Expr or assignment:")
@@ -367,7 +366,7 @@ func EvalExprOrAssignment(ev *Evaluator, ex ast.Expr) *SEXP {
 	return EvalExpr(ev, ex)
 }
 
-func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXP {
+func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 	DEBUG := ev.Debug
 
 	//	defer un(trace(ev, "EvalExpr"))
@@ -375,7 +374,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXP {
 	case *ast.FuncLit:
 		node := ex.(*ast.FuncLit)
 		defer un(trace(ev, "FuncLit"))
-		return &SEXP{Kind: token.FUNCTION, Fieldlist: node.Type.Params.List, Body: node.Body}
+		return &SEXP{kind: token.FUNCTION, Fieldlist: node.Type.Params.List, Body: node.Body}
 	case *ast.BasicLit:
 		ev.Invisible = false
 		node := ex.(*ast.BasicLit)
@@ -389,7 +388,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXP {
 			}
 			// TODO check conversion to integer
 			vint := int(math.Floor(vfloat))
-			return &SEXP{ValuePos: node.ValuePos, Kind: node.Kind, Integer: vint, Offset: vint-1, Immediate: vfloat}
+			return &SEXP{ValuePos: node.ValuePos, kind: node.Kind, Integer: vint, Offset: vint-1, Immediate: vfloat}
 		case token.INT:
 			vint, err := strconv.Atoi(node.Value)
 			if err != nil {
@@ -402,16 +401,16 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXP {
 				print("ERROR:")
 				println(err)
 			}
-			return &SEXP{ValuePos: node.ValuePos, Kind: node.Kind, Integer: vint, Offset: vint - 1, Immediate: vfloat}
+			return &SEXP{ValuePos: node.ValuePos, kind: node.Kind, Integer: vint, Offset: vint - 1, Immediate: vfloat}
 		case token.STRING:
-			return &SEXP{ValuePos: node.ValuePos, Kind: node.Kind, String: node.Value}
+			return &SEXP{ValuePos: node.ValuePos, kind: node.Kind, String: node.Value}
 		case token.NULL, token.NA, token.INF, token.NAN, token.TRUE, token.FALSE:
-			return &SEXP{ValuePos: node.ValuePos, Kind: node.Kind}
+			return &SEXP{ValuePos: node.ValuePos, kind: node.Kind}
 		case token.IDENT:
 			sexprec := ev.topFrame.Recursive(node.Value)
 			if sexprec == nil {
 				print("error: object '", node.Value, "' not found\n")
-				return &SEXP{ValuePos: node.ValuePos, Kind: token.ILLEGAL, Immediate: math.NaN()}
+				return &SEXP{ValuePos: node.ValuePos, kind: token.ILLEGAL, Immediate: math.NaN()}
 			} else {
 				return sexprec
 			}
@@ -439,10 +438,10 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) *SEXP {
 		givenType := reflect.TypeOf(ex)
 		println("?Expr:", givenType.String())
 	}
-	return &SEXP{Kind: token.ILLEGAL}
+	return &SEXP{kind: token.ILLEGAL}
 }
 
-func evalBinary(ev *Evaluator, node *ast.BinaryExpr) *SEXP {
+func evalBinary(ev *Evaluator, node *ast.BinaryExpr) SEXPItf {
 	defer un(trace(ev, "BinaryExpr"))
 	x := EvalExpr(ev, node.X)
 	un(traceff(ev, node.Op.String()))
@@ -471,19 +470,19 @@ func evalBinary(ev *Evaluator, node *ast.BinaryExpr) *SEXP {
 		}
 	case token.SEQUENCE:
 		// TODO: same for INDEXDOMAIN
-		low := EvalExpr(ev, node.X).Integer
-		start := EvalExpr(ev, node.X).Immediate
-		high := EvalExpr(ev, node.Y).Integer
-		slice := make([]float64,1+high-low)
+		low := EvalExpr(ev, node.X).(*SEXP)
+		high := EvalExpr(ev, node.Y).(*SEXP)
+		slice := make([]float64,1+high.Integer-low.Integer)
+		start := low.Immediate
 		for n,_ := range slice {
 			slice[n]=start
-			start++
+			start=start+1
 		}
-		return &SEXP{Kind: token.FLOAT, Slice: slice}
+		return &SEXP{kind: token.FLOAT, Slice: slice}
 	case token.LESS, token.LESSEQUAL, token.GREATER, token.GREATEREQUAL, token.EQUAL, token.UNEQUAL:
-		return EvalComp(node.Op, x, EvalExpr(ev, node.Y))
+		return EvalComp(node.Op, x.(*SEXP), EvalExpr(ev, node.Y).(*SEXP))
 	default:
-		return EvalOp(node.Op, x, EvalExpr(ev, node.Y))
+		return EvalOp(node.Op, x.(*SEXP), EvalExpr(ev, node.Y).(*SEXP))
 	}
 }
 

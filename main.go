@@ -97,8 +97,10 @@ func main() {
 
 		for true {
 			stmt, tok := parser.ParseIter(p) // main iterator calls parse.stmt
-			sexprec := eval.EvalStmt(ev, stmt)
-			print.PrintResult(ev, sexprec)
+			sexp := eval.EvalStmt(ev, stmt)
+			if ! (sexp==nil) {
+				print.PrintResult(ev, sexp.(*eval.SEXP))
+			}
 			if tok == token.EOF {
 				return
 			}

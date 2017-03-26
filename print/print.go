@@ -15,7 +15,7 @@ func PrintResult(ev *eval.Evaluator, r *eval.SEXP) {
 	DEBUG := ev.Debug
 	if DEBUG {
 		givenType := reflect.TypeOf(r)
-		print("print: ", givenType.String(), ": ", r.Kind.String(), ": ")
+		print("print: ", givenType.String(), ": ", r.Kind().String(), ": ")
 	}
 
 	if ev.Invisible {
@@ -24,7 +24,7 @@ func PrintResult(ev *eval.Evaluator, r *eval.SEXP) {
 	} else if r == nil {
 		println("FALSE")
 	} else {
-		switch r.Kind {
+		switch r.Kind() {
 		case token.SEMICOLON:
 			if DEBUG {
 				println("Semicolon")
@@ -37,14 +37,29 @@ func PrintResult(ev *eval.Evaluator, r *eval.SEXP) {
 			if r.Slice==nil {
 				fmt.Printf("[1] %g\n", r.Immediate) // R has small e for exponential format
 			} else {
-				printArray(r.Slice)
+				rdim := r.Dim()
+				if rdim==nil {
+					print("[", r.Length(), "]")
+					printArray(r.Slice)
+				} else if (len(rdim)==2) {
+					printMatrix(r.Slice, rdim[0],rdim[1])
+				} else {
+					print("[")
+					for n, v := range rdim {
+						if n>0 {print(",")}
+						fmt.Printf("%d", v)
+					}
+					print("]")
+					printArray(r.Slice)
+				}
 			}
 		case token.INT:
-			if r.Dim==nil {
+			rdim := r.Dim()
+			if rdim==nil {
 				println("[1]", r.Offset)
 			} else {
-				print("[", len(r.Dim), "]")
-				for _, v := range r.Dim {
+				print("[", len(rdim), "]")
+				for _, v := range rdim {
 					fmt.Printf(" %d", v)
 				}
 			}
@@ -70,17 +85,28 @@ func PrintResult(ev *eval.Evaluator, r *eval.SEXP) {
 			if DEBUG {
 				println("default print")
 			}
-			println(r.Kind.String())
+			println(r.Kind().String())
 		}
 	}
 }
 
 func printArray(slice []float64){
-	print("[", len(slice), "]")
-	for _, v := range r.slice {
-		fmt.Printf(" %g", v) // R has small e for exponential format
+	for _, v := range slice {
+		fmt.Printf(" %g", v)
 	}
 	println()
 }
 
-
+func printMatrix(slice []float64, rows int, cols int){
+	for col:=0;col<cols;col++ {
+		print("\t[,",col+1, "]")
+	}
+	println()
+	for row:=0; row< rows; row++ {
+		print("[",row+1, ",]")
+		for col:=0;col<cols;col++ {
+			fmt.Printf(" %7g", slice[row+rows*col])
+		}
+		println()
+	}
+}
