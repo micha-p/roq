@@ -122,6 +122,22 @@ type RSEXP struct {
 	Slice		[]SEXPItf
 }
 
+
+// text domain (strings, factors and symbols)
+type TSEXP struct {
+	ValuePos  token.Pos
+	TypeOf    SEXPTYPE
+	kind      token.Token    // token.INT, token.FLOAT, token.IMAG, token.CHAR, or token.STRING
+
+	Names     []string
+	dim       []int
+	dimnames  [][]string 
+
+	String    string
+	Slice     []string      // "A slice is a reference to an array"
+}
+
+
 func (x *VSEXP) Pos() token.Pos {
 	return x.ValuePos
 }
@@ -148,5 +164,31 @@ func (x *RSEXP) Length() int {
 	return len(x.Slice)
 }
 func (x *RSEXP) Kind() token.Token {
+	return x.kind
+}
+
+func (x *TSEXP) Pos() token.Pos {
+	return x.ValuePos
+}
+func (x *TSEXP) Dim() []int {
+	return x.dim
+}
+func (x *TSEXP) Length() int {
+	return len(x.Slice)
+}
+func (x *TSEXP) Kind() token.Token {
+	return x.kind
+}
+
+func (x *ISEXP) Pos() token.Pos {
+	return x.ValuePos
+}
+func (x *ISEXP) Dim() []int {
+	return x.dim
+}
+func (x *ISEXP) Length() int {
+	return len(x.Slice)
+}
+func (x *ISEXP) Kind() token.Token {
 	return x.kind
 }

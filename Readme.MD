@@ -16,3 +16,6 @@ Tagged pairs (LISTSXP, LANGSXP), generic vectors and expressions (VECSXP, EXPRSX
 
 This implementation tries to use different domains with very restricted types (Values, Indices, Strings) and evaluates the usefulness 
 of a common interface to them.
+
+
+for printing, length is shown instead of linecount

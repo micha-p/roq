@@ -8,6 +8,8 @@ import (
 	"eval"
 )
 
+// length is used instead of linecount
+
 // visibility is stored in the evaluator and unset after every print
 // TODO typeswitch should depend on Kind
 func PrintResult(ev *eval.Evaluator, r eval.SEXPItf) {
@@ -28,6 +30,8 @@ func PrintResult(ev *eval.Evaluator, r eval.SEXPItf) {
 			PrintResultV(ev, r.(*eval.VSEXP))
 		case *eval.RSEXP:
 			PrintResultR(ev, r.(*eval.RSEXP))
+		case *eval.TSEXP:
+			PrintResultT(ev, r.(*eval.TSEXP))
 		}
 	}
 }
@@ -39,6 +43,19 @@ func PrintResultR(ev *eval.Evaluator, r *eval.RSEXP) {
 		println()
 	}
 }
+
+func PrintResultT(ev *eval.Evaluator, r *eval.TSEXP) {
+			if r.Slice==nil {
+				println("[1]", "\""+r.String+"\"")
+			} else {
+				print("[", len(r.Slice), "]")
+				for _, v := range r.Slice {
+					print(" \"",v,"\"")
+				}
+			}
+			println()
+}
+
 func PrintResultV(ev *eval.Evaluator, r *eval.VSEXP) {
 
 	DEBUG := ev.Debug

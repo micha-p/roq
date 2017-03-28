@@ -33,26 +33,26 @@ func EvalLength(ev *Evaluator, node *ast.CallExpr) (r *VSEXP) {
 	}
 }
 
-func EvalCat(ev *Evaluator, node *ast.CallExpr) (r *VSEXP) {
+func EvalCat(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 	TRACE := ev.Trace
 	if TRACE {
 		println("PrintExpr")
 	}
 	for n := 0; n < len(node.Args); n++ {
-		r = EvalExpr(ev, node.Args[n]).(*VSEXP)
+		r = EvalExpr(ev, node.Args[n])
 		if n > 0 {
 			print(" ")
 		}
 		switch r.Kind() {
 		case token.STRING:
-			print(strings.Replace(r.String, "\\n", "\n", -1)) // needs strings.Map
+			print(strings.Replace(r.(*TSEXP).String, "\\n", "\n", -1)) // needs strings.Map
 		case token.INT:
-			fmt.Printf("%g", r.Immediate)
+			fmt.Printf("%g", r.(*VSEXP).Immediate)  // TODO
 		case token.FLOAT:
-			if r.Slice==nil {
-				print(r.Immediate)
+			if r.(*VSEXP).Slice==nil {
+				print(r.(*VSEXP).Immediate)
 			} else {
-				for n, v := range r.Slice {
+				for n, v := range r.(*VSEXP).Slice {
 					if n>0 {
 						print(" ")
 					}
@@ -78,17 +78,32 @@ func EvalColumn(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 		println("Column")
 	}
 
-	evaluatedArgs := make(map[int]float64)
-	for n, v := range node.Args { // TODO: strictly left to right
-		val := EvalExprOrAssignment(ev, v)
-		evaluatedArgs[n] = val.(*VSEXP).Immediate
+	if len(node.Args)>0 {
+		evaluatedArgs := make(map[int]SEXPItf)
+		for n, v := range node.Args { // TODO: strictly left to right
+			val := EvalExprOrAssignment(ev, v)
+			evaluatedArgs[n] = val
+		}
+		switch evaluatedArgs[0].(type){
+		case *VSEXP:
+			c := make([]float64, len(evaluatedArgs))
+			for n,v := range evaluatedArgs {
+				c[n] = v.(*VSEXP).Immediate
+			}
+			return &VSEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, kind: token.FLOAT, Slice: c}
+		case *TSEXP:
+			c := make([]string, len(evaluatedArgs))
+			for n,v := range evaluatedArgs {
+				c[n] = v.(*TSEXP).String
+			}
+			return &TSEXP{ValuePos: node.Fun.Pos(), TypeOf: STRSXP, kind: token.STRING, Slice: c}
+		default:
+			println("Error in c") // TODO
+			return nil
+		}
+	} else {
+		return nil
 	}
-	c := make([]float64, len(evaluatedArgs))
-	for n,v := range evaluatedArgs {
-		c[n] = v
-	}
-
-	return &VSEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, kind: token.FLOAT, Slice: c}
 }
 
 func EvalList(ev *Evaluator, node *ast.CallExpr) (r *RSEXP) {

@@ -6,8 +6,10 @@ cat("\n")
 dim(x)
 x
 cat("\n")
-list("a1","a2")
+"hello"
+c("a1","a2")
 list(1,2.0)
+list("a1","a2")
 
 #list(c("a1","a2"),c("b1","b2","b3"))
 #dimnames(x) <- list(c("a1","a2"),c("b1","b2","b3"))

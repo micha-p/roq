@@ -407,7 +407,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 			}
 			return &VSEXP{ValuePos: node.ValuePos, kind: node.Kind, Integer: vint, Offset: vint - 1, Immediate: vfloat}
 		case token.STRING:
-			return &VSEXP{ValuePos: node.ValuePos, kind: node.Kind, String: node.Value}
+			return &TSEXP{ValuePos: node.ValuePos, kind: node.Kind, String: node.Value}
 		case token.NULL, token.NA, token.INF, token.NAN, token.TRUE, token.FALSE:
 			return &VSEXP{ValuePos: node.ValuePos, kind: node.Kind}
 		case token.IDENT:
