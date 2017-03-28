@@ -65,7 +65,7 @@ type SEXPItf interface {
 	Pos()		token.Pos
 	Kind()		token.Token
 	Dim()		[]int
-	Atom()		interface{}
+//	Atom()		interface{} // TODO Length=1 => Atom(), is this dispatching really faster?
 	Length()	int
 }
 
@@ -79,20 +79,21 @@ type VSEXP struct {
 
 	Names     []string
 	dim       []int
-	Dimnames  [][]string 
+	dimnames  [][]string 
 
 	Fieldlist []*ast.Field   // only if function
 	Body      *ast.BlockStmt // only if function: BlockStmt or single Stmt
 	String    string
 	Immediate float64        // single value FLOAT
-	Integer   int            // single value INT
-	Offset    int            // single value INT (zerobased); TODO change to uint in indexdomain?
+	Integer   int            // single value INT // TODO move into indexdomain?
+	Offset    int            // single value INT (zerobased); TODO move into indexdomain?
 	Slice     []float64      // "A slice is a reference to an array"
 }
 
 
 // index domain
 type ISEXP struct {
+	ValuePos  token.Pos
 	TypeOf    SEXPTYPE
 	kind      token.Token    // token.INT, token.FLOAT, token.IMAG, token.CHAR, or token.STRING
 
@@ -102,11 +103,12 @@ type ISEXP struct {
 
 	Integer   int            // single value INT
 	Offset    int            // single value INT (zerobased); TODO change to uint in indexdomain?
-	slice     []float64      // "A slice is a reference to an array"
+	Slice     []int          // "A slice is a reference to an array"
 }
 
 // recursive domain
 type RSEXP struct {
+	ValuePos  token.Pos
 	TypeOf		SEXPTYPE
 	kind		token.Token    // token.INT, token.FLOAT, token.IMAG, token.CHAR, or token.STRING
 
@@ -117,11 +119,11 @@ type RSEXP struct {
 	CAR			SEXPItf
 	CDR			SEXPItf
 	TAG			SEXPItf
-	slice		[]*SEXPItf
+	Slice		[]SEXPItf
 }
 
 func (x *VSEXP) Pos() token.Pos {
-	return x.Pos()
+	return x.ValuePos
 }
 func (x *VSEXP) Atom() interface{} {
 	return x.Immediate
@@ -133,5 +135,18 @@ func (x *VSEXP) Length() int {
 	return len(x.Slice)
 }
 func (x *VSEXP) Kind() token.Token {
+	return x.kind
+}
+
+func (x *RSEXP) Pos() token.Pos {
+	return x.ValuePos
+}
+func (x *RSEXP) Dim() []int {
+	return x.dim
+}
+func (x *RSEXP) Length() int {
+	return len(x.Slice)
+}
+func (x *RSEXP) Kind() token.Token {
 	return x.kind
 }

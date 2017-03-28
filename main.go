@@ -99,7 +99,7 @@ func main() {
 			stmt, tok := parser.ParseIter(p) // main iterator calls parse.stmt
 			sexp := eval.EvalStmt(ev, stmt)
 			if ! (sexp==nil) {
-				print.PrintResult(ev, sexp.(*eval.VSEXP))
+				print.PrintResult(ev, sexp)
 			}
 			if tok == token.EOF {
 				return

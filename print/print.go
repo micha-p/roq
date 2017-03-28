@@ -10,8 +10,7 @@ import (
 
 // visibility is stored in the evaluator and unset after every print
 // TODO typeswitch should depend on Kind
-func PrintResult(ev *eval.Evaluator, r *eval.VSEXP) {
-
+func PrintResult(ev *eval.Evaluator, r eval.SEXPItf) {
 	DEBUG := ev.Debug
 	if DEBUG {
 		givenType := reflect.TypeOf(r)
@@ -24,6 +23,25 @@ func PrintResult(ev *eval.Evaluator, r *eval.VSEXP) {
 	} else if r == nil {
 		println("FALSE")
 	} else {
+		switch r.(type) {
+		case *eval.VSEXP:
+			PrintResultV(ev, r.(*eval.VSEXP))
+		case *eval.RSEXP:
+			PrintResultR(ev, r.(*eval.RSEXP))
+		}
+	}
+}
+
+func PrintResultR(ev *eval.Evaluator, r *eval.RSEXP) {
+	for n,v := range r.Slice {
+		print("[[",n+1,"]]\n")
+		PrintResult(ev,v)
+		println()
+	}
+}
+func PrintResultV(ev *eval.Evaluator, r *eval.VSEXP) {
+
+	DEBUG := ev.Debug
 		switch r.Kind() {
 		case token.SEMICOLON:
 			if DEBUG {
@@ -56,7 +74,7 @@ func PrintResult(ev *eval.Evaluator, r *eval.VSEXP) {
 		case token.INT:
 			rdim := r.Dim()
 			if rdim==nil {
-				println("[1]", r.Offset)
+				println("[1]", r.Integer)
 			} else {
 				print("[", len(rdim), "]")
 				for _, v := range rdim {
@@ -87,7 +105,6 @@ func PrintResult(ev *eval.Evaluator, r *eval.VSEXP) {
 			}
 			println(r.Kind().String())
 		}
-	}
 }
 
 func printArray(slice []float64){

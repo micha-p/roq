@@ -150,7 +150,7 @@ func isTrue(e SEXPItf) bool {
 	if e.Kind() == token.TRUE {
 		return true
 	}
-	if e.Kind() == token.FLOAT && e.Atom() != 0 {
+	if e.Kind() == token.FLOAT && e.(*VSEXP).Immediate != 0 {
 		return true
 	}
 	if e.Kind() == token.FLOAT && e.(*VSEXP).Slice != nil && e.Length()>0 {
@@ -162,7 +162,7 @@ func isTrue(e SEXPItf) bool {
 	}
 
 	//  TODO: better documentation on zero=true/false
-	if e.Kind() == token.FLOAT && e.Atom() == 0 {
+	if e.Kind() == token.FLOAT && e.(*VSEXP).Immediate == 0 {
 		return true
 	}
 	return false

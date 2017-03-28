@@ -48,11 +48,15 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 	if f == nil {
 		switch funcname {
 		case "c":
-			return EvalCombine(ev, node)
+			return EvalColumn(ev, node)
+		case "list":
+			return EvalList(ev, node)
 		case "cat":
 			return EvalCat(ev, node)
 		case "length":
 			return EvalLength(ev, node)
+		//case "dimnames":
+			//return node.Dimnames
 		case "dim":
 			// TODO len(Args) != 1
 			identifier := getIdent(ev, node.Args[0])

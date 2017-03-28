@@ -72,16 +72,16 @@ func EvalCat(ev *Evaluator, node *ast.CallExpr) (r *VSEXP) {
 // TODO recursive=TRUE/FALSE
 // TODO faster vector literals, composed just of floats
 
-func EvalCombine(ev *Evaluator, node *ast.CallExpr) (r *VSEXP) {
+func EvalColumn(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 	TRACE := ev.Trace
 	if TRACE {
-		println("Combine")
+		println("Column")
 	}
 
 	evaluatedArgs := make(map[int]float64)
 	for n, v := range node.Args { // TODO: strictly left to right
 		val := EvalExprOrAssignment(ev, v)
-		evaluatedArgs[n] = val.Atom().(float64)
+		evaluatedArgs[n] = val.(*VSEXP).Immediate
 	}
 	c := make([]float64, len(evaluatedArgs))
 	for n,v := range evaluatedArgs {
@@ -89,4 +89,19 @@ func EvalCombine(ev *Evaluator, node *ast.CallExpr) (r *VSEXP) {
 	}
 
 	return &VSEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, kind: token.FLOAT, Slice: c}
+}
+
+func EvalList(ev *Evaluator, node *ast.CallExpr) (r *RSEXP) {
+	TRACE := ev.Trace
+	if TRACE {
+		println("List")
+	}
+
+	evaluatedArgs := make([]SEXPItf,len(node.Args))
+	for n, v := range node.Args { // TODO: strictly left to right
+		val := EvalExprOrAssignment(ev, v)
+		evaluatedArgs[n] = val
+	}
+
+	return &RSEXP{ValuePos: node.Fun.Pos(), TypeOf: VECSXP, kind: token.FLOAT, Slice: evaluatedArgs}
 }
