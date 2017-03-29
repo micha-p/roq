@@ -65,6 +65,9 @@ type SEXPItf interface {
 	Pos()		token.Pos
 	Kind()		token.Token
 	Dim()		[]int
+	DimSet([]int)
+	Dimnames()	*RSEXP
+	DimnamesSet(*RSEXP)
 //	Atom()		interface{} // TODO Length=1 => Atom(), is this dispatching really faster?
 	Length()	int
 }
@@ -79,7 +82,7 @@ type VSEXP struct {
 
 	Names     []string
 	dim       []int
-	dimnames  [][]string 
+	dimnames  *RSEXP
 
 	Fieldlist []*ast.Field   // only if function
 	Body      *ast.BlockStmt // only if function: BlockStmt or single Stmt
@@ -99,7 +102,7 @@ type ISEXP struct {
 
 	Names     []string
 	dim       []int
-	Dimnames  [][]string 
+	dimnames  *RSEXP
 
 	Integer   int            // single value INT
 	Offset    int            // single value INT (zerobased); TODO change to uint in indexdomain?
@@ -114,7 +117,7 @@ type RSEXP struct {
 
 	Names		[]string
 	dim			[]int
-	Dimnames	[][]string 
+	dimnames	*RSEXP
 
 	CAR			SEXPItf
 	CDR			SEXPItf
@@ -131,7 +134,7 @@ type TSEXP struct {
 
 	Names     []string
 	dim       []int
-	dimnames  [][]string 
+	dimnames  *RSEXP
 
 	String    string
 	Slice     []string      // "A slice is a reference to an array"
@@ -147,6 +150,15 @@ func (x *VSEXP) Atom() interface{} {
 func (x *VSEXP) Dim() []int {
 	return x.dim
 }
+func (x *VSEXP) DimSet(v []int) {
+	x.dim=v
+}
+func (x *VSEXP) Dimnames() *RSEXP {
+	return x.dimnames
+}
+func (x *VSEXP) DimnamesSet(v *RSEXP) {
+	x.dimnames=v
+}
 func (x *VSEXP) Length() int {
 	return len(x.Slice)
 }
@@ -159,6 +171,15 @@ func (x *RSEXP) Pos() token.Pos {
 }
 func (x *RSEXP) Dim() []int {
 	return x.dim
+}
+func (x *RSEXP) DimSet(v []int) {
+	x.dim=v
+}
+func (x *RSEXP) Dimnames() *RSEXP {
+	return x.dimnames
+}
+func (x *RSEXP) DimnamesSet(v *RSEXP) {
+	x.dimnames=v
 }
 func (x *RSEXP) Length() int {
 	return len(x.Slice)
@@ -173,6 +194,15 @@ func (x *TSEXP) Pos() token.Pos {
 func (x *TSEXP) Dim() []int {
 	return x.dim
 }
+func (x *TSEXP) DimSet(v []int) {
+	x.dim=v
+}
+func (x *TSEXP) Dimnames() *RSEXP {
+	return x.dimnames
+}
+func (x *TSEXP) DimnamesSet(v *RSEXP) {
+	x.dimnames=v
+}
 func (x *TSEXP) Length() int {
 	return len(x.Slice)
 }
@@ -185,6 +215,15 @@ func (x *ISEXP) Pos() token.Pos {
 }
 func (x *ISEXP) Dim() []int {
 	return x.dim
+}
+func (x *ISEXP) DimSet(v []int) {
+	x.dim=v
+}
+func (x *ISEXP) Dimnames() *RSEXP {
+	return x.dimnames
+}
+func (x *ISEXP) DimnamesSet(v *RSEXP) {
+	x.dimnames=v
 }
 func (x *ISEXP) Length() int {
 	return len(x.Slice)

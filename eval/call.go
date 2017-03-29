@@ -55,8 +55,12 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 			return EvalCat(ev, node)
 		case "length":
 			return EvalLength(ev, node)
-		//case "dimnames":
-			//return node.Dimnames
+		case "dimnames":
+			// TODO len(Args) != 1
+			identifier := getIdent(ev, node.Args[0])
+			object := ev.topFrame.Lookup(identifier)
+			r := object.Dimnames()
+			return r
 		case "dim":
 			// TODO len(Args) != 1
 			identifier := getIdent(ev, node.Args[0])

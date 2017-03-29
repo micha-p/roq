@@ -15,8 +15,7 @@ import (
 func PrintResult(ev *eval.Evaluator, r eval.SEXPItf) {
 	DEBUG := ev.Debug
 	if DEBUG {
-		givenType := reflect.TypeOf(r)
-		print("print: ", givenType.String(), ": ", r.Kind().String(), ": ")
+		print("print: ")
 	}
 
 	if ev.Invisible {
@@ -25,6 +24,10 @@ func PrintResult(ev *eval.Evaluator, r eval.SEXPItf) {
 	} else if r == nil {
 		println("FALSE")
 	} else {
+		if DEBUG {
+			givenType := reflect.TypeOf(r)
+			println(givenType.String(),r)
+		}
 		switch r.(type) {
 		case *eval.VSEXP:
 			PrintResultV(ev, r.(*eval.VSEXP))
@@ -32,15 +35,28 @@ func PrintResult(ev *eval.Evaluator, r eval.SEXPItf) {
 			PrintResultR(ev, r.(*eval.RSEXP))
 		case *eval.TSEXP:
 			PrintResultT(ev, r.(*eval.TSEXP))
+		default:
+			println("?prnt")
 		}
 	}
 }
 
 func PrintResultR(ev *eval.Evaluator, r *eval.RSEXP) {
-	for n,v := range r.Slice {
-		print("[[",n+1,"]]\n")
-		PrintResult(ev,v)
-		println()
+	if r == nil {
+		println("ERROR: uncatched NULL pointer: ",r)
+		return
+	}
+	if r.Slice==nil {
+		print("[1] ")
+		PrintResult(ev, r.CAR)
+		print("[2] ")
+		PrintResult(ev, r.CDR)
+	} else {
+		for n,v := range r.Slice {
+			print("[[",n+1,"]]\n")
+			PrintResult(ev,v)
+			println()
+		}
 	}
 }
 
@@ -76,6 +92,12 @@ func PrintResultV(ev *eval.Evaluator, r *eval.VSEXP) {
 				if rdim==nil {
 					print("[", r.Length(), "]")
 					printArray(r.Slice)
+				} else if (len(rdim)==2 && r.Dimnames() != nil) {
+					printMatrixDimnames(r.Slice, 
+										rdim[0],
+										rdim[1],
+										r.Dimnames().Slice[0].(*eval.TSEXP).Slice,
+										r.Dimnames().Slice[1].(*eval.TSEXP).Slice)
 				} else if (len(rdim)==2) {
 					printMatrix(r.Slice, rdim[0],rdim[1])
 				} else {
@@ -129,6 +151,28 @@ func printArray(slice []float64){
 		fmt.Printf(" %g", v)
 	}
 	println()
+}
+
+func printMatrixDimnames(slice []float64, rows int, cols int, rownames []string, colnames []string){
+	for col:=0;col<cols;col++ {
+		if col<len(colnames) {
+			print("\t",colnames[col])
+		} else {
+			print("\t[,",col+1, "]")
+		}
+	}
+	println()
+	for row:=0; row< rows; row++ {
+		if row<len(rownames) {
+			print(rownames[row])
+		} else {
+			print("[",row+1, ",]")
+		}
+		for col:=0;col<cols;col++ {
+			fmt.Printf(" %7g", slice[row+rows*col])
+		}
+		println()
+	}
 }
 
 func printMatrix(slice []float64, rows int, cols int){

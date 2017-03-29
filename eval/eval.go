@@ -295,6 +295,10 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) (r SEXPItf) {
 }
 
 func doAttributeReplacement(ev *Evaluator,lhs *ast.CallExpr, rhs ast.Expr) SEXPItf {
+	TRACE := ev.Trace
+	if TRACE {
+		println("attribute replacement:")
+	}
 	funcobject := lhs.Fun
 	attribute := funcobject.(*ast.BasicLit).Value
 	defer un(trace(ev, attribute + "<-"))
@@ -309,7 +313,9 @@ func doAttributeReplacement(ev *Evaluator,lhs *ast.CallExpr, rhs ast.Expr) SEXPI
 		for n,v := range value.(*VSEXP).Slice {
 			dim[n]=int(v)
 		}
-		object.(*VSEXP).dim=dim
+		object.DimSet(dim)
+	case "dimnames":
+		object.DimnamesSet(value.(*RSEXP))
 	}
 	ev.Invisible = true // just for the following print
 	return nil
