@@ -315,7 +315,22 @@ func doAttributeReplacement(ev *Evaluator,lhs *ast.CallExpr, rhs ast.Expr) SEXPI
 		}
 		object.DimSet(dim)
 	case "dimnames":
-		object.DimnamesSet(value.(*RSEXP))
+		if object.Dim()==nil {
+			println("ERROR: 'dimnames' applied to non-array")
+			return nil
+		} else if value.Length() != len(object.Dim()) {
+			print("ERROR: ","length of 'dimnames' [",value.Length(),"] must match that of 'dims' [",len(object.Dim()),"]\n")
+			return nil
+		} else {
+			slice := value.(*RSEXP).Slice
+			for n,v := range object.Dim() {
+				if slice[n].Length() != v {
+					print("ERROR: ","length of 'dimnames' [",n+1,"] not equal to array extent\n")
+					return nil
+				}
+			}
+			object.DimnamesSet(value.(*RSEXP))
+		}
 	}
 	ev.Invisible = true // just for the following print
 	return nil
