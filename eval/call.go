@@ -61,6 +61,7 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 			return EvalList(ev, node)
 		case "cat":
 			return EvalCat(ev, node)
+		// TODO eval arg
 		case "length":
 			if arityOK(funcname, 1, node) {
 				return EvalLength(ev, node)
@@ -69,8 +70,7 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 			}
 		case "dimnames":
 			if arityOK(funcname, 1, node) {
-				identifier := getIdent(ev, node.Args[0])
-				object := ev.topFrame.Lookup(identifier)
+				object := EvalExpr(ev, node.Args[0])
 				r := object.Dimnames()
 				return r
 			} else {
@@ -78,11 +78,38 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 			}
 		case "dim":
 			if arityOK(funcname, 1, node) {
-				identifier := getIdent(ev, node.Args[0])
-				object := ev.topFrame.Lookup(identifier)
+				object := EvalExpr(ev, node.Args[0])
 				r := &VSEXP{kind: token.INT}
 				r.DimSet(object.Dim())
 				return r
+			} else {
+				return &VSEXP{kind: token.ILLEGAL}
+			}
+		case "class":
+			if arityOK(funcname, 1, node) {
+				object := EvalExpr(ev, node.Args[0])
+				s := object.Class()
+				if s==nil{
+					var r string
+					switch object.(type){
+						case *VSEXP:
+							r="numeric"
+						case *ISEXP:
+							r="numeric"
+//						case *LSEXP:
+//							r="logical"
+						case *TSEXP:
+							r="character"
+						case *RSEXP:  // TODO pairlist
+							r="list"
+						case *NSEXP:
+							r="NULL"
+						default:
+							panic("unknown type")
+					}
+					return &TSEXP{kind: token.STRING, String: r}
+				}
+				return &TSEXP{kind: token.STRING, String: *s}
 			} else {
 				return &VSEXP{kind: token.ILLEGAL}
 			}

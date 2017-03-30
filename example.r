@@ -1,18 +1,11 @@
-x <- 1:6
-dimnames(x) <- list(c("a1","a2"),c("b1","b2","b3"))
-dim(x) <- c(2,3)
-dimnames(x) <- list(c("a1","a2"),c("b1","b2","b3"))
-dimnames(x) <- list(c("a1","a2"),c("b1","b2","b3"),c("d"))
-dimnames(x) <- list(c("a1","a2"),c("b1","b2"))
-dimnames(x) <- list(c("a1","a2"),c("b1","b2","b3","b4"))
-dimnames(x) <- list(c("a1"),c("b1","b2","b3"))
-
-#y <- 1:24
-#dim(y) <- c(2,3,2,2)
-#y
-
-length(1,2)
-dimnames()
-dimnames(a,b,c)
-dim(1,2,3)
-dim(x)
+x <- 1.0
+class(x)
+class(x)<-"myclass"
+class(x)
+class(x)<-NULL
+class(x)
+class(1:6)
+class("a")
+class(NULL)
+class(list(1,2,3))
+#class(pairlist(1,2))

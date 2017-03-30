@@ -43,6 +43,16 @@ func doAttributeReplacement(ev *Evaluator,lhs *ast.CallExpr, rhs ast.Expr) SEXPI
 			}
 			object.DimnamesSet(value.(*RSEXP))
 		}
+	case "class":
+		switch value.(type){
+			case *TSEXP:
+				s:= value.(*TSEXP).String
+				object.ClassSet(&s)
+			case *NSEXP:
+				object.ClassSet(nil)
+			default:
+				panic("attribute replacement") // TODO
+		}
 	}
 	ev.Invisible = true // just for the following print
 	return nil

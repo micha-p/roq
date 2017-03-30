@@ -388,8 +388,13 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 			return &VSEXP{ValuePos: node.ValuePos, kind: node.Kind, Integer: vint, Offset: vint - 1, Immediate: vfloat}
 		case token.STRING:
 			return &TSEXP{ValuePos: node.ValuePos, kind: node.Kind, String: node.Value}
-		case token.NULL, token.NA, token.INF, token.NAN, token.TRUE, token.FALSE:
-			return &VSEXP{ValuePos: node.ValuePos, kind: node.Kind}
+		case token.NULL, token.NA, token.FALSE:
+			// TODO jus return nil?
+			return &NSEXP{ValuePos: node.ValuePos, kind: node.Kind}
+		case token.INF:
+			return &VSEXP{ValuePos: node.ValuePos, Immediate: math.Inf(+1)}
+		case token.NAN:
+			return &VSEXP{ValuePos: node.ValuePos, Immediate: math.NaN()}
 		case token.IDENT:
 			sexprec := ev.topFrame.Recursive(node.Value)
 			if sexprec == nil {
