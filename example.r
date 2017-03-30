@@ -10,3 +10,8 @@ dimnames(x) <- list(c("a1"),c("b1","b2","b3"))
 #y <- 1:24
 #dim(y) <- c(2,3,2,2)
 #y
+
+length(1,2)
+dimnames()
+dimnames(a,b,c)
+dim(1,2,3)

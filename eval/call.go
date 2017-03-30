@@ -35,6 +35,14 @@ func tryPartialMatch(partial string, argNames map[argindex]string, bound map[arg
 	return matches
 }
 
+func arityOK(funcname string, arity int, node *ast.CallExpr) bool {
+	if len(node.Args) == arity {
+		return true
+	} else {
+		print(len(node.Args), " arguments passed to '", funcname, "' which requires ", arity, "\n")
+		return false
+	}
+}
 
 // TODO use results field of funcType
 func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
@@ -54,25 +62,34 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 		case "cat":
 			return EvalCat(ev, node)
 		case "length":
-			return EvalLength(ev, node)
+			if arityOK(funcname, 1, node) {
+				return EvalLength(ev, node)
+			} else {
+				return &VSEXP{kind: token.ILLEGAL}
+			}
 		case "dimnames":
-			// TODO len(Args) != 1
-			identifier := getIdent(ev, node.Args[0])
-			object := ev.topFrame.Lookup(identifier)
-			r := object.Dimnames()
-			return r
+			if arityOK(funcname, 1, node) {
+				identifier := getIdent(ev, node.Args[0])
+				object := ev.topFrame.Lookup(identifier)
+				r := object.Dimnames()
+				return r
+			} else {
+				return &VSEXP{kind: token.ILLEGAL}
+			}
 		case "dim":
-			// TODO len(Args) != 1
-			identifier := getIdent(ev, node.Args[0])
-			object := ev.topFrame.Lookup(identifier)
-			return &VSEXP{kind: token.INT, dim: object.Dim()}
+			if arityOK(funcname, 1, node) {
+				identifier := getIdent(ev, node.Args[0])
+				object := ev.topFrame.Lookup(identifier)
+				return &VSEXP{kind: token.INT, dim: object.Dim()}
+			} else {
+				return &VSEXP{kind: token.ILLEGAL}
+			}
 		default:
 			println("\nError: could not find function \"" + funcname + "\"")
 			return &VSEXP{kind: token.ILLEGAL}
 		}
 	} else {
 		argNames := make(map[argindex]string)
-
 
 		// collect field names
 		for n, field := range f.(*VSEXP).Fieldlist {

@@ -6,30 +6,26 @@ import (
 	"lib/ast"
 	"lib/token"
 )
-	
+
+// https://cran.r-project.org/doc/manuals/R-ints.html#g_t_002eInternal-vs-_002ePrimitive
+
 func EvalLength(ev *Evaluator, node *ast.CallExpr) (r *VSEXP) {
 	TRACE := ev.Trace
 	if TRACE {
 		println("Length")
 	}
-	l:=len(node.Args)
-	if l == 1 {
-		ex := node.Args[0]
-		switch ex.(type) {
-		case *ast.IndexExpr:
-			iterator := IndexDomainEval(ev, ex.(*ast.IndexExpr).Index)
-			return &VSEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, kind: token.INT, Offset: iterator.Length()}
-		default:
-			val := EvalExpr(ev,node.Args[0])
-			if val.(*VSEXP).Slice ==nil {
-				return &VSEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, kind: token.INT, Offset: 1}
-			} else {
-				return &VSEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, kind: token.INT, Offset: val.Length()}
-			}
+	ex := node.Args[0]
+	switch ex.(type) {
+	case *ast.IndexExpr:
+		iterator := IndexDomainEval(ev, ex.(*ast.IndexExpr).Index)
+		return &VSEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, kind: token.INT, Offset: iterator.Length()}
+	default:
+		val := EvalExpr(ev,node.Args[0])
+		if val.(*VSEXP).Slice ==nil {
+			return &VSEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, kind: token.INT, Offset: 1}
+		} else {
+			return &VSEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, kind: token.INT, Offset: val.Length()}
 		}
-	} else {
-		println(l,"arguments passed to 'length' which requires 1") 
-		return &VSEXP{kind: token.ILLEGAL}
 	}
 }
 
