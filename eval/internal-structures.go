@@ -72,18 +72,21 @@ type SEXPItf interface {
 	Length()	int
 }
 
-// TODO split into several types 
+// promoted fields can't be used in Promoted fields act like ordinary fields of a struct except that they
+// cannot be used as field names in composite literals of the struct. 
+type SEXP struct {
+	names     []string
+	dim       []int
+	dimnames  *RSEXP
+}
 
 // value domain
 type VSEXP struct {
 	ValuePos  token.Pos
 	TypeOf    SEXPTYPE
 	kind      token.Token    // token.INT, token.FLOAT, token.IMAG, token.CHAR, or token.STRING
-
-	Names     []string
-	dim       []int
-	dimnames  *RSEXP
-
+							 // TODO: get rid of it
+	SEXP
 	Fieldlist []*ast.Field   // only if function
 	Body      *ast.BlockStmt // only if function: BlockStmt or single Stmt
 	String    string
@@ -100,10 +103,7 @@ type ISEXP struct {
 	TypeOf    SEXPTYPE
 	kind      token.Token    // token.INT, token.FLOAT, token.IMAG, token.CHAR, or token.STRING
 
-	Names     []string
-	dim       []int
-	dimnames  *RSEXP
-
+	SEXP
 	Integer   int            // single value INT
 	Offset    int            // single value INT (zerobased); TODO change to uint in indexdomain?
 	Slice     []int          // "A slice is a reference to an array"
@@ -115,10 +115,7 @@ type RSEXP struct {
 	TypeOf		SEXPTYPE
 	kind		token.Token    // token.INT, token.FLOAT, token.IMAG, token.CHAR, or token.STRING
 
-	Names		[]string
-	dim			[]int
-	dimnames	*RSEXP
-
+	SEXP
 	CAR			SEXPItf
 	CDR			SEXPItf
 	TAG			SEXPItf
@@ -132,13 +129,26 @@ type TSEXP struct {
 	TypeOf    SEXPTYPE
 	kind      token.Token    // token.INT, token.FLOAT, token.IMAG, token.CHAR, or token.STRING
 
-	Names     []string
-	dim       []int
-	dimnames  *RSEXP
-
+	SEXP
 	String    string
 	Slice     []string      // "A slice is a reference to an array"
 }
+
+
+
+func (x *SEXP) Dim() []int {
+	return x.dim
+}
+func (x *SEXP) DimSet(v []int) {
+	x.dim=v
+}
+func (x *SEXP) Dimnames() *RSEXP {
+	return x.dimnames
+}
+func (x *SEXP) DimnamesSet(v *RSEXP) {
+	x.dimnames=v
+}
+
 
 
 func (x *VSEXP) Pos() token.Pos {
@@ -147,18 +157,6 @@ func (x *VSEXP) Pos() token.Pos {
 func (x *VSEXP) Atom() interface{} {
 	return x.Immediate
 }
-func (x *VSEXP) Dim() []int {
-	return x.dim
-}
-func (x *VSEXP) DimSet(v []int) {
-	x.dim=v
-}
-func (x *VSEXP) Dimnames() *RSEXP {
-	return x.dimnames
-}
-func (x *VSEXP) DimnamesSet(v *RSEXP) {
-	x.dimnames=v
-}
 func (x *VSEXP) Length() int {
 	return len(x.Slice)
 }
@@ -166,20 +164,9 @@ func (x *VSEXP) Kind() token.Token {
 	return x.kind
 }
 
+
 func (x *RSEXP) Pos() token.Pos {
 	return x.ValuePos
-}
-func (x *RSEXP) Dim() []int {
-	return x.dim
-}
-func (x *RSEXP) DimSet(v []int) {
-	x.dim=v
-}
-func (x *RSEXP) Dimnames() *RSEXP {
-	return x.dimnames
-}
-func (x *RSEXP) DimnamesSet(v *RSEXP) {
-	x.dimnames=v
 }
 func (x *RSEXP) Length() int {
 	return len(x.Slice)
@@ -191,18 +178,6 @@ func (x *RSEXP) Kind() token.Token {
 func (x *TSEXP) Pos() token.Pos {
 	return x.ValuePos
 }
-func (x *TSEXP) Dim() []int {
-	return x.dim
-}
-func (x *TSEXP) DimSet(v []int) {
-	x.dim=v
-}
-func (x *TSEXP) Dimnames() *RSEXP {
-	return x.dimnames
-}
-func (x *TSEXP) DimnamesSet(v *RSEXP) {
-	x.dimnames=v
-}
 func (x *TSEXP) Length() int {
 	return len(x.Slice)
 }
@@ -212,18 +187,6 @@ func (x *TSEXP) Kind() token.Token {
 
 func (x *ISEXP) Pos() token.Pos {
 	return x.ValuePos
-}
-func (x *ISEXP) Dim() []int {
-	return x.dim
-}
-func (x *ISEXP) DimSet(v []int) {
-	x.dim=v
-}
-func (x *ISEXP) Dimnames() *RSEXP {
-	return x.dimnames
-}
-func (x *ISEXP) DimnamesSet(v *RSEXP) {
-	x.dimnames=v
 }
 func (x *ISEXP) Length() int {
 	return len(x.Slice)

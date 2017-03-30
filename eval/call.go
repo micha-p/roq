@@ -80,7 +80,9 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 			if arityOK(funcname, 1, node) {
 				identifier := getIdent(ev, node.Args[0])
 				object := ev.topFrame.Lookup(identifier)
-				return &VSEXP{kind: token.INT, dim: object.Dim()}
+				r := &VSEXP{kind: token.INT}
+				r.DimSet(object.Dim())
+				return r
 			} else {
 				return &VSEXP{kind: token.ILLEGAL}
 			}
