@@ -3,6 +3,7 @@ package eval
 import (
 	"lib/ast"
 	"lib/token"
+	"math"
 )
 
 type SEXPTYPE int
@@ -69,6 +70,8 @@ type SEXPItf interface {
 	Class() *string
 	ClassSet(*string)
 	//	Atom()		interface{} // TODO Length=1 => Atom(), is this dispatching really faster?
+	IntegerGet() int
+	FloatGet() float64
 	Length() int
 }
 
@@ -85,34 +88,33 @@ type SEXP struct {
 type VSEXP struct {
 	ValuePos token.Pos
 	TypeOf   SEXPTYPE
-	kind     token.Token // token.INT, token.FLOAT, token.IMAG, token.CHAR, or token.STRING
-	// TODO: get rid of it
+	kind     token.Token     // token.INT, token.FLOAT, token.IMAG, token.CHAR, or token.STRING
+	                         // TODO: get rid of it
 	SEXP
 	Fieldlist []*ast.Field   // only if function
 	Body      *ast.BlockStmt // only if function: BlockStmt or single Stmt
-	Immediate float64   // single value FLOAT
-	Integer   int       // single value INT // TODO move into indexdomain?
-	Offset    int       // single value INT (zerobased); TODO move into indexdomain?
-	Slice     []float64 // "A slice is a reference to an array"
+	Immediate float64        // single value FLOAT
+	Integer   int            // single value INT
+	Slice     []float64      // "A slice is a reference to an array"
 }
 
 // index domain
 type ISEXP struct {
 	ValuePos token.Pos
 	TypeOf   SEXPTYPE
-	kind     token.Token // token.INT, token.FLOAT, token.IMAG, token.CHAR, or token.STRING
+	kind     token.Token     // token.INT, token.FLOAT, token.IMAG, token.CHAR, or token.STRING
 
 	SEXP
-	Integer int   // single value INT
-	Offset  int   // single value INT (zerobased); TODO change to uint in indexdomain?
-	Slice   []int // "A slice is a reference to an array"
+	Immediate float64        // single value FLOAT
+	Integer int              // single value INT
+	Slice   []int            // "A slice is a reference to an array"
 }
 
 // recursive domain
 type RSEXP struct {
 	ValuePos token.Pos
 	TypeOf   SEXPTYPE
-	kind     token.Token // token.INT, token.FLOAT, token.IMAG, token.CHAR, or token.STRING
+	kind     token.Token     // token.INT, token.FLOAT, token.IMAG, token.CHAR, or token.STRING
 
 	SEXP
 	CAR   SEXPItf
@@ -171,26 +173,14 @@ func (x *VSEXP) Length() int {
 func (x *VSEXP) Kind() token.Token {
 	return x.kind
 }
-
-func (x *RSEXP) Pos() token.Pos {
-	return x.ValuePos
+func (x *VSEXP) IntegerGet() int {
+	// TODO check conversion to integer
+	return int(math.Floor(x.Immediate))
 }
-func (x *RSEXP) Length() int {
-	return len(x.Slice)
-}
-func (x *RSEXP) Kind() token.Token {
-	return x.kind
+func (x *VSEXP) FloatGet() float64 {
+	return x.Immediate
 }
 
-func (x *TSEXP) Pos() token.Pos {
-	return x.ValuePos
-}
-func (x *TSEXP) Length() int {
-	return len(x.Slice)
-}
-func (x *TSEXP) Kind() token.Token {
-	return x.kind
-}
 
 func (x *ISEXP) Pos() token.Pos {
 	return x.ValuePos
@@ -201,6 +191,54 @@ func (x *ISEXP) Length() int {
 func (x *ISEXP) Kind() token.Token {
 	return x.kind
 }
+func (x *ISEXP) IntegerGet() int {
+	return x.Integer
+}
+func (x *ISEXP) FloatGet() float64 {
+	return x.Immediate
+}
+
+
+
+func (x *RSEXP) Pos() token.Pos {
+	return x.ValuePos
+}
+func (x *RSEXP) Length() int {
+	return len(x.Slice)
+}
+func (x *RSEXP) Kind() token.Token {
+	return x.kind
+}
+func (x *RSEXP) IntegerGet() int {
+	panic("Trying to get an integer from a list")
+	return 0
+}
+func (x *RSEXP) FloatGet() float64 {
+	panic("Trying to get a float from a list")
+	return 0
+}
+
+
+
+func (x *TSEXP) Pos() token.Pos {
+	return x.ValuePos
+}
+func (x *TSEXP) Length() int {
+	return len(x.Slice)
+}
+func (x *TSEXP) Kind() token.Token {
+	return x.kind
+}
+func (x *TSEXP) IntegerGet() int {
+	panic("Trying to get an integer from characters")
+	return 0
+}
+func (x *TSEXP) FloatGet() float64 {
+	panic("Trying to get a float from characters")
+	return 0
+}
+
+
 
 func (x *NSEXP) Pos() token.Pos {
 	return x.ValuePos
@@ -210,4 +248,11 @@ func (x *NSEXP) Length() int {
 }
 func (x *NSEXP) Kind() token.Token {
 	return x.kind
+}
+func (x *NSEXP) IntegerGet() int {
+	return 0
+}
+func (x *NSEXP) FloatGet() float64 {
+	panic("Trying to get a float from NULL")
+	return 0
 }

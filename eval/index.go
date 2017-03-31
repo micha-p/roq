@@ -104,11 +104,11 @@ func (x *EmptyIterator) Next() int {
 
 
 
-func IndexDomainEvalRange(ev *Evaluator, a *VSEXP, b *VSEXP) IteratorItf {
+func IndexDomainEvalRange(ev *Evaluator, a SEXPItf, b SEXPItf) IteratorItf {
 	r := new(RangeIterator)
-	r.Start = a.Offset-1
-	r.Counter = a.Offset -1
-	r.End = b.Offset -1
+	r.Start = a.IntegerGet() - 2
+	r.Counter = r.Start
+	r.End = b.IntegerGet() -2
 	return r
 }
 

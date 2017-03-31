@@ -9,7 +9,7 @@ import (
 
 // https://cran.r-project.org/doc/manuals/R-ints.html#g_t_002eInternal-vs-_002ePrimitive
 
-func EvalLength(ev *Evaluator, node *ast.CallExpr) (r *VSEXP) {
+func EvalLength(ev *Evaluator, node *ast.CallExpr) (r *ISEXP) {
 	TRACE := ev.Trace
 	if TRACE {
 		println("Length")
@@ -18,13 +18,13 @@ func EvalLength(ev *Evaluator, node *ast.CallExpr) (r *VSEXP) {
 	switch ex.(type) {
 	case *ast.IndexExpr:
 		iterator := IndexDomainEval(ev, ex.(*ast.IndexExpr).Index)
-		return &VSEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, kind: token.INT, Offset: iterator.Length()}
+		return &ISEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, kind: token.INT, Integer: iterator.Length()}
 	default:
 		val := EvalExpr(ev,node.Args[0])
 		if val.(*VSEXP).Slice ==nil {
-			return &VSEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, kind: token.INT, Offset: 1}
+			return &ISEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, kind: token.INT, Integer: 0}
 		} else {
-			return &VSEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, kind: token.INT, Offset: val.Length()}
+			return &ISEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, kind: token.INT, Integer: val.Length()}
 		}
 	}
 }

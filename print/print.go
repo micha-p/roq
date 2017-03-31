@@ -35,6 +35,8 @@ func PrintResult(ev *eval.Evaluator, r eval.SEXPItf) {
 			PrintResultR(ev, r.(*eval.RSEXP))
 		case *eval.TSEXP:
 			PrintResultT(ev, r.(*eval.TSEXP))
+		case *eval.NSEXP:
+			println("NULL")
 		default:
 			println("?prnt")
 		}

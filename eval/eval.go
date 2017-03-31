@@ -370,9 +370,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 				print("ERROR:")
 				println(err)
 			}
-			// TODO check conversion to integer
-			vint := int(math.Floor(vfloat))
-			return &VSEXP{ValuePos: node.ValuePos, kind: node.Kind, Integer: vint, Offset: vint-1, Immediate: vfloat}
+			return &VSEXP{ValuePos: node.ValuePos, kind: node.Kind, Immediate: vfloat}
 		case token.INT:
 			vint, err := strconv.Atoi(node.Value)
 			if err != nil {
@@ -385,7 +383,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 				print("ERROR:")
 				println(err)
 			}
-			return &VSEXP{ValuePos: node.ValuePos, kind: node.Kind, Integer: vint, Offset: vint - 1, Immediate: vfloat}
+			return &ISEXP{ValuePos: node.ValuePos, kind: node.Kind, Integer: vint, Immediate: vfloat}
 		case token.STRING:
 			return &TSEXP{ValuePos: node.ValuePos, kind: node.Kind, String: node.Value}
 		case token.NULL, token.NA, token.FALSE:
@@ -399,7 +397,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 			sexprec := ev.topFrame.Recursive(node.Value)
 			if sexprec == nil {
 				print("error: object '", node.Value, "' not found\n")
-				return &VSEXP{ValuePos: node.ValuePos, kind: token.ILLEGAL, Immediate: math.NaN()}
+				return &VSEXP{ValuePos: node.ValuePos, kind: token.ILLEGAL}
 			} else {
 				return sexprec
 			}
@@ -459,10 +457,10 @@ func evalBinary(ev *Evaluator, node *ast.BinaryExpr) SEXPItf {
 		}
 	case token.SEQUENCE:
 		// TODO: same for INDEXDOMAIN
-		low := EvalExpr(ev, node.X).(*VSEXP)
-		high := EvalExpr(ev, node.Y).(*VSEXP)
-		slice := make([]float64,1+high.Integer-low.Integer)
-		start := low.Immediate
+		low := EvalExpr(ev, node.X)
+		high := EvalExpr(ev, node.Y)
+		slice := make([]float64,1+high.IntegerGet()-low.IntegerGet())
+		start := low.FloatGet()
 		for n,_ := range slice {
 			slice[n]=start
 			start=start+1
