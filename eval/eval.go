@@ -241,7 +241,7 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) (r SEXPItf) {
 		if DEBUG {
 			println("emptyStmt")
 		}
-		return &VSEXP{kind: token.SEMICOLON}
+		return nil
 	case *ast.IfStmt:
 		defer un(trace(ev, "ifStmt"))
 		e := s.(*ast.IfStmt)

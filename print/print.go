@@ -78,10 +78,6 @@ func PrintResultV(ev *eval.Evaluator, r *eval.VSEXP) {
 
 	DEBUG := ev.Debug
 		switch r.Kind() {
-		case token.SEMICOLON:
-			if DEBUG {
-				println("Semicolon")
-			}
 		case token.ILLEGAL:
 			if DEBUG {
 				println("ILLEGAL RESULT")
