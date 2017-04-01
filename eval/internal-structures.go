@@ -133,7 +133,9 @@ type TSEXP struct {
 // Errors and exceptions
 type ESEXP struct {
 	SEXP
+	// error
 	ValuePos token.Pos
+	Message  string
 }
 
 func (x *SEXP) Dim() []int {
@@ -154,6 +156,19 @@ func (x *SEXP) Class() *string {
 func (x *SEXP) ClassSet(v *string) {
 	x.class = v
 }
+func (x *SEXP) Length() int {
+	return 0
+}
+func (x *SEXP) IntegerGet() int {
+	panic("Trying to get an integer")
+	return 0
+}
+func (x *SEXP) FloatGet() float64 {
+	panic("Trying to get a float")
+	return 0
+}
+
+
 
 func (x *VSEXP) Pos() token.Pos {
 	return x.ValuePos
@@ -192,16 +207,13 @@ func (x *RSEXP) Pos() token.Pos {
 	return x.ValuePos
 }
 func (x *RSEXP) Length() int {
-	if x.Slice == nil {return 1} else {return len(x.Slice)}
+	if x.Slice == nil {
+		return 2  // cons cell
+	} else {
+		return len(x.Slice)
+	}
 }
-func (x *RSEXP) IntegerGet() int {
-	panic("Trying to get an integer from a list")
-	return 0
-}
-func (x *RSEXP) FloatGet() float64 {
-	panic("Trying to get a float from a list")
-	return 0
-}
+
 
 func (x *TSEXP) Pos() token.Pos {
 	return x.ValuePos
@@ -209,42 +221,14 @@ func (x *TSEXP) Pos() token.Pos {
 func (x *TSEXP) Length() int {
 	if x.Slice == nil {return 1} else {return len(x.Slice)}
 }
-func (x *TSEXP) IntegerGet() int {
-	panic("Trying to get an integer from characters")
-	return 0
-}
-func (x *TSEXP) FloatGet() float64 {
-	panic("Trying to get a float from characters")
-	return 0
-}
+
 
 func (x *NSEXP) Pos() token.Pos {
 	return x.ValuePos
 }
-func (x *NSEXP) Length() int {
-	return 0
-}
-func (x *NSEXP) IntegerGet() int {
-	panic("Trying to get a float from NULL")
-	return 0
-}
-func (x *NSEXP) FloatGet() float64 {
-	panic("Trying to get a float from NULL")
-	return 0
-}
 
-// Errors and exceptions
+
 func (x *ESEXP) Pos() token.Pos {
 	return x.ValuePos
 }
-func (x *ESEXP) Length() int {
-	return 0
-}
-func (x *ESEXP) IntegerGet() int {
-	panic("Trying to get a float from an ESEXP")
-	return 0
-}
-func (x *ESEXP) FloatGet() float64 {
-	panic("Trying to get a float from an ESEXP")
-	return 0
-}
+

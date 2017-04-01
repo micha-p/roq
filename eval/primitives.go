@@ -21,11 +21,7 @@ func EvalLength(ev *Evaluator, node *ast.CallExpr) (r *ISEXP) {
 		return &ISEXP{ValuePos: node.Fun.Pos(), Integer: iterator.Length()}
 	default:
 		val := EvalExpr(ev,node.Args[0])
-		if val.(*VSEXP).Slice ==nil {
-			return &ISEXP{ValuePos: node.Fun.Pos(), Integer: 0}
-		} else {
-			return &ISEXP{ValuePos: node.Fun.Pos(), Integer: val.Length()}
-		}
+		return &ISEXP{ValuePos: node.Fun.Pos(), Integer: val.Length()}
 	}
 }
 
