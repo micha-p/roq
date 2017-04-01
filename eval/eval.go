@@ -196,7 +196,7 @@ func EvalLoop(ev *Evaluator, e *ast.BlockStmt, cond ast.Expr) SEXPItf {
 		}
 	}
 	ev.Invisible = true
-	return &VSEXP{Kind: token.NULL}
+	return &NSEXP{}
 }
 func EvalFor(ev *Evaluator, e *ast.BlockStmt, identifier string, iterable SEXPItf) SEXPItf {
 	if iterable.(*VSEXP).Slice == nil {
@@ -226,7 +226,7 @@ func EvalFor(ev *Evaluator, e *ast.BlockStmt, identifier string, iterable SEXPIt
 		}
 	}
 	ev.Invisible = true
-	return &VSEXP{Kind: token.NULL}
+	return &NSEXP{}
 }
 
 func EvalStmt(ev *Evaluator, s ast.Stmt) (r SEXPItf) {
