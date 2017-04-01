@@ -81,14 +81,13 @@ type SEXP struct {
 	dim      []int
 	dimnames *RSEXP
 	class    *string
+	Test int
 }
 
 // value domain
 type VSEXP struct {
 	ValuePos token.Pos
-	TypeOf   SEXPTYPE
-	Kind     token.Token     // token.INT, token.FLOAT, token.IMAG, token.CHAR, or token.STRING
-	                         // TODO: get rid of it
+	Kind     token.Token
 	SEXP
 	Fieldlist []*ast.Field   // only if function
 	Body      *ast.BlockStmt // only if function: BlockStmt or single Stmt
@@ -100,9 +99,6 @@ type VSEXP struct {
 // Index domain
 type ISEXP struct {
 	ValuePos token.Pos
-	TypeOf   SEXPTYPE
-	kind     token.Token     // token.INT, token.FLOAT, token.IMAG, token.CHAR, or token.STRING
-
 	SEXP
 	Immediate float64        // single value FLOAT
 	Integer int              // single value INT
@@ -112,8 +108,6 @@ type ISEXP struct {
 // Recursive domain
 type RSEXP struct {
 	ValuePos token.Pos
-	TypeOf   SEXPTYPE
-	kind     token.Token
 	SEXP
 	CAR   SEXPItf
 	CDR   SEXPItf
@@ -121,21 +115,17 @@ type RSEXP struct {
 	Slice []SEXPItf
 }
 
-// NULL, NA, FALSE
+// NULL, FALSE
 type NSEXP struct {
 	SEXP
 	ValuePos token.Pos
-	TypeOf   SEXPTYPE
-	kind     token.Token
 }
 
 
-// Text domain: pointer to cached strings , factors, symbols
+// Text domain: pointer to cached strings, factors, symbols
 type TSEXP struct {
 	SEXP
 	ValuePos token.Pos
-	TypeOf   SEXPTYPE
-	kind     token.Token
 	String string
 	Slice  []string // "A slice is a reference to an array"
 }
@@ -144,7 +134,6 @@ type TSEXP struct {
 type ESEXP struct {
 	SEXP
 	ValuePos token.Pos
-	TypeOf   SEXPTYPE
 }
 
 func (x *SEXP) Dim() []int {

@@ -22,8 +22,15 @@ func doAttributeReplacement(ev *Evaluator,lhs *ast.CallExpr, rhs ast.Expr) SEXPI
 	case "dim":
 		// TODO instead of converting to float and back, parsing should support ints
 		dim := make([]int,value.Length())
-		for n,v := range value.(*VSEXP).Slice {
-			dim[n]=int(v)
+		switch value.(type){
+			case *VSEXP:
+				for n,v := range value.(*VSEXP).Slice {
+					dim[n]=int(v)
+				}
+			case *ISEXP:
+				dim=value.(*ISEXP).Slice
+			default:
+				panic("error in dim<-")
 		}
 		object.DimSet(dim)
 	case "dimnames":

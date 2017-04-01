@@ -18,13 +18,13 @@ func EvalLength(ev *Evaluator, node *ast.CallExpr) (r *ISEXP) {
 	switch ex.(type) {
 	case *ast.IndexExpr:
 		iterator := IndexDomainEval(ev, ex.(*ast.IndexExpr).Index)
-		return &ISEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, Integer: iterator.Length()}
+		return &ISEXP{ValuePos: node.Fun.Pos(), Integer: iterator.Length()}
 	default:
 		val := EvalExpr(ev,node.Args[0])
 		if val.(*VSEXP).Slice ==nil {
-			return &ISEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, Integer: 0}
+			return &ISEXP{ValuePos: node.Fun.Pos(), Integer: 0}
 		} else {
-			return &ISEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, Integer: val.Length()}
+			return &ISEXP{ValuePos: node.Fun.Pos(), Integer: val.Length()}
 		}
 	}
 }
@@ -68,6 +68,16 @@ func EvalCat(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 // TODO recursive=TRUE/FALSE
 // TODO faster vector literals, composed just of floats
 
+// TODO document difference! 
+// R returns double, if there is at least one double
+// here we decide on first type
+// inside string vectors, there is now conversion of numbers, but an error thrown!
+
+/* The output type is determined from the highest type of the
+     components in the hierarchy NULL < raw < logical < integer <
+     double < complex < character < list < expression.
+*/
+
 func EvalColumn(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 	TRACE := ev.Trace
 	if TRACE {
@@ -81,21 +91,37 @@ func EvalColumn(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 			evaluatedArgs[n] = val
 		}
 		switch evaluatedArgs[0].(type){
+
+		// TODO document difference! 
+		// R returns double, if there is at least one double
+		// here we decide on first type
+		case *ISEXP:
+			c := make([]int, len(evaluatedArgs))
+			for n,v := range evaluatedArgs {
+				c[n] = v.(*ISEXP).Integer
+			}
+			return &ISEXP{ValuePos: node.Fun.Pos(), Slice: c}
 		case *VSEXP:
 			c := make([]float64, len(evaluatedArgs))
 			for n,v := range evaluatedArgs {
-				c[n] = v.(*VSEXP).Immediate
+				switch v.(type){
+					case *VSEXP:
+						c[n] = v.(*VSEXP).Immediate
+					case *ISEXP:
+						c[n] = v.(*ISEXP).Immediate
+					default:
+						panic("Error in c")
+				}
 			}
-			return &VSEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, Kind: token.FLOAT, Slice: c}
+			return &VSEXP{ValuePos: node.Fun.Pos(), Kind: token.FLOAT, Slice: c}
 		case *TSEXP:
 			c := make([]string, len(evaluatedArgs))
 			for n,v := range evaluatedArgs {
 				c[n] = v.(*TSEXP).String
 			}
-			return &TSEXP{ValuePos: node.Fun.Pos(), TypeOf: STRSXP, Slice: c}
+			return &TSEXP{ValuePos: node.Fun.Pos(), Slice: c}
 		default:
-			println("Error in c") // TODO
-			return nil
+			panic("Error in function c") // TODO
 		}
 	} else {
 		return nil
@@ -114,5 +140,5 @@ func EvalList(ev *Evaluator, node *ast.CallExpr) (r *RSEXP) {
 		evaluatedArgs[n] = val
 	}
 
-	return &RSEXP{ValuePos: node.Fun.Pos(), TypeOf: VECSXP, Slice: evaluatedArgs}
+	return &RSEXP{ValuePos: node.Fun.Pos(), Slice: evaluatedArgs}
 }

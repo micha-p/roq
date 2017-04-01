@@ -79,8 +79,9 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 		case "dim":
 			if arityOK(funcname, 1, node) {
 				object := EvalExpr(ev, node.Args[0])
-				r := &VSEXP{Kind: token.INT}
+				r := new(ISEXP)
 				r.DimSet(object.Dim())
+				r.Test=1
 				return r
 			} else {
 				return &VSEXP{Kind: token.ILLEGAL}
