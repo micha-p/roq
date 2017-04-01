@@ -18,7 +18,7 @@ func EvalLength(ev *Evaluator, node *ast.CallExpr) (r *ISEXP) {
 	switch ex.(type) {
 	case *ast.IndexExpr:
 		iterator := IndexDomainEval(ev, ex.(*ast.IndexExpr).Index)
-		return &ISEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, kind: token.INT, Integer: iterator.Length()}
+		return &ISEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, Integer: iterator.Length()}
 	default:
 		val := EvalExpr(ev,node.Args[0])
 		if val.(*VSEXP).Slice ==nil {
@@ -92,7 +92,7 @@ func EvalColumn(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 			for n,v := range evaluatedArgs {
 				c[n] = v.(*TSEXP).String
 			}
-			return &TSEXP{ValuePos: node.Fun.Pos(), TypeOf: STRSXP, kind: token.STRING, Slice: c}
+			return &TSEXP{ValuePos: node.Fun.Pos(), TypeOf: STRSXP, Slice: c}
 		default:
 			println("Error in c") // TODO
 			return nil
@@ -114,5 +114,5 @@ func EvalList(ev *Evaluator, node *ast.CallExpr) (r *RSEXP) {
 		evaluatedArgs[n] = val
 	}
 
-	return &RSEXP{ValuePos: node.Fun.Pos(), TypeOf: VECSXP, kind: token.FLOAT, Slice: evaluatedArgs}
+	return &RSEXP{ValuePos: node.Fun.Pos(), TypeOf: VECSXP, Slice: evaluatedArgs}
 }

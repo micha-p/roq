@@ -97,7 +97,7 @@ type VSEXP struct {
 	Slice     []float64      // "A slice is a reference to an array"
 }
 
-// index domain
+// Index domain
 type ISEXP struct {
 	ValuePos token.Pos
 	TypeOf   SEXPTYPE
@@ -109,12 +109,11 @@ type ISEXP struct {
 	Slice   []int            // "A slice is a reference to an array"
 }
 
-// recursive domain
+// Recursive domain
 type RSEXP struct {
 	ValuePos token.Pos
 	TypeOf   SEXPTYPE
-	kind     token.Token     // token.INT, token.FLOAT, token.IMAG, token.CHAR, or token.STRING
-
+	kind     token.Token
 	SEXP
 	CAR   SEXPItf
 	CDR   SEXPItf
@@ -122,23 +121,30 @@ type RSEXP struct {
 	Slice []SEXPItf
 }
 
-// NULL, NA, false
+// NULL, NA, FALSE
 type NSEXP struct {
+	SEXP
 	ValuePos token.Pos
 	TypeOf   SEXPTYPE
 	kind     token.Token
-	SEXP
 }
 
-// text domain (strings, factors and symbols)
+
+// Text domain: pointer to cached strings , factors, symbols
 type TSEXP struct {
+	SEXP
 	ValuePos token.Pos
 	TypeOf   SEXPTYPE
-	kind     token.Token // token.INT, token.FLOAT, token.IMAG, token.CHAR, or token.STRING
-
-	SEXP
+	kind     token.Token
 	String string
 	Slice  []string // "A slice is a reference to an array"
+}
+
+// Errors and exceptions
+type ESEXP struct {
+	SEXP
+	ValuePos token.Pos
+	TypeOf   SEXPTYPE
 }
 
 func (x *SEXP) Dim() []int {
@@ -167,7 +173,7 @@ func (x *VSEXP) Atom() interface{} {
 	return x.Immediate
 }
 func (x *VSEXP) Length() int {
-	return len(x.Slice)
+	if x.Slice == nil {return 1} else {return len(x.Slice)}
 }
 func (x *VSEXP) IntegerGet() int {
 	// TODO check conversion to integer
@@ -182,7 +188,7 @@ func (x *ISEXP) Pos() token.Pos {
 	return x.ValuePos
 }
 func (x *ISEXP) Length() int {
-	return len(x.Slice)
+	if x.Slice == nil {return 1} else {return len(x.Slice)}
 }
 func (x *ISEXP) IntegerGet() int {
 	return x.Integer
@@ -197,7 +203,7 @@ func (x *RSEXP) Pos() token.Pos {
 	return x.ValuePos
 }
 func (x *RSEXP) Length() int {
-	return len(x.Slice)
+	if x.Slice == nil {return 1} else {return len(x.Slice)}
 }
 func (x *RSEXP) IntegerGet() int {
 	panic("Trying to get an integer from a list")
@@ -208,13 +214,11 @@ func (x *RSEXP) FloatGet() float64 {
 	return 0
 }
 
-
-
 func (x *TSEXP) Pos() token.Pos {
 	return x.ValuePos
 }
 func (x *TSEXP) Length() int {
-	return len(x.Slice)
+	if x.Slice == nil {return 1} else {return len(x.Slice)}
 }
 func (x *TSEXP) IntegerGet() int {
 	panic("Trying to get an integer from characters")
@@ -225,8 +229,6 @@ func (x *TSEXP) FloatGet() float64 {
 	return 0
 }
 
-
-
 func (x *NSEXP) Pos() token.Pos {
 	return x.ValuePos
 }
@@ -234,9 +236,26 @@ func (x *NSEXP) Length() int {
 	return 0
 }
 func (x *NSEXP) IntegerGet() int {
+	panic("Trying to get a float from NULL")
 	return 0
 }
 func (x *NSEXP) FloatGet() float64 {
 	panic("Trying to get a float from NULL")
+	return 0
+}
+
+// Errors and exceptions
+func (x *ESEXP) Pos() token.Pos {
+	return x.ValuePos
+}
+func (x *ESEXP) Length() int {
+	return 0
+}
+func (x *ESEXP) IntegerGet() int {
+	panic("Trying to get a float from an ESEXP")
+	return 0
+}
+func (x *ESEXP) FloatGet() float64 {
+	panic("Trying to get a float from an ESEXP")
 	return 0
 }
