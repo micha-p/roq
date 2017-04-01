@@ -62,7 +62,6 @@ type SEXP struct {
 // generic -> should be changed to SEXP
 type SEXPItf interface {
 	Pos() token.Pos
-	Kind() token.Token
 	Dim() []int
 	DimSet([]int)
 	Dimnames() *RSEXP
@@ -88,7 +87,7 @@ type SEXP struct {
 type VSEXP struct {
 	ValuePos token.Pos
 	TypeOf   SEXPTYPE
-	kind     token.Token     // token.INT, token.FLOAT, token.IMAG, token.CHAR, or token.STRING
+	Kind     token.Token     // token.INT, token.FLOAT, token.IMAG, token.CHAR, or token.STRING
 	                         // TODO: get rid of it
 	SEXP
 	Fieldlist []*ast.Field   // only if function
@@ -170,9 +169,6 @@ func (x *VSEXP) Atom() interface{} {
 func (x *VSEXP) Length() int {
 	return len(x.Slice)
 }
-func (x *VSEXP) Kind() token.Token {
-	return x.kind
-}
 func (x *VSEXP) IntegerGet() int {
 	// TODO check conversion to integer
 	return int(math.Floor(x.Immediate))
@@ -188,9 +184,6 @@ func (x *ISEXP) Pos() token.Pos {
 func (x *ISEXP) Length() int {
 	return len(x.Slice)
 }
-func (x *ISEXP) Kind() token.Token {
-	return x.kind
-}
 func (x *ISEXP) IntegerGet() int {
 	return x.Integer
 }
@@ -205,9 +198,6 @@ func (x *RSEXP) Pos() token.Pos {
 }
 func (x *RSEXP) Length() int {
 	return len(x.Slice)
-}
-func (x *RSEXP) Kind() token.Token {
-	return x.kind
 }
 func (x *RSEXP) IntegerGet() int {
 	panic("Trying to get an integer from a list")
@@ -226,9 +216,6 @@ func (x *TSEXP) Pos() token.Pos {
 func (x *TSEXP) Length() int {
 	return len(x.Slice)
 }
-func (x *TSEXP) Kind() token.Token {
-	return x.kind
-}
 func (x *TSEXP) IntegerGet() int {
 	panic("Trying to get an integer from characters")
 	return 0
@@ -245,9 +232,6 @@ func (x *NSEXP) Pos() token.Pos {
 }
 func (x *NSEXP) Length() int {
 	return 0
-}
-func (x *NSEXP) Kind() token.Token {
-	return x.kind
 }
 func (x *NSEXP) IntegerGet() int {
 	return 0

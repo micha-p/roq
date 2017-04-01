@@ -77,7 +77,7 @@ func PrintResultT(ev *eval.Evaluator, r *eval.TSEXP) {
 func PrintResultV(ev *eval.Evaluator, r *eval.VSEXP) {
 
 	DEBUG := ev.Debug
-		switch r.Kind() {
+		switch r.Kind {
 		case token.ILLEGAL:
 			if DEBUG {
 				println("ILLEGAL RESULT")
@@ -140,7 +140,7 @@ func PrintResultV(ev *eval.Evaluator, r *eval.VSEXP) {
 			if DEBUG {
 				println("default print")
 			}
-			println(r.Kind().String())
+			println(r.Kind.String())
 		}
 }
 

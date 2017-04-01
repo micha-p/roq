@@ -156,7 +156,7 @@ func IndexDomainEval(ev *Evaluator, ex ast.Expr) IteratorItf {
 				return r
 			}
 		default:
-			println("Unknown node.kind")
+			println("Unknown node.Kind")
 		}
     case *ast.BinaryExpr:
 		ev.Invisible = false
@@ -190,7 +190,7 @@ func EvalIndexExpr(ev *Evaluator, node *ast.IndexExpr) *VSEXP {
 	array := ev.topFrame.Recursive(arrayPart.Value)
 	if array == nil {
 		print("error: object '", arrayPart.Value, "' not found\n")
-		return &VSEXP{ValuePos: arrayPart.ValuePos, kind: token.ILLEGAL, Immediate: math.NaN()}
+		return &VSEXP{ValuePos: arrayPart.ValuePos,Kind: token.ILLEGAL, Immediate: math.NaN()}
 	} else {
 		iterator := IndexDomainEval(ev, node.Index)
 		r := make([]float64,0,array.Length())
@@ -204,6 +204,6 @@ func EvalIndexExpr(ev *Evaluator, node *ast.IndexExpr) *VSEXP {
 				break
 			}
 		}  
-		return &VSEXP{ValuePos: arrayPart.ValuePos, kind: token.FLOAT, Slice:r}
+		return &VSEXP{ValuePos: arrayPart.ValuePos,Kind: token.FLOAT, Slice:r}
 	}
 }

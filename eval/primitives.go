@@ -22,9 +22,9 @@ func EvalLength(ev *Evaluator, node *ast.CallExpr) (r *ISEXP) {
 	default:
 		val := EvalExpr(ev,node.Args[0])
 		if val.(*VSEXP).Slice ==nil {
-			return &ISEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, kind: token.INT, Integer: 0}
+			return &ISEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, Integer: 0}
 		} else {
-			return &ISEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, kind: token.INT, Integer: val.Length()}
+			return &ISEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, Integer: val.Length()}
 		}
 	}
 }
@@ -39,12 +39,12 @@ func EvalCat(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 		if n > 0 {
 			print(" ")
 		}
-		switch r.Kind() {
-		case token.STRING:
+		switch r.(type) {
+		case *TSEXP:
 			print(strings.Replace(r.(*TSEXP).String, "\\n", "\n", -1)) // needs strings.Map
-		case token.INT:
-			fmt.Printf("%g", r.(*VSEXP).Immediate)  // TODO
-		case token.FLOAT:
+		case *ISEXP:
+			fmt.Printf("%g", r.(*ISEXP).Immediate)  // TODO
+		case *VSEXP:
 			if r.(*VSEXP).Slice==nil {
 				print(r.(*VSEXP).Immediate)
 			} else {
@@ -56,7 +56,7 @@ func EvalCat(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 				}
 			}
 		default:
-			println("?CAT", r.Kind().String())
+			println("?CAT")
 		}
 	}
 	ev.Invisible = true
@@ -86,7 +86,7 @@ func EvalColumn(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 			for n,v := range evaluatedArgs {
 				c[n] = v.(*VSEXP).Immediate
 			}
-			return &VSEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, kind: token.FLOAT, Slice: c}
+			return &VSEXP{ValuePos: node.Fun.Pos(), TypeOf: REALSXP, Kind: token.FLOAT, Slice: c}
 		case *TSEXP:
 			c := make([]string, len(evaluatedArgs))
 			for n,v := range evaluatedArgs {

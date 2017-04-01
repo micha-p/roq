@@ -66,7 +66,7 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 			if arityOK(funcname, 1, node) {
 				return EvalLength(ev, node)
 			} else {
-				return &VSEXP{kind: token.ILLEGAL}
+				return &VSEXP{Kind: token.ILLEGAL}
 			}
 		case "dimnames":
 			if arityOK(funcname, 1, node) {
@@ -74,16 +74,16 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 				r := object.Dimnames()
 				return r
 			} else {
-				return &VSEXP{kind: token.ILLEGAL}
+				return &VSEXP{Kind: token.ILLEGAL}
 			}
 		case "dim":
 			if arityOK(funcname, 1, node) {
 				object := EvalExpr(ev, node.Args[0])
-				r := &VSEXP{kind: token.INT}
+				r := &VSEXP{Kind: token.INT}
 				r.DimSet(object.Dim())
 				return r
 			} else {
-				return &VSEXP{kind: token.ILLEGAL}
+				return &VSEXP{Kind: token.ILLEGAL}
 			}
 		case "class":
 			if arityOK(funcname, 1, node) {
@@ -107,15 +107,15 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 						default:
 							panic("unknown type")
 					}
-					return &TSEXP{kind: token.STRING, String: r}
+					return &TSEXP{String: r}
 				}
-				return &TSEXP{kind: token.STRING, String: *s}
+				return &TSEXP{String: *s}
 			} else {
-				return &VSEXP{kind: token.ILLEGAL}
+				return &VSEXP{Kind: token.ILLEGAL}
 			}
 		default:
 			println("\nError: could not find function \"" + funcname + "\"")
-			return &VSEXP{kind: token.ILLEGAL}
+			return &VSEXP{Kind: token.ILLEGAL}
 		}
 	} else {
 		argNames := make(map[argindex]string)
@@ -191,7 +191,7 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 				start = false
 			}
 			print(")\n")
-			return &VSEXP{kind: token.ILLEGAL}
+			return &VSEXP{Kind: token.ILLEGAL}
 		}
 
 		// match positional arguments
@@ -222,7 +222,7 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 				start = false
 			}
 			print(")\n")
-			return &VSEXP{kind: token.ILLEGAL}
+			return &VSEXP{Kind: token.ILLEGAL}
 		}
 
 		// eval args

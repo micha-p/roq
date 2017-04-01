@@ -147,13 +147,13 @@ func isTrue(e SEXPItf) bool {
 	if e == nil {
 		return false
 	}
-	if e.Kind() == token.TRUE {
+	if e.(*VSEXP).Kind == token.TRUE {
 		return true
 	}
-	if e.Kind() == token.FLOAT && e.(*VSEXP).Immediate != 0 {
+	if e.(*VSEXP).Kind == token.FLOAT && e.(*VSEXP).Immediate != 0 {
 		return true
 	}
-	if e.Kind() == token.FLOAT && e.(*VSEXP).Slice != nil && e.Length()>0 {
+	if e.(*VSEXP).Kind == token.FLOAT && e.(*VSEXP).Slice != nil && e.Length()>0 {
 		if e.(*VSEXP).Slice[0] == 0 {
 			return false
 		} else {
@@ -161,8 +161,9 @@ func isTrue(e SEXPItf) bool {
 		}
 	}
 
+	//  THIS IS A MAIN DIFFERENCE
 	//  TODO: better documentation on zero=true/false
-	if e.Kind() == token.FLOAT && e.(*VSEXP).Immediate == 0 {
+	if e.(*VSEXP).Kind == token.FLOAT && e.(*VSEXP).Immediate == 0 {
 		return true
 	}
 	return false
@@ -195,7 +196,7 @@ func EvalLoop(ev *Evaluator, e *ast.BlockStmt, cond ast.Expr) SEXPItf {
 		}
 	}
 	ev.Invisible = true
-	return &VSEXP{kind: token.NULL}
+	return &VSEXP{Kind: token.NULL}
 }
 func EvalFor(ev *Evaluator, e *ast.BlockStmt, identifier string, iterable SEXPItf) SEXPItf {
 	if iterable.(*VSEXP).Slice == nil {
@@ -209,7 +210,7 @@ func EvalFor(ev *Evaluator, e *ast.BlockStmt, identifier string, iterable SEXPIt
 	for _,v := range iterable.(*VSEXP).Slice {
 		evloop.state = loopState
 		// TODO: make use of cached position in map
-		ev.topFrame.Insert(identifier, &VSEXP{kind: token.FLOAT, Immediate: v})
+		ev.topFrame.Insert(identifier, &VSEXP{Kind: token.FLOAT, Immediate: v})
 		for n := 0; n < len(e.List); n++ {
 			EvalStmt(&evloop, e.List[n])
 			rstate = evloop.state
@@ -225,7 +226,7 @@ func EvalFor(ev *Evaluator, e *ast.BlockStmt, identifier string, iterable SEXPIt
 		}
 	}
 	ev.Invisible = true
-	return &VSEXP{kind: token.NULL}
+	return &VSEXP{Kind: token.NULL}
 }
 
 func EvalStmt(ev *Evaluator, s ast.Stmt) (r SEXPItf) {
@@ -264,10 +265,10 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) (r SEXPItf) {
 		return EvalFor(ev, e.Body, e.Parameter.String(), EvalExpr(ev, e.Iterable))
 	case *ast.BreakStmt:
 		ev.state = breakState
-		return &VSEXP{kind: token.BREAK}
+		return &VSEXP{Kind: token.BREAK}
 	case *ast.NextStmt:
 		ev.state = nextState
-		return &VSEXP{kind: token.NEXT}
+		return &VSEXP{Kind: token.NEXT}
 	case *ast.BlockStmt:
 		if TRACE {
 			println("blockStmt")
@@ -281,17 +282,17 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) (r SEXPItf) {
 			}
 		}
 		if TRACE {
-			println("return: ", r.Kind().String())
+			println("return: "/*, r.Kind.String()*/) // TODO typoeofstring
 		}
 		return r
 	case *ast.VersionStmt:
 		ev.state = nextState
-		return &VSEXP{kind: token.VERSION}
+		return &VSEXP{Kind: token.VERSION}
 	default:
 		givenType := reflect.TypeOf(s)
 		println("?Stmt:", givenType.String())
 	}
-	return &VSEXP{kind: token.ILLEGAL}
+	return &VSEXP{Kind: token.ILLEGAL}
 }
 
 
@@ -304,7 +305,7 @@ func doAssignment(ev *Evaluator,lhs ast.Expr, rhs ast.Expr) SEXPItf {
 		target := getIdent(ev, lhs)
 		defer un(trace(ev, "assignment: "+target+" <- "))
 		value = EvalExpr(ev, rhs)
-		defer un(trace(ev, value.(*VSEXP).Immediate, " ", value.Kind().String()))
+		defer un(trace(ev, value.(*VSEXP).Immediate, " ", value.(*VSEXP).Kind.String()))
 		ev.topFrame.Insert(target, value)
 	}
 	ev.Invisible = true // just for the following print
@@ -358,7 +359,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 	case *ast.FuncLit:
 		node := ex.(*ast.FuncLit)
 		defer un(trace(ev, "FuncLit"))
-		return &VSEXP{kind: token.FUNCTION, Fieldlist: node.Type.Params.List, Body: node.Body}
+		return &VSEXP{Kind: token.FUNCTION, Fieldlist: node.Type.Params.List, Body: node.Body}
 	case *ast.BasicLit:
 		ev.Invisible = false
 		node := ex.(*ast.BasicLit)
@@ -370,7 +371,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 				print("ERROR:")
 				println(err)
 			}
-			return &VSEXP{ValuePos: node.ValuePos, kind: node.Kind, Immediate: vfloat}
+			return &VSEXP{ValuePos: node.ValuePos,Kind: node.Kind, Immediate: vfloat}
 		case token.INT:
 			vint, err := strconv.Atoi(node.Value)
 			if err != nil {
@@ -383,12 +384,12 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 				print("ERROR:")
 				println(err)
 			}
-			return &ISEXP{ValuePos: node.ValuePos, kind: node.Kind, Integer: vint, Immediate: vfloat}
+			return &ISEXP{ValuePos: node.ValuePos,Integer: vint, Immediate: vfloat}
 		case token.STRING:
-			return &TSEXP{ValuePos: node.ValuePos, kind: node.Kind, String: node.Value}
+			return &TSEXP{ValuePos: node.ValuePos,String: node.Value}
 		case token.NULL, token.NA, token.FALSE:
 			// TODO jus return nil?
-			return &NSEXP{ValuePos: node.ValuePos, kind: node.Kind}
+			return &NSEXP{ValuePos: node.ValuePos}
 		case token.INF:
 			return &VSEXP{ValuePos: node.ValuePos, Immediate: math.Inf(+1)}
 		case token.NAN:
@@ -397,12 +398,12 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 			sexprec := ev.topFrame.Recursive(node.Value)
 			if sexprec == nil {
 				print("error: object '", node.Value, "' not found\n")
-				return &VSEXP{ValuePos: node.ValuePos, kind: token.ILLEGAL}
+				return &VSEXP{ValuePos: node.ValuePos,Kind: token.ILLEGAL}
 			} else {
 				return sexprec
 			}
 		default:
-			println("Unknown node.kind")
+			println("Unknown node.Kind")
 		}
 	case *ast.BinaryExpr:
 		ev.Invisible = false
@@ -425,7 +426,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 		givenType := reflect.TypeOf(ex)
 		println("?Expr:", givenType.String())
 	}
-	return &VSEXP{kind: token.ILLEGAL}
+	return &VSEXP{Kind: token.ILLEGAL}
 }
 
 func evalBinary(ev *Evaluator, node *ast.BinaryExpr) SEXPItf {
@@ -465,7 +466,7 @@ func evalBinary(ev *Evaluator, node *ast.BinaryExpr) SEXPItf {
 			slice[n]=start
 			start=start+1
 		}
-		return &VSEXP{kind: token.FLOAT, Slice: slice}
+		return &VSEXP{Kind: token.FLOAT, Slice: slice}
 	case token.LESS, token.LESSEQUAL, token.GREATER, token.GREATEREQUAL, token.EQUAL, token.UNEQUAL:
 		return EvalComp(node.Op, x.(*VSEXP), EvalExpr(ev, node.Y).(*VSEXP))
 	default:
