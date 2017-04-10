@@ -37,6 +37,8 @@ func PrintResult(ev *eval.Evaluator, r eval.SEXPItf) {
 			PrintResultR(ev, r.(*eval.RSEXP))
 		case *eval.TSEXP:
 			PrintResultT(ev, r.(*eval.TSEXP))
+		case *eval.ESEXP:
+			PrintResultE(ev, r.(*eval.ESEXP))
 		case *eval.NSEXP:
 			println("NULL")
 		default:
@@ -51,10 +53,12 @@ func PrintResultR(ev *eval.Evaluator, r *eval.RSEXP) {
 		return
 	}
 	if r.Slice == nil {
-		print("[1] ")
+		println("[[1]]")
 		PrintResult(ev, r.CAR)
-		print("[2] ")
+		println()
+		println("[[2]]")
 		PrintResult(ev, r.CDR)
+		println()
 	} else {
 		for n, v := range r.Slice {
 			print("[[", n+1, "]]\n")
@@ -89,15 +93,36 @@ func PrintResultI(ev *eval.Evaluator, r *eval.ISEXP) {
 	println()
 }
 
+func PrintResultE(ev *eval.Evaluator, r *eval.ESEXP) {
+	switch r.Kind {
+	case token.ILLEGAL:
+		println("ILLEGAL RESULT")
+	case token.VERSION:
+		PrintVersion()
+	default:
+		println(r.Message)
+	}
+}
+
 func PrintResultV(ev *eval.Evaluator, r *eval.VSEXP) {
 
 	DEBUG := ev.Debug
-	switch r.Kind {
-	case token.ILLEGAL:
+	if r.Lambda {
 		if DEBUG {
-			println("ILLEGAL RESULT")
+			print("function(")
+			for n, field := range r.Fieldlist {
+				//for _,ident := range field.Names {
+				//	print(ident)
+				//}
+				identifier := field.Type.(*ast.Ident)
+				if n > 0 {
+					print(",")
+				}
+				print(identifier.Name)
+			}
+			println(")")
 		}
-	case token.FLOAT:
+	} else {
 		if r.Slice == nil {
 			fmt.Printf("[1] %g\n", r.Immediate) // R has small e for exponential format
 		} else {
@@ -125,28 +150,6 @@ func PrintResultV(ev *eval.Evaluator, r *eval.VSEXP) {
 				printArray(r.Slice)
 			}
 		}
-	case token.FUNCTION:
-		if DEBUG {
-			print("function(")
-			for n, field := range r.Fieldlist {
-				//for _,ident := range field.Names {
-				//	print(ident)
-				//}
-				identifier := field.Type.(*ast.Ident)
-				if n > 0 {
-					print(",")
-				}
-				print(identifier.Name)
-			}
-			println(")")
-		}
-	case token.VERSION:
-		PrintVersion()
-	default:
-		if DEBUG {
-			println("?prnt values(s) default")
-		}
-		println(r.Kind.String())
 	}
 }
 

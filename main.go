@@ -19,6 +19,7 @@ import (
 
 var TRACE bool
 var DEBUG bool
+var ECHO bool
 
 func myerrorhandler(pos token.Position, msg string) {
 	println("SCANNER ERROR", pos.Filename, pos.Line, pos.Column, msg)
@@ -33,18 +34,21 @@ func main() {
 	traceFlagPtr := flag.Bool("T", false, "trace")
 	debugLongPtr := flag.Bool("debug", false, "debug")
 	debugFlagPtr := flag.Bool("D", false, "debug")
+	echoLongPtr := flag.Bool("echo", false, "debug")
+	echoFlagPtr := flag.Bool("E", false, "debug")
 	filePtr := flag.String("file", "example.src", "filename to process")
 	flag.Parse()
 
 	TRACE = *traceFlagPtr || *traceLongPtr
 	DEBUG = *debugFlagPtr || *debugLongPtr
+	ECHO  = *echoFlagPtr || *echoLongPtr
 
 	if *scanPtr {
 		src, _ := ioutil.ReadFile(*filePtr)
 
 		var s scanner.Scanner
 		file := fset.AddFile(*filePtr, fset.Base(), len(src)) // register input "file"
-		s.Init(file, src, myerrorhandler)
+		s.Init(file, src, myerrorhandler, ECHO)
 
 		// Repeated calls to Scan yield the token sequence found in the input
 		for {
@@ -65,6 +69,9 @@ func main() {
 		if DEBUG {
 			parserOpts = parserOpts | parser.Debug
 		}
+		if ECHO {
+			parserOpts = parserOpts | parser.Echo
+		}
 
 		p, err := parser.ParseInit(fset, *filePtr, nil, parserOpts)
 		if err != nil {
@@ -84,7 +91,20 @@ func main() {
 			}
 		}
 	} else { // eval
-		p, errp := parser.ParseInit(fset, *filePtr, nil, parser.AllErrors)
+		var parserOpts parser.Mode
+		parserOpts = parser.AllErrors
+		
+		if TRACE {
+			parserOpts = parserOpts | parser.Trace
+		}
+		if DEBUG {
+			parserOpts = parserOpts | parser.Debug
+		}
+		if ECHO {
+			parserOpts = parserOpts | parser.Echo
+		}
+
+		p, errp := parser.ParseInit(fset, *filePtr, nil, parserOpts)
 		if errp != nil {
 			fmt.Println(errp)
 			return

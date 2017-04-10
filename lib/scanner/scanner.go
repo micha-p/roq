@@ -33,6 +33,7 @@ type Scanner struct {
 	dir  string       // directory portion of file.Name()
 	src  []byte       // source
 	err  ErrorHandler // error reporting; or nil
+	echo bool
 
 	// scanning state
 	ch         rune // current character
@@ -51,6 +52,10 @@ const bom = 0xFEFF // byte order mark, only permitted as very first character
 // s.ch < 0 means end-of-file.
 //
 func (s *Scanner) next() {
+
+	if s.ch == '\n' && s.echo {
+		print("> ", string(s.src[s.lineOffset:s.rdOffset]))
+	}
 	if s.rdOffset < len(s.src) {
 		s.offset = s.rdOffset
 		if s.ch == '\n' {
@@ -97,7 +102,7 @@ func (s *Scanner) next() {
 // Note that Init may call err if there is an error in the first character
 // of the file.
 //
-func (s *Scanner) Init(file *token.File, src []byte, err ErrorHandler) {
+func (s *Scanner) Init(file *token.File, src []byte, err ErrorHandler, echo bool) {
 	// Explicitly initialize all fields since a scanner may be reused.
 	if file.Size() != len(src) {
 		panic(fmt.Sprintf("file size (%d) does not match src len (%d)", file.Size(), len(src)))
@@ -106,6 +111,7 @@ func (s *Scanner) Init(file *token.File, src []byte, err ErrorHandler) {
 	s.dir, _ = filepath.Split(file.Name())
 	s.src = src
 	s.err = err
+	s.echo = echo
 
 	s.ch = ' '
 	s.offset = 0

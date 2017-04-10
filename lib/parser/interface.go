@@ -55,6 +55,7 @@ const (
 	ParseComments                                  // parse comments and add them to AST
 	Trace                                          // print a trace of parsed productions
 	Debug                                          // print expected tokens etc
+	Echo                                           // print input chars
 	DeclarationErrors                              // report declaration errors
 	SpuriousErrors                                 // same as AllErrors, for backward-compatibility
 	AllErrors         = SpuriousErrors             // report all errors (not just the first 10 on different lines)

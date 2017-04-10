@@ -33,6 +33,7 @@ type parser struct {
 	// Tracing/debugging
 	trace  bool // == (mode & Trace != 0)
 	debug  bool // == (mode & Trace != 0)
+	echo   bool // == (mode & Echo  != 0)
 	indent int  // indentation used for tracing output
 
 	// Next token
@@ -61,11 +62,13 @@ type parser struct {
 func (p *parser) init(fset *token.FileSet, filename string, src []byte, mode Mode) {
 	p.file = fset.AddFile(filename, -1, len(src))
 
-	eh := func(pos token.Position, msg string) { p.errors.Add(pos, msg) }
-	p.scanner.Init(p.file, src, eh)
-
 	p.trace = mode&Trace != 0 // for convenience (p.trace is used frequently)
 	p.debug = mode&Debug != 0 // for convenience (p.debug is used frequently)
+	p.echo  = mode&Echo  != 0
+
+	eh := func(pos token.Position, msg string) { p.errors.Add(pos, msg) }
+	p.scanner.Init(p.file, src, eh, p.echo)
+
 
 	p.next()
 }

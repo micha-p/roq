@@ -86,8 +86,8 @@ type SEXP struct {
 
 // value domain
 type VSEXP struct {
-	ValuePos token.Pos
-	Kind     token.Token
+	ValuePos  token.Pos
+	Lambda    bool
 	SEXP
 	Fieldlist []*ast.Field   // only if function
 	Body      *ast.BlockStmt // only if function: BlockStmt or single Stmt
@@ -134,6 +134,7 @@ type TSEXP struct {
 type ESEXP struct {
 	SEXP
 	// error
+	Kind     token.Token
 	ValuePos token.Pos
 	Message  string
 }

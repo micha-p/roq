@@ -78,13 +78,13 @@ func mapAA(FUN func(float64, float64) float64, x []float64, y []float64) []float
 
 func EvalVectorOp(x *VSEXP, y *VSEXP, FUN func(float64, float64) float64) *VSEXP {
 	if x.Slice==nil && y.Slice==nil {
-		return &VSEXP{Kind: token.FLOAT, Immediate: FUN(x.Immediate,y.Immediate)}
+		return &VSEXP{Immediate: FUN(x.Immediate,y.Immediate)}
 	} else if x.Slice==nil {
-		return &VSEXP{Kind: token.FLOAT, Slice: mapIA(FUN,x.Atom().(float64),y.Slice)}
+		return &VSEXP{Slice: mapIA(FUN,x.Immediate,y.Slice)}
 	} else if y.Slice==nil {
-		return &VSEXP{Kind: token.FLOAT, Slice: mapAI(FUN,x.Slice,y.Atom().(float64))}
+		return &VSEXP{Slice: mapAI(FUN,x.Slice,y.Immediate)}
 	} else {
-		return &VSEXP{Kind: token.FLOAT, Slice: mapAA(FUN,x.Slice,y.Slice)}
+		return &VSEXP{Slice: mapAA(FUN,x.Slice,y.Slice)}
 	}
 }
 
@@ -98,9 +98,6 @@ func EvalComp(op token.Token, x *VSEXP, y *VSEXP) *VSEXP {
 	// false and true are not really the same. false is rather the base level.
 	if x == nil || y == nil {
 		return nil
-	}
-	if x.Kind == token.ILLEGAL || y.Kind == token.ILLEGAL {
-		return &VSEXP{Kind: token.ILLEGAL}
 	}
 	var o1,o2 float64
 	if x.Slice==nil {
@@ -152,14 +149,13 @@ func EvalComp(op token.Token, x *VSEXP, y *VSEXP) *VSEXP {
 			return nil
 		}
 	default:
-		println("?Comp: " + op.String())
-		return &VSEXP{Kind: token.ILLEGAL}
+		panic("?Comp: " + op.String())
 	}
 }
 
 func EvalOp(op token.Token, x *VSEXP, y *VSEXP) *VSEXP {
-	if x.Kind == token.ILLEGAL || y.Kind == token.ILLEGAL {
-		return &VSEXP{Kind: token.ILLEGAL}
+	if x == nil || y == nil {
+		return nil
 	}
 	switch op {
 	case token.PLUS:
@@ -175,7 +171,6 @@ func EvalOp(op token.Token, x *VSEXP, y *VSEXP) *VSEXP {
 	case token.MODULUS:
 		return EvalVectorOp(x,y,fMODULUS)
 	default:
-		println("?Op: " + op.String())
-		return &VSEXP{Kind: token.ILLEGAL}
+		panic("?Op: " + op.String())
 	}
 }

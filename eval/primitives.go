@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 	"lib/ast"
-	"lib/token"
 )
 
 // https://cran.r-project.org/doc/manuals/R-ints.html#g_t_002eInternal-vs-_002ePrimitive
@@ -109,7 +108,7 @@ func EvalColumn(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 						panic("Error in c")
 				}
 			}
-			return &VSEXP{ValuePos: node.Fun.Pos(), Kind: token.FLOAT, Slice: c}
+			return &VSEXP{ValuePos: node.Fun.Pos(), Slice: c}
 		case *TSEXP:
 			c := make([]string, len(evaluatedArgs))
 			for n,v := range evaluatedArgs {
@@ -132,9 +131,25 @@ func EvalList(ev *Evaluator, node *ast.CallExpr) (r *RSEXP) {
 
 	evaluatedArgs := make([]SEXPItf,len(node.Args))
 	for n, v := range node.Args { // TODO: strictly left to right
-		val := EvalExprOrAssignment(ev, v)
+		var val SEXPItf
+		val = EvalExprOrAssignment(ev, v)
 		evaluatedArgs[n] = val
 	}
 
 	return &RSEXP{ValuePos: node.Fun.Pos(), Slice: evaluatedArgs}
+}
+
+
+
+// TODO documentation and comparison
+// paitlist might be called with more than 2 arguments
+func EvalPairlist(ev *Evaluator, node *ast.CallExpr) (r *RSEXP) {
+	TRACE := ev.Trace
+	if TRACE {
+		println("Pairlist")
+	}
+
+	return &RSEXP{ValuePos: node.Fun.Pos(), 
+		CAR: EvalExprOrAssignment(ev, node.Args[0]),
+		CDR: EvalExprOrAssignment(ev, node.Args[1])}
 }

@@ -17,5 +17,14 @@ Tagged pairs (LISTSXP, LANGSXP), generic vectors and expressions (VECSXP, EXPRSX
 This implementation tries to use different domains with very restricted types (Values, Indices, Strings) and evaluates the usefulness 
 of a common interface to them.
 
+Value and index domain
 
-for printing, length is shown instead of linecount
+Strictly, there should be only one type of numbers in each domain. float64 on toplevel and unsigned integers within brackets. 
+
+To support wider compatibility, a more relaxed mode is neccesssary: Value domain defaults to double. Index domain defaults to int. 
+This way, integer vecors might be coposed in toplevel. 
+Functions on numbers should not rely on the types.
+
+Output
+
+For printing, length is shown instead of linecount, but this information might be dropped completely. 

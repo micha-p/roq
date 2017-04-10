@@ -185,12 +185,12 @@ func IndexDomainEval(ev *Evaluator, ex ast.Expr) IteratorItf {
 
 // TODO consistant naming for index, value and toplevel domain:
 // evalExprI -> ISEXPR
-func EvalIndexExpr(ev *Evaluator, node *ast.IndexExpr) *VSEXP {
+func EvalIndexExpr(ev *Evaluator, node *ast.IndexExpr) SEXPItf {
 	arrayPart := node.Array.(*ast.BasicLit)
 	array := ev.topFrame.Recursive(arrayPart.Value)
 	if array == nil {
 		print("error: object '", arrayPart.Value, "' not found\n")
-		return &VSEXP{ValuePos: arrayPart.ValuePos,Kind: token.ILLEGAL, Immediate: math.NaN()}
+		return &ESEXP{ValuePos: arrayPart.ValuePos,Kind: token.ILLEGAL}
 	} else {
 		iterator := IndexDomainEval(ev, node.Index)
 		r := make([]float64,0,array.Length())
@@ -204,6 +204,6 @@ func EvalIndexExpr(ev *Evaluator, node *ast.IndexExpr) *VSEXP {
 				break
 			}
 		}  
-		return &VSEXP{ValuePos: arrayPart.ValuePos,Kind: token.FLOAT, Slice:r}
+		return &VSEXP{ValuePos: arrayPart.ValuePos, Slice:r}
 	}
 }

@@ -27,6 +27,11 @@ release
 - dataframes (list of vectors)
 - tsp
 
+release TESTCASES
+
+
+for HASH in `git log --format="%H" --follow example.r | tac`; do git show $HASH:example.r; done
+
 release
 
 - class
