@@ -116,6 +116,8 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 			} else {
 				return &ESEXP{Kind: token.ILLEGAL}
 			}
+		case "quit":
+			panic("quit")
 		default:
 			println("\nError: could not find function \"" + funcname + "\"")
 			return &ESEXP{Kind: token.ILLEGAL}

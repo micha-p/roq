@@ -26,6 +26,13 @@ func myerrorhandler(pos token.Position, msg string) {
 }
 
 func main() {
+
+	defer func() {
+		if x := recover(); x != "quit" {
+			println("run time panic: %v", x)
+		}
+	}()
+
 	fset := token.NewFileSet() // positions are relative to fset
 
 	scanPtr := flag.Bool("scan", false, "scan")

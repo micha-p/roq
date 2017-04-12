@@ -1,6 +1,7 @@
 package print
 
 import (
+	"math"
 	"eval"
 	"fmt"
 	"lib/ast"
@@ -124,7 +125,11 @@ func PrintResultV(ev *eval.Evaluator, r *eval.VSEXP) {
 		}
 	} else {
 		if r.Slice == nil {
-			fmt.Printf("[1] %g\n", r.Immediate) // R has small e for exponential format
+			if r.Immediate == math.NaN(){
+				println("NAN")
+			} else {
+				fmt.Printf("[1] %g\n", r.Immediate) // R has small e for exponential format
+			}
 		} else {
 			rdim := r.Dim()
 			if rdim == nil {
