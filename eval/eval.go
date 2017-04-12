@@ -288,8 +288,9 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 			return &VSEXP{ValuePos: node.ValuePos, Immediate: vfloat}
 		case token.STRING:
 			return &TSEXP{ValuePos: node.ValuePos, String: node.Value}
-		case token.NULL, token.FALSE:
-			// TODO jus return nil?
+		case token.TRUE:
+			return &VSEXP{ValuePos: node.ValuePos, Immediate: 1}   	// in R: TRUE+1 = 2
+		case token.NULL, token.FALSE:								// TODO just return nil?
 			return &NSEXP{ValuePos: node.ValuePos}
 		case token.INF:
 			return &VSEXP{ValuePos: node.ValuePos, Immediate: math.Inf(+1)}
@@ -304,7 +305,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 				return sexprec
 			}
 		default:
-			println("Unknown node.Kind")
+			println("Unknown basic literal:",node.Kind.String())
 		}
 	case *ast.BinaryExpr:
 		ev.Invisible = false

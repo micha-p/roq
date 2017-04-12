@@ -53,8 +53,15 @@ const bom = 0xFEFF // byte order mark, only permitted as very first character
 //
 func (s *Scanner) next() {
 
-	if s.ch == '\n' && s.echo {
-		print("> ", string(s.src[s.lineOffset:s.rdOffset]))
+	if s.lineOffset==s.offset && s.echo { // start of line
+		print("> ")
+		i := 0
+		for true {
+			c := s.src[s.lineOffset+i]
+			print(string(c))
+			if  c == '\n' {break}
+			i = i +1
+		}
 	}
 	if s.rdOffset < len(s.src) {
 		s.offset = s.rdOffset
