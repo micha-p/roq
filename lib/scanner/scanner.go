@@ -34,6 +34,7 @@ type Scanner struct {
 	src  []byte       // source
 	err  ErrorHandler // error reporting; or nil
 	echo bool
+	start bool
 
 	// scanning state
 	ch         rune // current character
@@ -48,16 +49,25 @@ type Scanner struct {
 
 const bom = 0xFEFF // byte order mark, only permitted as very first character
 
+func (s *Scanner) Start() {
+	s.start=true
+}
+
 // Read the next Unicode char into s.ch.
 // s.ch < 0 means end-of-file.
 //
 func (s *Scanner) next() {
 
 	if s.lineOffset==s.offset && s.echo { // start of line
-		print("> ")
+		if s.start {
+			print("> ")
+		} else {
+			print("  ")
+		}
 		i := 0
 		for true {
 			c := s.src[s.lineOffset+i]
+			if c>32 {s.start=false}  // lines containing only whitespace won't unset start
 			print(string(c))
 			if  c == '\n' {break}
 			i = i +1
@@ -198,6 +208,7 @@ exit:
 	if hasCR {
 		lit = stripCR(lit)
 	}
+	s.Start()
 	return string(lit)
 }
 

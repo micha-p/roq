@@ -97,7 +97,10 @@ func PrintResultI(ev *eval.Evaluator, r *eval.ISEXP) {
 func PrintResultE(ev *eval.Evaluator, r *eval.ESEXP) {
 	switch r.Kind {
 	case token.ILLEGAL:
-		println("ILLEGAL RESULT")
+		DEBUG := ev.Debug
+		if DEBUG {
+			println("ILLEGAL RESULT")
+		}
 	case token.VERSION:
 		PrintVersion()
 	default:

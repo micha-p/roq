@@ -1,3 +1,7 @@
+# go run main.go -E -file all.r 
+# echo ". <- NA" | cat - all.r | R --no-save --interactive 
+
+
 r = 1  +2 %% 10 + . ;
 r
 a.a=23. + .1 * a_2 + ..b * ._c / a...b
@@ -179,7 +183,6 @@ a+3
 b<-function(c,d){c+d}
 b
 #b(1,2)
-quit()
 
 #r = 1  +2 %% 10 + . ;
 
@@ -364,7 +367,9 @@ f(1,2)
 a
 #[1] 1
 
+ 
 
+quit()
 #f<-function(a,b) if(a)a else 33
 #f(1,2)
 ##[1] 1
