@@ -305,7 +305,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 				return sexprec
 			}
 		default:
-			println("Unknown basic literal:",node.Kind.String())
+			panic("Unknown basic literal:"+node.Kind.String())
 		}
 	case *ast.BinaryExpr:
 		ev.Invisible = false

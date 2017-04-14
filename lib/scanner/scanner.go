@@ -53,26 +53,43 @@ func (s *Scanner) Start() {
 	s.start=true
 }
 
+// echo should print at the beginning of a line
+// but deal correctly with lookahead
+
+func (s *Scanner) Echo() {
+	printline := func() {
+		i := 0
+		for (s.rdOffset+i) < len(s.src) {   	// print complete line
+			c := s.src[s.rdOffset+i]
+			if c>32 {s.start=false}      		// lines containing only whitespace won't unset start
+			print(string(c))
+			if  c == '\n' {break}
+			i++
+		}
+	}
+
+	if s.rdOffset==0 {							// start of very first line
+		print("> "); printline()
+	} else {
+		if s.ch == '\n' && s.rdOffset < len(s.src) {						// lookahead will go past end of last line
+			if s.start {
+				print("> ")
+			} else {
+				print("  ")
+			}
+			printline()
+		}
+	}
+}
+
+
 // Read the next Unicode char into s.ch.
 // s.ch < 0 means end-of-file.
 //
 func (s *Scanner) next() {
 
-	if s.echo && s.lineOffset==s.offset && s.rdOffset>0 { // start of line
-		if s.start {
-			print("> ")
-		} else {
-			print("  ")
-		}
-		i := 0
-		for true {
-			c := s.src[s.lineOffset+i]
-			if c>32 {s.start=false}  // lines containing only whitespace won't unset start
-			print(string(c))
-			if  c == '\n' {break}
-			i = i +1
-		}
-	}
+	if s.echo { s.Echo() }
+	
 	if s.rdOffset < len(s.src) {
 		s.offset = s.rdOffset
 		if s.ch == '\n' {
@@ -102,6 +119,7 @@ func (s *Scanner) next() {
 		}
 		s.ch = -1 // eof
 	}
+//	if s.echo { s.Echo() }
 }
 
 // Init prepares the scanner s to tokenize the text src by setting the

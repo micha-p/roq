@@ -28,10 +28,12 @@ func myerrorhandler(pos token.Position, msg string) {
 func main() {
 
 	defer func() {
-		if x := recover(); x != "quit" {
-			println("run time panic: %v", x)
+		if x := recover(); x !=nil && x != "quit" {
+			fmt.Printf("run time panic: %v", x)
+			println()
 		}
 	}()
+
 
 	fset := token.NewFileSet() // positions are relative to fset
 
@@ -41,8 +43,8 @@ func main() {
 	traceFlagPtr := flag.Bool("T", false, "trace")
 	debugLongPtr := flag.Bool("debug", false, "debug")
 	debugFlagPtr := flag.Bool("D", false, "debug")
-	echoLongPtr := flag.Bool("echo", false, "debug")
-	echoFlagPtr := flag.Bool("E", false, "debug")
+	echoLongPtr := flag.Bool("echo", false, "echo")
+	echoFlagPtr := flag.Bool("E", false, "echo")
 	filePtr := flag.String("file", "example.src", "filename to process")
 	flag.Parse()
 
