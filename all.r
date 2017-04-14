@@ -1,3 +1,4 @@
+
 # go run main.go -E -file all.r 
 # echo ". <- NA" | cat - all.r | R --no-save --interactive 
 
@@ -369,7 +370,6 @@ a
 
  
 
-quit()
 #f<-function(a,b) if(a)a else 33
 #f(1,2)
 ##[1] 1
@@ -478,9 +478,13 @@ f<-function(a,b)if(a)a else 33
 f(1,2)
 # [1] 1
 
+
+
 if 3 4 else 5
 if 3+4 4 else 5
 if 3-3 4 else 5
+
+
 #while(1) 3 # wont stop
 #while 1 3 # wont stop
 repeat {if (4) {break} else {next}}
@@ -489,6 +493,12 @@ names <- c("alp", "bet", "gamm")
 #for(n in names) print(n)
 vect <-c(1,2,3,4)
 vect
+
+
+quit()
+
+
+
 for(a in vect) {print(a+1)}
 cat(5)
 cat(5,6,"a",7,"\n")

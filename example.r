@@ -1,3 +1,6 @@
-list(1,2)
-pairlist(1,2)
-c(1,2,3) + 1
+names <- c("alp", "bet", "gamm")
+names
+for(n in names) print(n)
+
+vect <-c(1,2,3,4)
+vect
