@@ -58,7 +58,7 @@ func (s *Scanner) Start() {
 //
 func (s *Scanner) next() {
 
-	if s.lineOffset==s.offset && s.echo { // start of line
+	if s.echo && s.lineOffset==s.offset && s.rdOffset>0 { // start of line
 		if s.start {
 			print("> ")
 		} else {
@@ -136,7 +136,8 @@ func (s *Scanner) Init(file *token.File, src []byte, err ErrorHandler, echo bool
 	s.lineOffset = 0
 	s.insertSemi = false
 	s.ErrorCount = 0
-
+	
+	s.Start()
 	s.next()
 	if s.ch == bom {
 		s.next() // ignore BOM at file beginning
