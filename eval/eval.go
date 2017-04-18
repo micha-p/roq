@@ -45,9 +45,28 @@ func (f *Frame) Recursive(name string) (r SEXPItf) {
 	if r == nil {
 		if f.Outer != nil {
 			return f.Outer.Recursive(name)
+		} else {
+			print("Error: object '", name, "' not found\n")
+			return nil
 		}
 	}
 	return
+}
+
+func (f *Frame) Delete(name string, DEBUG bool) () {
+	r := f.Objects[name]
+	if r == nil {
+		if f.Outer != nil {
+			f.Outer.Delete(name, DEBUG)
+		} else {
+			print("In remove(",name,") : object '",name,"' not found\n")
+		}
+	} else {
+		delete(f.Objects,name)
+		if DEBUG {
+			println("Removed object: ",name)
+		} 
+	}
 }
 
 func getIdent(ev *Evaluator, ex ast.Expr) string {
@@ -61,6 +80,8 @@ func (s *Frame) Insert(identifier string, obj SEXPItf) (alt SEXPItf) {
 	s.Objects[identifier] = obj
 	return
 }
+
+
 
 type LoopState int
 
@@ -302,13 +323,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 		case token.NAN, token.NA:
 			return &VSEXP{ValuePos: node.ValuePos, Immediate: math.NaN()}
 		case token.IDENT:
-			sexprec := ev.topFrame.Recursive(node.Value)
-			if sexprec == nil {
-				print("error: object '", node.Value, "' not found\n")
-				return nil
-			} else {
-				return sexprec
-			}
+			return ev.topFrame.Recursive(node.Value)
 		default:
 			panic("Unknown basic literal:"+node.Kind.String())
 		}

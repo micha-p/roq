@@ -130,8 +130,8 @@ func main() {
 			sexp := eval.EvalStmt(ev, stmt)
 			if ! (sexp==nil) {
 				print.PrintResult(ev, sexp)
-				parser.StartLine(p)
 			}
+			parser.StartLine(p)
 			if tok == token.EOF {
 				return
 			}

@@ -1,6 +1,6 @@
 
 # go run main.go -E -file all.r 
-# echo ". <- NA" | cat - all.r | R --no-save --interactive 
+# echo ". <- NA" | cat - all.r | R --no-save --interactive --quiet
 
 
 r = 1  +2 %% 10 + . ;

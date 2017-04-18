@@ -47,6 +47,7 @@ func arityOK(funcname string, arity int, node *ast.CallExpr) bool {
 // TODO use results field of funcType
 func EvalCallBuiltin(ev *Evaluator, node *ast.CallExpr, funcname string) (r SEXPItf) {
 	TRACE := ev.Trace
+	DEBUG := ev.Debug
 	if TRACE {
 		println("Search for builtin: " + funcname)
 	}
@@ -153,6 +154,10 @@ func EvalCallBuiltin(ev *Evaluator, node *ast.CallExpr, funcname string) (r SEXP
 			return &TSEXP{String: *s}
 		} else {
 			return &ESEXP{Kind: token.ILLEGAL}
+		}
+	case "remove":
+		for _,arg := range(node.Args){
+			ev.topFrame.Delete(arg.(*ast.BasicLit).Value,DEBUG)
 		}
 	case "quit":
 		panic("quit")
