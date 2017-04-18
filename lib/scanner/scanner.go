@@ -321,7 +321,7 @@ func (s *Scanner) scanMantissa(base int) {
 func (s *Scanner) scanNumber(seenDecimalPoint bool) (token.Token, string) {
 	// digitVal(s.ch) < 10
 	offs := s.offset
-	tok := token.INT
+	tok := token.FLOAT
 
 	if seenDecimalPoint {
 		offs--
@@ -351,9 +351,13 @@ func (s *Scanner) scanNumber(seenDecimalPoint bool) (token.Token, string) {
 				seenDecimalDigit = true
 				s.scanMantissa(10)
 			}
-			if s.ch == '.' || s.ch == 'e' || s.ch == 'E' || s.ch == 'i' {
+			if s.ch == '.' {
 				goto fraction
 			}
+			if s.ch == 'e' || s.ch == 'E' || s.ch == 'i' {
+				goto exponent
+			}
+
 			// octal int
 			if seenDecimalDigit {
 				s.error(offs, "illegal octal number")
@@ -362,12 +366,15 @@ func (s *Scanner) scanNumber(seenDecimalPoint bool) (token.Token, string) {
 		goto exit
 	}
 
+
+
 	// decimal int or float
 	s.scanMantissa(10)
 
 fraction:
 	if s.ch == '.' {
 		tok = token.FLOAT
+		seenDecimalPoint=true
 		s.next()
 		if s.ch == '.' {
 			tok = token.INT
@@ -391,6 +398,19 @@ exponent:
 	if s.ch == 'i' {
 		tok = token.IMAG
 		s.next()
+	}
+
+	// integer literal
+	if s.ch == 'L' {
+		if seenDecimalPoint {
+			println("Warning message:")
+			// there is a trailing space
+			println("integer literal "+ string(s.src[offs:s.offset])+"L contains decimal; using numeric value ")
+		} else {
+			tok=token.INT
+		}
+		s.next()
+	return tok, string(s.src[offs:s.offset-1])
 	}
 
 exit:

@@ -285,7 +285,12 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 				print("ERROR:")
 				println(err)
 			}
-			return &VSEXP{ValuePos: node.ValuePos, Immediate: vfloat}
+			vint, err := strconv.Atoi(node.Value) // TODO: support for all R formatted values
+			if err != nil {
+				print("ERROR:")
+				println(err)
+			}
+			return &ISEXP{ValuePos: node.ValuePos, Immediate: vfloat, Integer: vint}
 		case token.STRING:
 			return &TSEXP{ValuePos: node.ValuePos, String: node.Value}
 		case token.TRUE:
