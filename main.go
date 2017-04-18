@@ -10,7 +10,6 @@ import (
 	//	"strings"
 	//	"os"
 	"eval"
-	"print"
 	"lib/ast"
 	"lib/parser"
 	"lib/scanner"
@@ -26,13 +25,6 @@ func myerrorhandler(pos token.Position, msg string) {
 }
 
 func main() {
-
-	defer func() {
-		if x := recover(); x !=nil && x != "quit" {
-			fmt.Printf("run time panic: %v", x)
-			println()
-		}
-	}()
 
 
 	fset := token.NewFileSet() // positions are relative to fset
@@ -51,6 +43,15 @@ func main() {
 	TRACE = *traceFlagPtr || *traceLongPtr
 	DEBUG = *debugFlagPtr || *debugLongPtr
 	ECHO  = *echoFlagPtr || *echoLongPtr
+
+	if DEBUG==false {
+		defer func() {
+			if x := recover(); x !=nil && x != "quit" {
+				fmt.Printf("run time panic: %v", x)
+			}
+		}()
+	}
+
 
 	if *scanPtr {
 		src, _ := ioutil.ReadFile(*filePtr)
@@ -107,10 +108,12 @@ func main() {
 		if TRACE {
 			parserOpts = parserOpts | parser.Trace
 		}
+		
+/*		// debugging eval should not trigger debugging in parser
 		if DEBUG {
 			parserOpts = parserOpts | parser.Debug
 		}
-		if ECHO {
+*/		if ECHO {
 			parserOpts = parserOpts | parser.Echo
 		}
 
@@ -129,7 +132,7 @@ func main() {
 			stmt, tok := parser.ParseIter(p) // main iterator calls parse.stmt
 			sexp := eval.EvalStmt(ev, stmt)
 			if ! (sexp==nil) {
-				print.PrintResult(ev, sexp)
+				eval.PrintResult(ev, sexp)
 			}
 			parser.StartLine(p)
 			if tok == token.EOF {

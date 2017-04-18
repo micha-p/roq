@@ -287,7 +287,16 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 	case *ast.FuncLit:
 		node := ex.(*ast.FuncLit)
 		defer un(trace(ev, "FuncLit"))
-		return &VSEXP{Fieldlist: node.Type.Params.List, Body: node.Body}
+		
+		withEllipsis := false
+		for _, field := range node.Type.Params.List {
+			switch field.Type.(type){
+			case *ast.Ellipsis:
+				withEllipsis=true
+				break
+			}
+		}
+		return &VSEXP{Fieldlist: node.Type.Params.List, Body: node.Body, ellipsis: withEllipsis}
 	case *ast.BasicLit:
 		ev.Invisible = false
 		node := ex.(*ast.BasicLit)
