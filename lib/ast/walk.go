@@ -128,9 +128,6 @@ func Walk(v Visitor, node Node) {
 		}
 		Walk(v, n.Elt)
 
-	case *StructType:
-		Walk(v, n.Fields)
-
 	case *FuncType:
 		if n.Params != nil {
 			Walk(v, n.Params)
@@ -138,10 +135,6 @@ func Walk(v Visitor, node Node) {
 	/*	if n.Results != nil {
 		Walk(v, n.Results)
 	}*/
-
-	case *MapType:
-		Walk(v, n.Key)
-		Walk(v, n.Value)
 
 	// Statements
 	case *BadStmt:

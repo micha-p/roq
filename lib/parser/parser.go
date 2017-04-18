@@ -457,27 +457,6 @@ func (p *parser) parseTypeName() ast.Expr {
 	return ident
 }
 
-func (p *parser) parseArrayType() ast.Expr {
-	if p.trace {
-		defer un(trace(p, "ArrayType"))
-	}
-
-	lbrack := p.expect(token.LBRACK)
-	p.exprLev++
-	var len ast.Expr
-	// always permit ellipsis for more fault-tolerant parsing
-	if p.tok == token.ELLIPSIS {
-		len = &ast.Ellipsis{Ellipsis: p.pos}
-		p.next()
-	} else if p.tok != token.RBRACK {
-		len = p.parseRhs()
-	}
-	p.exprLev--
-	p.expect(token.RBRACK)
-	elt := p.parseType()
-
-	return &ast.ArrayType{Lbrack: lbrack, Len: len, Elt: elt}
-}
 
 func (p *parser) makeIdentList(list []ast.Expr) []*ast.Ident {
 	idents := make([]*ast.Ident, len(list))
@@ -493,81 +472,6 @@ func (p *parser) makeIdentList(list []ast.Expr) []*ast.Ident {
 		idents[i] = ident
 	}
 	return idents
-}
-
-func (p *parser) parseFieldDecl(scope *ast.Scope) *ast.Field {
-	if p.trace {
-		defer un(trace(p, "FieldDecl"))
-	}
-
-	// 1st FieldDecl
-	// A type name used as an anonymous field looks like a field identifier.
-	var list []ast.Expr
-	for {
-		list = append(list, p.parseVarType(false))
-		if p.tok != token.COMMA {
-			break
-		}
-		p.next()
-	}
-
-	typ := p.tryVarType(false)
-
-	// analyze case
-	var idents []*ast.Ident
-	if typ != nil {
-		// IdentifierList Type
-		idents = p.makeIdentList(list)
-	} else {
-		// ["*"] TypeName (AnonymousField)
-		typ = list[0] // we always have at least one element
-		if n := len(list); n > 1 {
-			p.errorExpected(p.pos, "type")
-			typ = &ast.BadExpr{From: p.pos, To: p.pos}
-		}
-	}
-
-	// Tag
-	var tag *ast.BasicLit
-	if p.tok == token.STRING {
-		tag = &ast.BasicLit{ValuePos: p.pos, Kind: p.tok, Value: p.lit}
-		p.next()
-	}
-
-	p.expectSemi() // call before accessing p.linecomment
-
-	field := &ast.Field{Names: idents, Type: typ, Tag: tag}
-	p.declare(field, nil, scope, ast.Var, idents...)
-	p.resolve(typ)
-
-	return field
-}
-
-func (p *parser) parseStructType() *ast.StructType {
-	if p.trace {
-		defer un(trace(p, "StructType"))
-	}
-
-	pos := p.expect(token.STRUCT)
-	lbrace := p.expect(token.LBRACE)
-	scope := ast.NewScope(nil) // struct scope
-	var list []*ast.Field
-	for p.tok == token.IDENT || p.tok == token.MULTIPLICATION || p.tok == token.LPAREN {
-		// a field declaration cannot start with a '(' but we accept
-		// it here for more robust parsing and better error messages
-		// (parseFieldDecl will check and complain if necessary)
-		list = append(list, p.parseFieldDecl(scope))
-	}
-	rbrace := p.expect(token.RBRACE)
-
-	return &ast.StructType{
-		Struct: pos,
-		Fields: &ast.FieldList{
-			Opening: lbrace,
-			List:    list,
-			Closing: rbrace,
-		},
-	}
 }
 
 // If the result is an identifier, it is not resolved.
@@ -694,36 +598,16 @@ func (p *parser) parseFuncType() (*ast.FuncType, *ast.Scope) {
 	return &ast.FuncType{Func: pos, Params: params}, scope
 }
 
-func (p *parser) parseMapType() *ast.MapType {
-	if p.trace {
-		defer un(trace(p, "MapType"))
-	}
-
-	pos := p.expect(token.MAP)
-	p.expect(token.LBRACK)
-	key := p.parseType()
-	p.expect(token.RBRACK)
-	value := p.parseType()
-
-	return &ast.MapType{Map: pos, Key: key, Value: value}
-}
-
 // If the result is an identifier, it is not resolved.
 func (p *parser) tryIdentOrType() ast.Expr {
 	switch p.tok {
 	case token.IDENT:
 		return p.parseTypeName()
-	case token.LBRACK:
-		return p.parseArrayType()
-	case token.STRUCT:
-		return p.parseStructType()
 	case token.FUNCTION:
 		typ, _ := p.parseFuncType()
 		return typ
 		/*	case token.INTERFACE:
 			return p.parseInterfaceType()*/
-	case token.MAP:
-		return p.parseMapType()
 	case token.LPAREN:
 		lparen := p.pos
 		p.next()
@@ -1043,8 +927,6 @@ func isLiteralType(x ast.Expr) bool {
 		_, isIdent := t.X.(*ast.Ident)
 		return isIdent
 	case *ast.ArrayType:
-	case *ast.StructType:
-	case *ast.MapType:
 	default:
 		return false // all other nodes are not legal composite literal types
 	}
