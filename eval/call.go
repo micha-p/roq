@@ -91,15 +91,23 @@ func EvalCallBuiltin(ev *Evaluator, node *ast.CallExpr, funcname string) (r SEXP
 			}else{
 				switch object.(type) {
 			    case *VSEXP:
-					r = "double"
+					if object.(*VSEXP).Body==nil{
+						r = "double"
+					} else {
+						r = "closure"
+					}
 				case *ISEXP:
 					r = "integer"
 //				case *LSEXP:
 //					r="logical"
 				case *TSEXP:
 					r = "character"
-				case *RSEXP: // TODO pairlist
-					r = "list"
+				case *RSEXP:
+					if object.(*RSEXP).Slice==nil{
+						r = "pairlist"
+					} else {
+						r = "list"
+					}
 				case *NSEXP:
 					r = "NULL"
 				default:
@@ -117,16 +125,24 @@ func EvalCallBuiltin(ev *Evaluator, node *ast.CallExpr, funcname string) (r SEXP
 			if s == nil {
 				var r string
 				switch object.(type) {
-				case *VSEXP:
-					r = "numeric"
+			    case *VSEXP:
+					if object.(*VSEXP).Body==nil{
+						r = "numeric"
+					} else {
+						r = "function"
+					}
 				case *ISEXP:
 					r = "numeric"
 //				case *LSEXP:
 //					r="logical"
 				case *TSEXP:
 					r = "character"
-				case *RSEXP: // TODO pairlist
-					r = "list"
+				case *RSEXP:
+					if object.(*RSEXP).Slice==nil{
+						r = "pairlist"
+					} else {
+						r = "list"
+					}
 				case *NSEXP:
 					r = "NULL"
 				default:
