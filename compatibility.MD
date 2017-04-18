@@ -7,7 +7,7 @@ Differences:
 - isTRUE will drop a warning, as it is misleading
 - break/next in wrong context will stop, as running code is expected
 - native lowlevel print statement: print a 
-
+- c() cant be overloaded
 
 	// returning values allows for concatenated comparisons
 	// No problem UNLESS X == 0!!!

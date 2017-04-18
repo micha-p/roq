@@ -77,8 +77,8 @@ func PrintResultT(ev *eval.Evaluator, r *eval.TSEXP) {
 		for _, v := range r.Slice {
 			print(" \"", v, "\"")
 		}
+		println()
 	}
-	println()
 }
 
 func PrintResultI(ev *eval.Evaluator, r *eval.ISEXP) {
@@ -111,7 +111,7 @@ func PrintResultE(ev *eval.Evaluator, r *eval.ESEXP) {
 func PrintResultV(ev *eval.Evaluator, r *eval.VSEXP) {
 
 	DEBUG := ev.Debug
-	if r.Lambda {
+	if r.Body != nil {
 		if DEBUG {
 			print("function(")
 			for n, field := range r.Fieldlist {
@@ -131,7 +131,7 @@ func PrintResultV(ev *eval.Evaluator, r *eval.VSEXP) {
 			if r.Immediate == math.NaN(){
 				println("NAN")
 			} else {
-				fmt.Printf("[1] %g\n", r.Immediate) // R has small e for exponential format
+				fmt.Printf("[1] %g", r.Immediate) // R has small e for exponential format
 			}
 		} else {
 			rdim := r.Dim()

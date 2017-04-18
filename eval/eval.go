@@ -266,7 +266,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 	case *ast.FuncLit:
 		node := ex.(*ast.FuncLit)
 		defer un(trace(ev, "FuncLit"))
-		return &VSEXP{Lambda: true, Fieldlist: node.Type.Params.List, Body: node.Body}
+		return &VSEXP{Fieldlist: node.Type.Params.List, Body: node.Body}
 	case *ast.BasicLit:
 		ev.Invisible = false
 		node := ex.(*ast.BasicLit)

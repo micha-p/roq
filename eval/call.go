@@ -82,6 +82,34 @@ func EvalCallBuiltin(ev *Evaluator, node *ast.CallExpr, funcname string) (r SEXP
 		} else {
 			return &ESEXP{Kind: token.ILLEGAL}
 		}
+	case "typeof":
+		if arityOK(funcname, 1, node) {
+			object := EvalExpr(ev, node.Args[0])
+			var r string
+			if object == nil {
+				r = "NULL"
+			}else{
+				switch object.(type) {
+			    case *VSEXP:
+					r = "double"
+				case *ISEXP:
+					r = "integer"
+//				case *LSEXP:
+//					r="logical"
+				case *TSEXP:
+					r = "character"
+				case *RSEXP: // TODO pairlist
+					r = "list"
+				case *NSEXP:
+					r = "NULL"
+				default:
+					panic("unknown type")
+				}
+				return &TSEXP{String: r}
+			}
+		} else {
+			return &ESEXP{Kind: token.ILLEGAL}
+		}
 	case "class":
 		if arityOK(funcname, 1, node) {
 			object := EvalExpr(ev, node.Args[0])
@@ -116,6 +144,7 @@ func EvalCallBuiltin(ev *Evaluator, node *ast.CallExpr, funcname string) (r SEXP
 		println("Error: could not find function \"" + funcname + "\"")
 		return &ESEXP{Kind: token.ILLEGAL}
 	}
+	return
 }
 
 func EvalCallFunction(ev *Evaluator, node *ast.CallExpr, funcname string, f *VSEXP) (r SEXPItf) {

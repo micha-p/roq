@@ -94,6 +94,7 @@ func main() {
 			case *ast.EmptyStmt:
 			default:
 				ast.Print(fset, stmt)
+				parser.StartLine(p)
 			}
 			if tok == token.EOF {
 				return
@@ -129,6 +130,7 @@ func main() {
 			sexp := eval.EvalStmt(ev, stmt)
 			if ! (sexp==nil) {
 				print.PrintResult(ev, sexp)
+				parser.StartLine(p)
 			}
 			if tok == token.EOF {
 				return

@@ -145,13 +145,15 @@ func ParseInit(fset *token.FileSet, filename string, src interface{}, mode Mode)
 	return &p, err
 }
 
+func StartLine(p *parser)() {
+	p.scanner.Start()
+}
 
 func ParseIter(p *parser) (s ast.Stmt, tok token.Token) {
 
 	p.pkgScope = p.topScope
 
 	if true /* p.mode&ImportsOnly == 0 */ {
-		p.scanner.Start()
 		s = p.parseStmt()
 	}
 

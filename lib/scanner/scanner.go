@@ -51,35 +51,39 @@ const bom = 0xFEFF // byte order mark, only permitted as very first character
 
 func (s *Scanner) Start() {
 	s.start=true
+//	println("startline")
 }
 
 // echo should print at the beginning of a line
 // but deal correctly with lookahead
 
 func (s *Scanner) Echo() {
-	printline := func() {
+	printline := func(s *Scanner) {
 		i := 0
-		for (s.rdOffset+i) < len(s.src) {   	// print complete line
-			c := s.src[s.rdOffset+i]
-			if c>32 {s.start=false}      		// lines containing only whitespace won't unset start
+		s.start=true
+		for (s.lineOffset+i) < len(s.src) {   		// print complete line
+			c := s.src[s.lineOffset+i]
+			if c>32 {s.start=false}      			// lines containing only whitespace won't unset start
 			print(string(c))
 			if  c == '\n' {break}
 			i++
 		}
 	}
 
-	if s.rdOffset==0 {							// start of very first line
-		print("> "); printline()
+	if s.rdOffset==0 {								// start of very first line
+		//print("> "); printline()
 	} else {
-		if s.ch == '\n' && s.rdOffset < len(s.src) {						// lookahead will go past end of last line
+		if s.lineOffset == s.offset {		// lookahead will go past end of last line
 			if s.start {
 				print("> ")
+				s.start=false
 			} else {
 				print("  ")
 			}
-			printline()
+			printline(s)
 		}
 	}
+	if s.ch<0{println()}
 }
 
 
