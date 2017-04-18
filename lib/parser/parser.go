@@ -458,68 +458,24 @@ func (p *parser) parseTypeName() ast.Expr {
 }
 
 
-func (p *parser) makeIdentList(list []ast.Expr) []*ast.Ident {
-	idents := make([]*ast.Ident, len(list))
-	for i, x := range list {
-		ident, isIdent := x.(*ast.Ident)
-		if !isIdent {
-			if _, isBad := x.(*ast.BadExpr); !isBad {
-				// only report error if it's a new one
-				p.errorExpected(x.Pos(), "identifier")
-			}
-			ident = &ast.Ident{NamePos: x.Pos(), Name: "_"}
-		}
-		idents[i] = ident
-	}
-	return idents
-}
-
-// If the result is an identifier, it is not resolved.
-func (p *parser) tryVarType(isParam bool) ast.Expr {
-	if isParam && p.tok == token.ELLIPSIS {
-		pos := p.pos
-		p.next()
-		typ := p.tryIdentOrType() // don't use parseType so we can provide better error message
-		if typ != nil {
-			p.resolve(typ)
-		} else {
-			p.error(pos, "'...' parameter is missing type")
-			typ = &ast.BadExpr{From: pos, To: p.pos}
-		}
-		return &ast.Ellipsis{Ellipsis: pos, Elt: typ}
-	}
-	return p.tryIdentOrType()
-}
-
-// If the result is an identifier, it is not resolved.
-func (p *parser) parseVarType(isParam bool) ast.Expr {
-	if p.trace {
-		defer un(trace(p, "VarType"))
-	}
-	typ := p.tryVarType(isParam)
-	if typ == nil {
-		pos := p.pos
-		p.errorExpected(pos, "type")
-		p.next() // make progress
-		typ = &ast.BadExpr{From: pos, To: p.pos}
-	}
-	return typ
-}
-
-func (p *parser) parseFuncParameterList(scope *ast.Scope, ellipsisOk bool) (params []*ast.Field) {
+func (p *parser) parseFuncParameterList(scope *ast.Scope, ellipsisOk bool) (list []*ast.Field) {
 	if p.trace {
 		defer un(trace(p, "ParameterList: "+p.lit))
 	}
 
 	// 1st ParameterDecl
 	// A list of identifiers looks like a list of type names.
-	var list []ast.Expr
 	for {
 		if p.tok == token.RPAREN {
 			break
 		}
 		//		list = append(list, p.parseVarType(ellipsisOk))
-		list = append(list, p.parseIdent())
+		if p.tok == token.ELLIPSIS {
+			list = append(list, &ast.Field{Type: &ast.Ellipsis{}})
+			p.next()
+		} else {
+			list = append(list, &ast.Field{Type: p.parseIdent()})
+		}
 		if p.tok != token.COMMA {
 			break
 		}
@@ -527,44 +483,6 @@ func (p *parser) parseFuncParameterList(scope *ast.Scope, ellipsisOk bool) (para
 		if p.tok == token.RPAREN {
 			break
 		}
-	}
-
-	// analyze case
-	if typ := p.tryVarType(ellipsisOk); typ != nil {
-		// IdentifierList Type
-		idents := p.makeIdentList(list)
-		field := &ast.Field{Names: idents, Type: typ}
-		params = append(params, field)
-		// Go spec: The scope of an identifier denoting a function
-		// parameter or result variable is the function body.
-		p.declare(field, nil, scope, ast.Var, idents...)
-		p.resolve(typ)
-		if !p.atComma("parameter list", token.RPAREN) {
-			return
-		}
-		p.next()
-		for p.tok != token.RPAREN && p.tok != token.EOF {
-			idents := p.parseIdentList()
-			typ := p.parseVarType(ellipsisOk)
-			field := &ast.Field{Names: idents, Type: typ}
-			params = append(params, field)
-			// Go spec: The scope of an identifier denoting a function
-			// parameter or result variable is the function body.
-			p.declare(field, nil, scope, ast.Var, idents...)
-			p.resolve(typ)
-			if !p.atComma("parameter list", token.RPAREN) {
-				break
-			}
-			p.next()
-		}
-		return
-	}
-
-	// Type { "," Type } (anonymous parameters)
-	params = make([]*ast.Field, len(list))
-	for i, typ := range list {
-		p.resolve(typ)
-		params[i] = &ast.Field{Type: typ}
 	}
 	return
 }

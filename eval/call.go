@@ -84,77 +84,9 @@ func EvalCallBuiltin(ev *Evaluator, node *ast.CallExpr, funcname string) (r SEXP
 			return &ESEXP{Kind: token.ILLEGAL}
 		}
 	case "typeof":
-		if arityOK(funcname, 1, node) {
-			object := EvalExpr(ev, node.Args[0])
-			var r string
-			if object == nil {
-				r = "NULL"
-			}else{
-				switch object.(type) {
-			    case *VSEXP:
-					if object.(*VSEXP).Body==nil{
-						r = "double"
-					} else {
-						r = "closure"
-					}
-				case *ISEXP:
-					r = "integer"
-//				case *LSEXP:
-//					r="logical"
-				case *TSEXP:
-					r = "character"
-				case *RSEXP:
-					if object.(*RSEXP).Slice==nil{
-						r = "pairlist"
-					} else {
-						r = "list"
-					}
-				case *NSEXP:
-					r = "NULL"
-				default:
-					panic("unknown type")
-				}
-				return &TSEXP{String: r}
-			}
-		} else {
-			return &ESEXP{Kind: token.ILLEGAL}
-		}
+		return EvalTypeof(ev, node)
 	case "class":
-		if arityOK(funcname, 1, node) {
-			object := EvalExpr(ev, node.Args[0])
-			s := object.Class()
-			if s == nil {
-				var r string
-				switch object.(type) {
-			    case *VSEXP:
-					if object.(*VSEXP).Body==nil{
-						r = "numeric"
-					} else {
-						r = "function"
-					}
-				case *ISEXP:
-					r = "numeric"
-//				case *LSEXP:
-//					r="logical"
-				case *TSEXP:
-					r = "character"
-				case *RSEXP:
-					if object.(*RSEXP).Slice==nil{
-						r = "pairlist"
-					} else {
-						r = "list"
-					}
-				case *NSEXP:
-					r = "NULL"
-				default:
-					panic("unknown type")
-				}
-				return &TSEXP{String: r}
-			}
-			return &TSEXP{String: *s}
-		} else {
-			return &ESEXP{Kind: token.ILLEGAL}
-		}
+		return EvalClass(ev, node)
 	case "remove":
 		for _,arg := range(node.Args){
 			ev.topFrame.Delete(arg.(*ast.BasicLit).Value,DEBUG)

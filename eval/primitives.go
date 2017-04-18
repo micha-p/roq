@@ -2,8 +2,8 @@ package eval
 
 import (
 	"fmt"
-	"strings"
 	"lib/ast"
+	"strings"
 )
 
 // https://cran.r-project.org/doc/manuals/R-ints.html#g_t_002eInternal-vs-_002ePrimitive
@@ -19,7 +19,7 @@ func EvalLength(ev *Evaluator, node *ast.CallExpr) (r *ISEXP) {
 		iterator := IndexDomainEval(ev, ex.(*ast.IndexExpr).Index)
 		return &ISEXP{ValuePos: node.Fun.Pos(), Integer: iterator.Length()}
 	default:
-		val := EvalExpr(ev,node.Args[0])
+		val := EvalExpr(ev, node.Args[0])
 		return &ISEXP{ValuePos: node.Fun.Pos(), Integer: val.Length()}
 	}
 }
@@ -38,13 +38,13 @@ func EvalCat(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 		case *TSEXP:
 			print(strings.Replace(r.(*TSEXP).String, "\\n", "\n", -1)) // needs strings.Map
 		case *ISEXP:
-			fmt.Printf("%g", r.(*ISEXP).Immediate)  // TODO
+			fmt.Printf("%g", r.(*ISEXP).Immediate) // TODO
 		case *VSEXP:
-			if r.(*VSEXP).Slice==nil {
+			if r.(*VSEXP).Slice == nil {
 				print(r.(*VSEXP).Immediate)
 			} else {
 				for n, v := range r.(*VSEXP).Slice {
-					if n>0 {
+					if n > 0 {
 						print(" ")
 					}
 					fmt.Printf(" %g", v) // R has small e for exponential format
@@ -63,14 +63,14 @@ func EvalCat(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 // TODO recursive=TRUE/FALSE
 // TODO faster vector literals, composed just of floats
 
-// TODO document difference! 
+// TODO document difference!
 // R returns double, if there is at least one double
 // here we decide on first type
 // inside string vectors, there is now conversion of numbers, but an error thrown!
 
 /* The output type is determined from the highest type of the
-     components in the hierarchy NULL < raw < logical < integer <
-     double < complex < character < list < expression.
+   components in the hierarchy NULL < raw < logical < integer <
+   double < complex < character < list < expression.
 */
 
 func EvalColumn(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
@@ -79,39 +79,39 @@ func EvalColumn(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 		println("Column")
 	}
 
-	if len(node.Args)>0 {
+	if len(node.Args) > 0 {
 		evaluatedArgs := make(map[int]SEXPItf)
 		for n, v := range node.Args { // TODO: strictly left to right
 			val := EvalExprOrAssignment(ev, v)
 			evaluatedArgs[n] = val
 		}
-		switch evaluatedArgs[0].(type){
+		switch evaluatedArgs[0].(type) {
 
-		// TODO document difference! 
+		// TODO document difference!
 		// R returns double, if there is at least one double
 		// here we decide on first type
 		case *ISEXP:
 			c := make([]int, len(evaluatedArgs))
-			for n,v := range evaluatedArgs {
+			for n, v := range evaluatedArgs {
 				c[n] = v.(*ISEXP).Integer
 			}
 			return &ISEXP{ValuePos: node.Fun.Pos(), Slice: c}
 		case *VSEXP:
 			c := make([]float64, len(evaluatedArgs))
-			for n,v := range evaluatedArgs {
-				switch v.(type){
-					case *VSEXP:
-						c[n] = v.(*VSEXP).Immediate
-					case *ISEXP:
-						c[n] = v.(*ISEXP).Immediate
-					default:
-						panic("Error in c")
+			for n, v := range evaluatedArgs {
+				switch v.(type) {
+				case *VSEXP:
+					c[n] = v.(*VSEXP).Immediate
+				case *ISEXP:
+					c[n] = v.(*ISEXP).Immediate
+				default:
+					panic("Error in c")
 				}
 			}
 			return &VSEXP{ValuePos: node.Fun.Pos(), Slice: c}
 		case *TSEXP:
 			c := make([]string, len(evaluatedArgs))
-			for n,v := range evaluatedArgs {
+			for n, v := range evaluatedArgs {
 				c[n] = v.(*TSEXP).String
 			}
 			return &TSEXP{ValuePos: node.Fun.Pos(), Slice: c}
@@ -129,7 +129,7 @@ func EvalList(ev *Evaluator, node *ast.CallExpr) (r *RSEXP) {
 		println("List")
 	}
 
-	evaluatedArgs := make([]SEXPItf,len(node.Args))
+	evaluatedArgs := make([]SEXPItf, len(node.Args))
 	for n, v := range node.Args { // TODO: strictly left to right
 		var val SEXPItf
 		val = EvalExprOrAssignment(ev, v)
@@ -139,17 +139,89 @@ func EvalList(ev *Evaluator, node *ast.CallExpr) (r *RSEXP) {
 	return &RSEXP{ValuePos: node.Fun.Pos(), Slice: evaluatedArgs}
 }
 
-
-
 // TODO documentation and comparison
-// paitlist might be called with more than 2 arguments
+// pairlist might be called with more than 2 arguments
 func EvalPairlist(ev *Evaluator, node *ast.CallExpr) (r *RSEXP) {
 	TRACE := ev.Trace
 	if TRACE {
 		println("Pairlist")
 	}
 
-	return &RSEXP{ValuePos: node.Fun.Pos(), 
+	return &RSEXP{ValuePos: node.Fun.Pos(),
 		CAR: EvalExprOrAssignment(ev, node.Args[0]),
 		CDR: EvalExprOrAssignment(ev, node.Args[1])}
+}
+
+func EvalTypeof(ev *Evaluator, node *ast.CallExpr) (r *TSEXP) {
+	if arityOK("typeof", 1, node) {
+		object := EvalExpr(ev, node.Args[0])
+		var r string
+		if object == nil {
+			r = "NULL"
+		} else {
+			switch object.(type) {
+			case *VSEXP:
+				if object.(*VSEXP).Body == nil {
+					r = "double"
+				} else {
+					r = "closure"
+				}
+			case *ISEXP:
+				r = "integer"
+//				case *LSEXP:
+//					r="logical"
+			case *TSEXP:
+				r = "character"
+			case *RSEXP:
+				if object.(*RSEXP).Slice == nil {
+					r = "pairlist"
+				} else {
+					r = "list"
+				}
+			case *NSEXP:
+				r = "NULL"
+			default:
+				panic("unknown type")
+			}
+			return &TSEXP{String: r}
+		}
+	}
+	return
+}
+
+func EvalClass(ev *Evaluator, node *ast.CallExpr) (r *TSEXP) {
+	if arityOK("class", 1, node) {
+		object := EvalExpr(ev, node.Args[0])
+		s := object.Class()
+		if s == nil {
+			var r string
+			switch object.(type) {
+			case *VSEXP:
+				if object.(*VSEXP).Body == nil {
+					r = "numeric"
+				} else {
+					r = "function"
+				}
+			case *ISEXP:
+				r = "numeric"
+//				case *LSEXP:
+//					r="logical"
+			case *TSEXP:
+				r = "character"
+			case *RSEXP:
+				if object.(*RSEXP).Slice == nil {
+					r = "pairlist"
+				} else {
+					r = "list"
+				}
+			case *NSEXP:
+				r = "NULL"
+			default:
+				panic("unknown type")
+			}
+			return &TSEXP{String: r}
+		}
+		return &TSEXP{String: *s}
+	}
+	return
 }
