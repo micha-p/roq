@@ -65,6 +65,7 @@ type Field struct {
 	Names []*Ident  // field/method/parameter names; or nil if anonymous field
 	Type  Expr      // field/method/parameter type
 	Tag   *BasicLit // field tag; or nil
+	Default  Expr
 }
 
 func (f *Field) Pos() token.Pos {

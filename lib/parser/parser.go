@@ -463,8 +463,6 @@ func (p *parser) parseFuncParameterList(scope *ast.Scope, ellipsisOk bool) (list
 		defer un(trace(p, "ParameterList: "+p.lit))
 	}
 
-	// 1st ParameterDecl
-	// A list of identifiers looks like a list of type names.
 	for {
 		if p.tok == token.RPAREN {
 			break
@@ -474,7 +472,13 @@ func (p *parser) parseFuncParameterList(scope *ast.Scope, ellipsisOk bool) (list
 			list = append(list, &ast.Field{Type: &ast.Ellipsis{}})
 			p.next()
 		} else {
-			list = append(list, &ast.Field{Type: p.parseIdent()})
+			identifier := p.parseIdent()
+			if p.tok == token.SHORTASSIGNMENT {
+				p.next()
+				list = append(list, &ast.Field{Type: identifier, Default: p.parseRhs()})
+			}else{
+				list = append(list, &ast.Field{Type: identifier})
+			}
 		}
 		if p.tok != token.COMMA {
 			break

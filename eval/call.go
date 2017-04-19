@@ -123,17 +123,34 @@ func EvalApply(ev *Evaluator, funcname string, f *VSEXP, argNames []string, coll
 		println("apply function", funcname, "to call:")
 	}
 	for n, fieldname := range argNames {
-		value := evaluatedArgs[n]
 		if DEBUG {
-			print("arg[", n, "]\t", fieldname, "\t")
-			PrintResult(ev, value)
+			print("arg[", n, "]\t", fieldname)
 		}
-		if value == nil {
-			print("Error in ", funcname, "(")
-			print(") : argument \"", fieldname, " is missing, with no default\n")
-			return nil
+		if fieldname != "..." {
+			value := evaluatedArgs[n]
+			if value == nil {
+				defaultExpr := f.Fieldlist[n].Default
+				if defaultExpr == nil { 
+					print("Error in ", funcname, "(")
+					print(") : argument \"", fieldname, " is missing, with no default\n")
+					return nil
+				} else {
+					if DEBUG {
+						print("\tDEFAULT")
+					}
+					value = EvalExpr(ev, defaultExpr)
+				}
+			} else {
+					if DEBUG {
+						print("\t")
+					}
+			}	
+			if DEBUG {
+				print("\t")
+				PrintResult(ev, value)
+			}
+			ev.topFrame.Insert(fieldname, value)
 		}
-		ev.topFrame.Insert(fieldname, value)
 	}
 	return EvalStmt(ev, f.Body)
 }
@@ -142,16 +159,15 @@ func EvalCallEllipsisFunction(ev *Evaluator, node *ast.CallExpr, funcname string
 	TRACE := ev.Trace
 	DEBUG := ev.Debug
 
-	var ellipsisPosition int
 	// collect field names of formals in function definition
 	argNames := make([]string, 0, len(f.Fieldlist)+len(node.Args))
-	for i, field := range f.Fieldlist {
+	for _, field := range f.Fieldlist {
 		switch field.Type.(type) {
 		case *ast.Ident:
 			identifier := field.Type.(*ast.Ident)
 			argNames = append(argNames, identifier.Name)
 		case *ast.Ellipsis:
-			ellipsisPosition = i
+			argNames = append(argNames, "...")
 		}
 	}
 
@@ -209,7 +225,7 @@ func EvalCallEllipsisFunction(ev *Evaluator, node *ast.CallExpr, funcname string
 	// match positional arguments up to ellipsis
 	j := 0
 	for n, fieldname := range argNames {
-		if n == ellipsisPosition {
+		if fieldname == "..." {
 			break
 		}
 		if collectedArgs[n] == nil {
