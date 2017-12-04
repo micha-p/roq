@@ -24,10 +24,14 @@ func myerrorhandler(pos token.Position, msg string) {
 	println("SCANNER ERROR", pos.Filename, pos.Line, pos.Column, msg)
 }
 
-func mainScan(filePtr *string) {
+func mainScan(filePtr *string, srcString string, ECHO bool) {
 	fset := token.NewFileSet() // positions are relative to fset
-	src, _ := ioutil.ReadFile(*filePtr)
-
+	var src []byte
+	if srcString != "" {
+		src = []byte(srcString)
+	} else {
+		src, _ = ioutil.ReadFile(*filePtr)
+	}
 	var s scanner.Scanner
 	file := fset.AddFile(*filePtr, fset.Base(), len(src)) // register input "file"
 	s.Init(file, src, myerrorhandler, ECHO)
@@ -42,9 +46,9 @@ func mainScan(filePtr *string) {
 	}
 }
 
-func mainParse(filePtr *string, parserOpts parser.Mode) {
+func mainParse(filePtr *string, src interface{}, parserOpts parser.Mode) {
 	fset := token.NewFileSet() // positions are relative to fset
-	p, err := parser.ParseInit(fset, *filePtr, nil, parserOpts)
+	p, err := parser.ParseInit(fset, *filePtr, src, parserOpts)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -90,8 +94,17 @@ func main() {
 		}()
 	}
 
+	var src interface{}
+	if *exprPtr == "" {
+		src = nil
+	} else {
+		filename := "EXPRESSION"
+                filePtr = &filename
+                src = *exprPtr
+	}
+
 	if *scanPtr {
-		mainScan(filePtr)
+		mainScan(filePtr, *exprPtr, ECHO)
 	} else if *parsePtr {
 		var parserOpts parser.Mode
 		parserOpts = parser.AllErrors
@@ -106,7 +119,7 @@ func main() {
 
 			parserOpts = parserOpts | parser.Echo
 		}
-		mainParse(filePtr, parserOpts)
+		mainParse(filePtr, src, parserOpts)
 	} else {
 		var parserOpts parser.Mode
 		parserOpts = parser.AllErrors
@@ -124,10 +137,7 @@ func main() {
 		if ECHO {
 			parserOpts = parserOpts | parser.Echo
 		}
-		if *exprPtr == "" {
-			eval.EvalMain(filePtr, nil, parserOpts, TRACE, DEBUG)
-		} else {
-			eval.EvalMain(filePtr, *exprPtr, parserOpts, TRACE, DEBUG)
-		}
+
+		eval.EvalMain(filePtr, src, parserOpts, TRACE, DEBUG)
 	}
 }
