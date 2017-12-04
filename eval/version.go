@@ -7,7 +7,7 @@ func PrintVersion() {
 	print("os             "); println(runtime.GOOS)
 	print("status         "); println("proof of concept")
 	print("major          "); println("0")
-	print("minor          "); println("1.3")
+	print("minor          "); println("1.4")
 	print("language       "); println("R")
 }
 
