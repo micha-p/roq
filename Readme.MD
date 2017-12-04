@@ -14,8 +14,13 @@ cd go
 export GOPATH=$PWD
 cd src
 git clone https://github.com/micha-p/roq.git
-go test
+cd roq
+
+go run main.go -expr "1+2"
 go run main.go
+go test
+go build
+./roq -file all.r
 
 # Short summary
 

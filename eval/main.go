@@ -6,20 +6,20 @@ import (
 	"roq/lib/token"
 )
 
-func EvalStringForTest(src string){
+func EvalStringForTest(src interface{}){
         filename:=""
-	EvalMain(&filename, &src, parser.AllErrors, false, false)
+	EvalMain(&filename, src, parser.AllErrors, false, false)
 }
 
 
-func EvalMain(filePtr *string, src *string, parserOpts parser.Mode, TRACE bool, DEBUG bool) {
+func EvalMain(filePtr *string, src interface{}, parserOpts parser.Mode, TRACE bool, DEBUG bool) {
 	fset := token.NewFileSet() // positions are relative to fset
-	p, errp := parser.ParseInit(fset, *filePtr, *src, parserOpts)
+	p, errp := parser.ParseInit(fset, *filePtr, src, parserOpts)
 	if errp != nil {
 		fmt.Println(errp)
 		return
 	}
-	ev, erre := EvalInit(fset, *filePtr, *src, parser.AllErrors, TRACE, DEBUG)
+	ev, erre := EvalInit(fset, *filePtr, src, parser.AllErrors, TRACE, DEBUG)
 	if erre != nil {
 		fmt.Println(erre)
 		return

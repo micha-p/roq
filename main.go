@@ -124,6 +124,11 @@ func main() {
 		if ECHO {
 			parserOpts = parserOpts | parser.Echo
 		}
-		eval.EvalMain(filePtr, exprPtr, parserOpts, TRACE, DEBUG)
+		if *exprPtr==""{
+			eval.EvalMain(filePtr, nil, parserOpts, TRACE, DEBUG)
+		} else {
+filename:=""
+			eval.EvalMain(&filename, exprPtr, parserOpts, TRACE, DEBUG)
+		}
 	}
 }
