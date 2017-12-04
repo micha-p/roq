@@ -34,3 +34,16 @@ func ExamplePrecedenceOperators() {
 	// [1] 1
 	// [1] 1.5
 }
+
+func ExampleMissingValues() {
+	eval.EvalStringForTest(`r = 1  +2 %% 10 + .
+				r
+  				r = 1  +2 %% 10 + NaN
+				r
+  				r = 1  +2 %% 10 + NA
+				r`)
+	// Output:
+	// [1] NaN
+	// [1] NaN
+	// [1] NaN
+}
