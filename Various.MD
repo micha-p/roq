@@ -1,3 +1,5 @@
+# Some comparisons to other languages
+
 
 Go: during scanning, semicolons are inserted at linebreaks, if insertSemi=true
 

@@ -4,10 +4,34 @@ https://blog.gopheracademy.com/advent-2014/parsers-lexers/
 
 https://cran.r-project.org/doc/manuals/R-lang.html
 
+# EXTREMELY ALPHA
+
+# Short summary
+
+## Differences to R
+
+- No welcome message
+- No interactive mode, just file, expression or STDIN
+- A Dot means NA
+- NA, NaN, ... should be unified to NULL and NaN (less decicions)
+- false values are treated differently
+- limited access to workspace and environment
+- simplified output
 
 
+## Additional features (TODO)
 
-Internal representation
+- multiline strings
+- multiline arrays and matrices
+- concurrency on the interpreter-level of course
+
+## Dirty hacks (TO BE REMOVED)
+
+- exit as recovered panic
+
+# Notes on the planned implementation
+
+## Internal representation
 
 In R, the types for storing data objects are not orthogonal: There are two different types 
 for single strings (CHARSXP) and arrays of pointers to strings (STRSXP). In contrast, even atomic 
@@ -17,7 +41,7 @@ Tagged pairs (LISTSXP, LANGSXP), generic vectors and expressions (VECSXP, EXPRSX
 This implementation tries to use different domains with very restricted types (Values, Indices, Strings) and evaluates the usefulness 
 of a common interface to them.
 
-Value and index domain
+## Value and index domain
 
 Strictly, there should be only one type of numbers in each domain. float64 on toplevel and unsigned integers within brackets. 
 
@@ -25,6 +49,6 @@ To support wider compatibility, a more relaxed mode is neccesssary: Value domain
 This way, integer vecors might be coposed in toplevel. 
 Functions on numbers should not rely on the types.
 
-Output
+## Output
 
-For printing, length is shown instead of linecount, but this information might be dropped completely. 
+For printing, length is shown instead of linecount, but this information might be dropped completely (TO BE EVALUATED). 

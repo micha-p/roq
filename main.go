@@ -37,7 +37,7 @@ func main() {
 	debugFlagPtr := flag.Bool("D", false, "debug")
 	echoLongPtr := flag.Bool("echo", false, "echo")
 	echoFlagPtr := flag.Bool("E", false, "echo")
-	filePtr := flag.String("file", "example.src", "filename to process")
+	filePtr := flag.String("file", "example.r", "filename to process")
 	flag.Parse()
 
 	TRACE = *traceFlagPtr || *traceLongPtr

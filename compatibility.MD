@@ -2,7 +2,7 @@
 strict mode enforcing more compatibility
 
 Differences:
-- only standard  attributes
+- only standard attributes
 - probably evaluating zero to TRUE (in progress)
 - isTRUE will drop a warning, as it is misleading
 - break/next in wrong context will stop, as running code is expected
