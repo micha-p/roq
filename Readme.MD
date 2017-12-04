@@ -8,11 +8,12 @@ https://cran.r-project.org/doc/manuals/R-lang.html
 
 # Short summary
 
-## Differences to R
+## Preliminary differences to R
 
 - No welcome message
-- No interactive mode, just file, expression or STDIN
-- A Dot means NA
+- No interactive mode, just file or expression
+- numeric values are float, integers restricted to index oprations
+- single dot means NA
 - NA, NaN, ... should be unified to NULL and NaN (less decicions)
 - false values are treated differently
 - limited access to workspace and environment
