@@ -23,7 +23,7 @@ go test
 go build
 
 # run a collection of statements
-./roq -file demo.r
+./roq -E -file demo.r
 ```
 
 # Short summary
