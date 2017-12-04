@@ -3,8 +3,8 @@ package eval
 import (
 	"math"
 	"fmt"
-	"lib/ast"
-	"lib/token"
+	"roq/lib/ast"
+	"roq/lib/token"
 )
 
 // length is used instead of linecount

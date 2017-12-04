@@ -6,8 +6,8 @@ package scanner_test
 
 import (
 	"fmt"
-	"lib/scanner"
-	"lib/token"
+	"roq/lib/scanner"
+	"roq/lib/token"
 )
 
 func ExampleScanner_Scan() {

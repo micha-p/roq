@@ -1,7 +1,7 @@
 package eval
 
 import (
-	"lib/ast"
+	"roq/lib/ast"
 )
 
 func EvalLoop(ev *Evaluator, e *ast.BlockStmt, cond ast.Expr) SEXPItf {

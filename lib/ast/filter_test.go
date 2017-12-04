@@ -8,10 +8,10 @@ package ast_test
 
 import (
 	"bytes"
-	"lib/ast"
-	"lib/format"
-	"lib/parser"
-	"lib/token"
+	"roq/lib/ast"
+	"roq/lib/format"
+	"roq/lib/parser"
+	"roq/lib/token"
 	"testing"
 )
 

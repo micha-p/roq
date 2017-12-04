@@ -7,10 +7,10 @@ package ast_test
 import (
 	"bytes"
 	"fmt"
-	"lib/ast"
-	"lib/format"
-	"lib/parser"
-	"lib/token"
+	"roq/lib/ast"
+	"roq/lib/format"
+	"roq/lib/parser"
+	"roq/lib/token"
 )
 
 // This example demonstrates how to inspect the AST of a Go program.

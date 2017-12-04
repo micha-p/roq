@@ -6,7 +6,7 @@ package scanner
 
 import (
 	"io/ioutil"
-	"lib/token"
+	"roq/lib/token"
 	"os"
 	"path/filepath"
 	"runtime"

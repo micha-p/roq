@@ -6,7 +6,7 @@ package parser
 
 import (
 	"io/ioutil"
-	"lib/token"
+	"roq/lib/token"
 	"testing"
 )
 

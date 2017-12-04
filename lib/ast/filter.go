@@ -5,7 +5,7 @@
 package ast
 
 import (
-	"lib/token"
+	"roq/lib/token"
 	"sort"
 )
 

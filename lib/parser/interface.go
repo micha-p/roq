@@ -11,8 +11,8 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
-	"lib/ast"
-	"lib/token"
+	"roq/lib/ast"
+	"roq/lib/token"
 )
 
 // If src != nil, readSource converts src to a []byte if possible;

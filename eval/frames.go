@@ -1,7 +1,7 @@
 package eval
 
 import (
-	"lib/ast"
+	"roq/lib/ast"
 )
 
 // Frames are derived from ast.Scopes:

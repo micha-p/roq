@@ -8,8 +8,8 @@ package ast
 
 import (
 	"fmt"
-	"lib/scanner"
-	"lib/token"
+	"roq/lib/scanner"
+	"roq/lib/token"
 	"strconv"
 )
 

@@ -10,7 +10,7 @@ package scanner
 
 import (
 	"fmt"
-	"lib/token"
+	"roq/lib/token"
 	"path/filepath"
 	"unicode"
 	"unicode/utf8"

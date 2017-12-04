@@ -7,7 +7,7 @@ package scanner
 import (
 	"fmt"
 	"io"
-	"lib/token"
+	"roq/lib/token"
 	"sort"
 )
 

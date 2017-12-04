@@ -6,8 +6,8 @@
 package eval
 
 import (
-	"lib/ast"
-	"lib/token"
+	"roq/lib/ast"
+	"roq/lib/token"
 	"strconv"
 	"strings"
 )

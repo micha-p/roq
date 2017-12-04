@@ -9,7 +9,7 @@ package ast
 import (
 	"bytes"
 	"fmt"
-	"lib/token"
+	"roq/lib/token"
 )
 
 // A Scope maintains the set of named language entities declared

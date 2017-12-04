@@ -6,8 +6,8 @@ package parser_test
 
 import (
 	"fmt"
-	"lib/parser"
-	"lib/token"
+	"roq/lib/parser"
+	"roq/lib/token"
 )
 
 func ExampleParseFile() {
@@ -29,6 +29,6 @@ func ExampleParseFile() {
 	// output:
 	//
 	// "fmt"
-	// "lib/parser"
-	// "lib/token"
+	// "roq/lib/parser"
+	// "roq/lib/token"
 }

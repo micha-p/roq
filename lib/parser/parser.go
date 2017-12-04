@@ -18,9 +18,9 @@ package parser
 
 import (
 	"fmt"
-	"lib/ast"
-	"lib/scanner"
-	"lib/token"
+	"roq/lib/ast"
+	"roq/lib/scanner"
+	"roq/lib/token"
 	"strconv"
 )
 
@@ -285,7 +285,7 @@ func (p *parser) atComma(context string, follow token.Token) bool {
 
 func assert(cond bool, msg string) {
 	if !cond {
-		panic("lib/parser internal error: " + msg)
+		panic("roq/lib/parser internal error: " + msg)
 	}
 }
 

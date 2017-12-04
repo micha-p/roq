@@ -9,11 +9,11 @@ import (
 	//	"log"
 	//	"strings"
 	//	"os"
-	"eval"
-	"lib/ast"
-	"lib/parser"
-	"lib/scanner"
-	"lib/token"
+	"roq/eval"
+	"roq/lib/ast"
+	"roq/lib/parser"
+	"roq/lib/scanner"
+	"roq/lib/token"
 )
 
 var TRACE bool

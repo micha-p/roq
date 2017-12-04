@@ -8,7 +8,7 @@
 package ast
 
 import (
-	"lib/token"
+	"roq/lib/token"
 	"unicode"
 	"unicode/utf8"
 )
