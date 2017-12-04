@@ -1,14 +1,10 @@
 package main_test 
 
 import (
-	"fmt"
+	"roq/eval"
 	"testing"
 )
 
-func TestFail(t *testing.T) {
-	x := 1
-	t.Error("Fail ", x)
-}
 
 func TestOK(t *testing.T) {
 	x := 1
@@ -17,14 +13,8 @@ func TestOK(t *testing.T) {
 	}
 }
 
-func ExampleOK() {
-        fmt.Println("Hello")
+func ExampleAdd() {
+        eval.EvalTest("1+2")
         // Output:
-        // Hello
-}
-
-func ExampleFail() {
-        fmt.Println("Bye")
-        // Output:
-        // Hello
+        // [1] 3
 }

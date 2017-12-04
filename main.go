@@ -24,10 +24,47 @@ func myerrorhandler(pos token.Position, msg string) {
 	println("SCANNER ERROR", pos.Filename, pos.Line, pos.Column, msg)
 }
 
-func main() {
-
-
+func mainScan(filePtr *string) {
 	fset := token.NewFileSet() // positions are relative to fset
+	src, _ := ioutil.ReadFile(*filePtr)
+
+	var s scanner.Scanner
+	file := fset.AddFile(*filePtr, fset.Base(), len(src)) // register input "file"
+	s.Init(file, src, myerrorhandler, ECHO)
+
+	// Repeated calls to Scan yield the token sequence found in the input
+	for {
+		pos, tok, lit := s.Scan()
+		if tok == token.EOF {
+			break
+		}
+		fmt.Printf("%s\t%s\t%q\n", fset.Position(pos), tok, lit)
+	}
+}
+
+func mainParse(filePtr *string, parserOpts parser.Mode) {
+	fset := token.NewFileSet() // positions are relative to fset
+	p, err := parser.ParseInit(fset, *filePtr, nil, parserOpts)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	for true {
+		stmt, tok := parser.ParseIter(p) // main iterator calls parse.stmt
+		switch stmt.(type) {
+		case *ast.EmptyStmt:
+		default:
+			ast.Print(fset, stmt)
+			parser.StartLine(p)
+		}
+		if tok == token.EOF {
+			return
+		}
+	}
+}
+
+func main() {
 
 	scanPtr := flag.Bool("scan", false, "scan")
 	parsePtr := flag.Bool("parse", false, "parse")
@@ -38,41 +75,27 @@ func main() {
 	echoLongPtr := flag.Bool("echo", false, "echo")
 	echoFlagPtr := flag.Bool("E", false, "echo")
 	filePtr := flag.String("file", "example.r", "filename to process")
+	exprPtr := flag.String("expr", "", "expression to process")
 	flag.Parse()
 
 	TRACE = *traceFlagPtr || *traceLongPtr
 	DEBUG = *debugFlagPtr || *debugLongPtr
-	ECHO  = *echoFlagPtr || *echoLongPtr
+	ECHO = *echoFlagPtr || *echoLongPtr
 
-	if DEBUG==false {
+	if DEBUG == false {
 		defer func() {
-			if x := recover(); x !=nil && x != "quit" {
+			if x := recover(); x != nil && x != "quit" {
 				fmt.Printf("run time panic: %v", x)
 			}
 		}()
 	}
 
-
 	if *scanPtr {
-		src, _ := ioutil.ReadFile(*filePtr)
-
-		var s scanner.Scanner
-		file := fset.AddFile(*filePtr, fset.Base(), len(src)) // register input "file"
-		s.Init(file, src, myerrorhandler, ECHO)
-
-		// Repeated calls to Scan yield the token sequence found in the input
-		for {
-			pos, tok, lit := s.Scan()
-			if tok == token.EOF {
-				break
-			}
-			fmt.Printf("%s\t%s\t%q\n", fset.Position(pos), tok, lit)
-		}
+		mainScan(filePtr)
 	} else if *parsePtr {
-
 		var parserOpts parser.Mode
 		parserOpts = parser.AllErrors
-		
+
 		if TRACE {
 			parserOpts = parserOpts | parser.Trace
 		}
@@ -80,64 +103,27 @@ func main() {
 			parserOpts = parserOpts | parser.Debug
 		}
 		if ECHO {
+
 			parserOpts = parserOpts | parser.Echo
 		}
-
-		p, err := parser.ParseInit(fset, *filePtr, nil, parserOpts)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
-		for true {
-			stmt, tok := parser.ParseIter(p) // main iterator calls parse.stmt
-			switch stmt.(type) {
-			case *ast.EmptyStmt:
-			default:
-				ast.Print(fset, stmt)
-				parser.StartLine(p)
-			}
-			if tok == token.EOF {
-				return
-			}
-		}
-	} else { // eval
+		mainParse(filePtr, parserOpts)
+	} else {
 		var parserOpts parser.Mode
 		parserOpts = parser.AllErrors
-		
+
 		if TRACE {
 			parserOpts = parserOpts | parser.Trace
 		}
-		
-/*		// debugging eval should not trigger debugging in parser
+
+		/*
 		if DEBUG {
 			parserOpts = parserOpts | parser.Debug
 		}
-*/		if ECHO {
+		*/
+
+		if ECHO {
 			parserOpts = parserOpts | parser.Echo
 		}
-
-		p, errp := parser.ParseInit(fset, *filePtr, nil, parserOpts)
-		if errp != nil {
-			fmt.Println(errp)
-			return
-		}
-		ev, erre := eval.EvalInit(fset, *filePtr, nil, parser.AllErrors, TRACE, DEBUG)
-		if erre != nil {
-			fmt.Println(erre)
-			return
-		}
-
-		for true {
-			stmt, tok := parser.ParseIter(p) // main iterator calls parse.stmt
-			sexp := eval.EvalStmt(ev, stmt)
-			if ! (sexp==nil) {
-				eval.PrintResult(ev, sexp)
-			}
-			parser.StartLine(p)
-			if tok == token.EOF {
-				return
-			}
-		}
+		eval.EvalMain(filePtr, exprPtr, parserOpts, TRACE, DEBUG)
 	}
 }
