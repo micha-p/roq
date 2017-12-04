@@ -100,7 +100,9 @@ func PrintResultE(ev *Evaluator, r *ESEXP) {
 func PrintResultV(ev *Evaluator, r *VSEXP) {
 
 	DEBUG := ev.Debug
-	if r.Body != nil {
+	if r== nil {
+		println("nil")
+	} else if r.Body != nil {
 		if DEBUG {
 			print("function(")
 			for n, field := range r.Fieldlist {

@@ -28,7 +28,7 @@ func EvalMain(filePtr *string, src interface{}, parserOpts parser.Mode, TRACE bo
 	for true {
 		stmt, tok := parser.ParseIter(p) // main iterator calls parse.stmt
 		sexp := EvalStmt(ev, stmt)
-		if !(sexp == nil) {
+		if sexp != nil {
 			PrintResult(ev, sexp)
 		}
 		parser.StartLine(p)

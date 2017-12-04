@@ -21,7 +21,7 @@ go run main.go -expr "1+2"
 go run main.go
 go test
 go build
-./roq -file all.r
+./roq -file demo.r
 ```
 
 # Short summary

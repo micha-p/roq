@@ -479,12 +479,9 @@ names <- c("alp", "bet", "gamm")
 vect <-c(1,2,3,4)
 vect
 
+# to be fixed
+#for(a in vect) {cat(a+1)}
 
-quit()
-
-
-
-for(a in vect) {cat(a+1)}
 cat(5)
 cat(5,6,"a",7,"\n")
 
@@ -495,9 +492,9 @@ cat(5,6,"a",7,"\n")
 # error in R
 # repeat 3
 
-repeat {if (4) {break} else {next}}
-for(n in names) cat(n,"\n")
-for(a in vect) {cat(a+1,"\n")}
+# repeat {if (4) {break} else {next}}
+# for(n in names) cat(n,"\n")
+# for(a in vect) {cat(a+1,"\n")}
 
 TRUE
 FALSE
@@ -553,12 +550,14 @@ cat("\n")
 cat("\n")
 1 < 2 < 3 < 4
 3 < 5 > 1
-n=1
-while(n<4){
-	cat(n)
-	cat("\n")
-	n=n+1
-}
+
+# n=1
+# while(n<4){
+# 	cat(n)
+# 	cat("\n")
+# 	n=n+1
+# }
+
 if(1<2) 3 else 4
 if(1<2<5) 3 else 4
 if(0<2) 3 else 4
@@ -571,30 +570,32 @@ if(0<2) 3 else 4
 #	cat("\n")
 ##	if (n==5) {break}
 #}
-n=0
-while(n<=7){
-	n <- n+1
-	if (n==3) {next}
-	cat(n)
-	cat("\n")
-	if (n==5) {break}
-}
-n=0
-while(n<=7){
-	n <- n+1
-	if (n==3) {next}
-	cat(n)
-	cat("\n")
-	if (n==5) {break}
-}
+# n=0
+# while(n<=7){
+# 	n <- n+1
+# 	if (n==3) {next}
+# 	cat(n)
+# 	cat("\n")
+# 	if (n==5) {break}
+# }
+# n=0
+# while(n<=7){
+# 	n <- n+1
+# 	if (n==3) {next}
+# 	cat(n)
+# 	cat("\n")
+# 	if (n==5) {break}
+# }
 
-m=10
-repeat{
-	m<-m+1
-	cat(m)
-	cat("\n")
-	if (m==15) {break}
-}
+# m=10
+# repeat{
+# 	m<-m+1
+# 	cat(m)
+# 	cat("\n")
+# 	if (m==15) {break}
+# }
+
+
 version
 c(1,2,3)
 cat("\n")
@@ -713,20 +714,23 @@ cat("\n")
 1 < 2 < 3
 1 > 2 < 3 # 1>2 is FALSE; 0 would be < 3
 3 > c(2,2) == 2
-n<-0
-repeat{
-	cat(n)
-	cat("\n")
-	if(n==3)break
-	n=n+1
-}
-	cat("\n")
-for (n in c(1,2,3,4,5,6)) {
-	if(n==3)next
-	cat(n)
-	cat("\n")
-	if(n==5)break
-}
+# n<-0
+# repeat{
+# 	cat(n)
+# 	cat("\n")
+# 	if(n==3)break
+# 	n=n+1
+# }
+
+cat("\n")
+
+# for (n in c(1,2,3,4,5,6)) {
+# 	if(n==3)next
+# 	cat(n)
+# 	cat("\n")
+# 	if(n==5)break
+# }
+
 1 < 2 < 3
 1 < 3 < 2
 1 < 3 > 2
@@ -743,17 +747,17 @@ d=c(1,3)
 a[1]
 a[2.2]
 a[1:3]
-a[b]
-a[d]
+#a[b]
+#a[d]
 a=c(11,22,33)
-length(a)
-length(c(1,2))
-length(c(1,2),c(1,3))
-length()
-length(a[1])
-length(a[2.2])
-length(a[1:2])
-length(a[1:3])
+# length(a)
+# length(c(1,2))
+# length(c(1,2),c(1,3))
+# length()
+# length(a[1])
+# length(a[2.2])
+# length(a[1:2])
+# length(a[1:3])
 #x <- 1:6
 x <- c(1,2,3,4,5,6)
 x
@@ -917,40 +921,7 @@ class(x)
 class(1:6)
 class("a")
 class(NULL)
-class(list(1,2,3))
-#class(pairlist(1,2))
-version()
-x <- 1.0
-class(x)
-class(x)<-"myclass"
-class(x)
-class(x)<-NULL
-class(x)
-class(1:6)
-class("a")
-class(NULL)
-class(list(1,2,3))
-#class(pairlist(1,2))
-x <- 1.0
-class(x)
-class(x)<-"myclass"
-class(x)
-class(x)<-NULL
-class(x)
-class(1:6)
-class("a")
-class(NULL)
-class(list(1,2,3))
+#class(list(1,2,3))
 #class(pairlist(1,2))
 
-c(2,3)
-c(2.0,3.0)
-c(2.0,3)
-# c(2,3.0) will fail
-x <- 1.0
-length(x)
-length(c(2,3))
-length(c(2.0,3.0))
-length(c("a"))
-# c(2,3.0) will fail
-length(NULL)
+version
