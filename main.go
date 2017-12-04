@@ -116,19 +116,18 @@ func main() {
 		}
 
 		/*
-		if DEBUG {
-			parserOpts = parserOpts | parser.Debug
-		}
+			if DEBUG {
+				parserOpts = parserOpts | parser.Debug
+			}
 		*/
 
 		if ECHO {
 			parserOpts = parserOpts | parser.Echo
 		}
-		if *exprPtr==""{
+		if *exprPtr == "" {
 			eval.EvalMain(filePtr, nil, parserOpts, TRACE, DEBUG)
 		} else {
-filename:=""
-			eval.EvalMain(&filename, exprPtr, parserOpts, TRACE, DEBUG)
+			eval.EvalMain(filePtr, *exprPtr, parserOpts, TRACE, DEBUG)
 		}
 	}
 }
