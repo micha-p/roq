@@ -4,7 +4,18 @@ https://blog.gopheracademy.com/advent-2014/parsers-lexers/
 
 https://cran.r-project.org/doc/manuals/R-lang.html
 
-# EXTREMELY ALPHA
+*EXTREMELY ALPHA*
+
+# Usage
+
+cd $HOME
+mkdir -p go/src
+cd go
+export GOPATH=$PWD
+cd src
+git clone https://github.com/micha-p/roq.git
+go test
+go run main.go
 
 # Short summary
 
