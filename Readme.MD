@@ -8,6 +8,7 @@ https://cran.r-project.org/doc/manuals/R-lang.html
 
 # Usage
 
+```
 cd $HOME
 mkdir -p go/src
 cd go
@@ -21,6 +22,7 @@ go run main.go
 go test
 go build
 ./roq -file all.r
+```
 
 # Short summary
 
