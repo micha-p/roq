@@ -20,4 +20,7 @@ RSEXP	cons		pointer
 
 NSEXP	false		bool
 
+# Input
 
+Parser and scanner of golang use unbuffered input until end of file. Interactive mode would therefore require a completely different scanner structure.
+Therefore input is restricted to files, unbuffered stdin and single expressions, which might be lists of statements. 
