@@ -1,4 +1,4 @@
-package main_test
+package main
 
 import (
 	"roq/eval"
@@ -25,7 +25,7 @@ func ExampleArithmeticOperators() {
 
 func ExamplePrecedenceOperators() {
 	eval.EvalStringForTest(`1+2*3
-                                (1+2)*3
+				(1+2)*3
 				10-3^2
 				2*3/4`)
 	// Output:
@@ -38,12 +38,26 @@ func ExamplePrecedenceOperators() {
 func ExampleMissingValues() {
 	eval.EvalStringForTest(`r = 1  +2 %% 10 + .
 				r
-  				r = 1  +2 %% 10 + NaN
+				r = 1  +2 %% 10 + NaN
 				r
-  				r = 1  +2 %% 10 + NA
+				r = 1  +2 %% 10 + NA
 				r`)
 	// Output:
 	// [1] NaN
 	// [1] NaN
 	// [1] NaN
+}
+
+
+func ExampleAssignment() {
+	eval.EvalStringForTest(`a <- 3
+				4 -> d
+				b = 2 +a 
+				a
+				d
+				b`)
+	// Output:
+	// [1] 3
+	// [1] 4
+	// [1] 5
 }
