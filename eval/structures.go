@@ -1,9 +1,9 @@
 package eval
 
 import (
+	"math"
 	"roq/lib/ast"
 	"roq/lib/token"
-	"math"
 )
 
 type SEXPTYPE int
@@ -74,25 +74,25 @@ type SEXPItf interface {
 	Length() int
 }
 
-// promoted fields can't be used in Promoted fields act like ordinary fields of a struct except that they
-// cannot be used as field names in composite literals of the struct.
+// Promoted fields act like ordinary fields of a struct except that they
+// cannot be used as field names in composite literals of the struct
+// => ValuesPos has to stay in the derived types
 type SEXP struct {
 	names    []string
 	dim      []int
 	dimnames *RSEXP
 	class    *string
-	Test int
+	Test     int
 }
 
 // value domain
 type VSEXP struct {
-	ValuePos  token.Pos
+	ValuePos token.Pos
 	SEXP
 	Fieldlist []*ast.Field   // only if function
-	ellipsis  bool 				 // only if function
+	ellipsis  bool           // only if function
 	Body      *ast.BlockStmt // only if function: BlockStmt or single Stmt
 	Immediate float64        // single value FLOAT
-	Integer   int            // single value INT
 	Slice     []float64      // "A slice is a reference to an array"
 }
 
@@ -100,9 +100,9 @@ type VSEXP struct {
 type ISEXP struct {
 	ValuePos token.Pos
 	SEXP
-	Immediate float64        // single value FLOAT
-	Integer int              // single value INT
-	Slice   []int            // "A slice is a reference to an array"
+	Immediate float64 // single value FLOAT
+	Integer   int     // single value INT
+	Slice     []int   // "A slice is a reference to an array"
 }
 
 // Recursive domain
@@ -117,26 +117,25 @@ type RSEXP struct {
 
 // NULL, FALSE
 type NSEXP struct {
-	SEXP
 	ValuePos token.Pos
+	SEXP
 }
-
 
 // Text domain: pointer to cached strings, factors, symbols
 type TSEXP struct {
-	SEXP
 	ValuePos token.Pos
+	SEXP
 	String string
 	Slice  []string // "A slice is a reference to an array"
 }
 
 // Errors and exceptions
 type ESEXP struct {
+	ValuePos token.Pos
 	SEXP
 	// error
-	Kind     token.Token
-	ValuePos token.Pos
-	Message  string
+	Kind    token.Token
+	Message string
 }
 
 func (x *SEXP) Dim() []int {
@@ -169,8 +168,6 @@ func (x *SEXP) FloatGet() float64 {
 	return 0
 }
 
-
-
 func (x *VSEXP) Pos() token.Pos {
 	return x.ValuePos
 }
@@ -178,7 +175,11 @@ func (x *VSEXP) Atom() interface{} {
 	return x.Immediate
 }
 func (x *VSEXP) Length() int {
-	if x.Slice == nil {return 1} else {return len(x.Slice)}
+	if x.Slice == nil {
+		return 1
+	} else {
+		return len(x.Slice)
+	}
 }
 func (x *VSEXP) IntegerGet() int {
 	// TODO check conversion to integer
@@ -188,12 +189,15 @@ func (x *VSEXP) FloatGet() float64 {
 	return x.Immediate
 }
 
-
 func (x *ISEXP) Pos() token.Pos {
 	return x.ValuePos
 }
 func (x *ISEXP) Length() int {
-	if x.Slice == nil {return 1} else {return len(x.Slice)}
+	if x.Slice == nil {
+		return 1
+	} else {
+		return len(x.Slice)
+	}
 }
 func (x *ISEXP) IntegerGet() int {
 	return x.Integer
@@ -202,34 +206,32 @@ func (x *ISEXP) FloatGet() float64 {
 	return x.Immediate
 }
 
-
-
 func (x *RSEXP) Pos() token.Pos {
 	return x.ValuePos
 }
 func (x *RSEXP) Length() int {
 	if x.Slice == nil {
-		return 2  // cons cell
+		return 2 // cons cell
 	} else {
 		return len(x.Slice)
 	}
 }
 
-
 func (x *TSEXP) Pos() token.Pos {
 	return x.ValuePos
 }
 func (x *TSEXP) Length() int {
-	if x.Slice == nil {return 1} else {return len(x.Slice)}
+	if x.Slice == nil {
+		return 1
+	} else {
+		return len(x.Slice)
+	}
 }
-
 
 func (x *NSEXP) Pos() token.Pos {
 	return x.ValuePos
 }
 
-
 func (x *ESEXP) Pos() token.Pos {
 	return x.ValuePos
 }
-
