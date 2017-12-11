@@ -19,6 +19,7 @@ cd roq
 
 go run main.go -expr "1+2"
 go run main.go -file example.r
+go run main.go -E -file demo.r
 go test
 go build
 
