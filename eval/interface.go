@@ -8,18 +8,18 @@ import (
 
 func EvalStringForTest(src interface{}){
         filename:=""
-	EvalMain(&filename, src, parser.AllErrors, false, false)
+	EvalMain(&filename, src, parser.AllErrors, false, false,"0","0.0")
 }
 
 
-func EvalMain(filePtr *string, src interface{}, parserOpts parser.Mode, TRACE bool, DEBUG bool) {
+func EvalMain(filePtr *string, src interface{}, parserOpts parser.Mode, TRACE bool, DEBUG bool, MAJOR string, MINOR string) {
 	fset := token.NewFileSet() // positions are relative to fset
 	p, errp := parser.ParseInit(fset, *filePtr, src, parserOpts)
 	if errp != nil {
 		fmt.Println(errp)
 		return
 	}
-	ev, erre := EvalInit(fset, *filePtr, src, parser.AllErrors, TRACE, DEBUG)
+	ev, erre := EvalInit(fset, *filePtr, src, parser.AllErrors, TRACE, DEBUG, MAJOR, MINOR)
 	if erre != nil {
 		fmt.Println(erre)
 		return

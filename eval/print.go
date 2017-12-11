@@ -1,6 +1,7 @@
 package eval
 
 import (
+	"roq/version"
 	"math"
 	"fmt"
 	"roq/lib/ast"
@@ -84,16 +85,15 @@ func PrintResultI(ev *Evaluator, r *ISEXP) {
 }
 
 func PrintResultE(ev *Evaluator, r *ESEXP) {
+	DEBUG := ev.Debug
 	switch r.Kind {
 	case token.ILLEGAL:
-		DEBUG := ev.Debug
 		if DEBUG {
 			println("ILLEGAL RESULT")
 		}
 	case token.VERSION:
-		PrintVersion()
+		version.PrintVersion(ev.Major,ev.Minor)
 	case token.EOF:
-		DEBUG := ev.Debug
 		if DEBUG {
 			println("EOF")
 		}

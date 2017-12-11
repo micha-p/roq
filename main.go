@@ -10,6 +10,7 @@ import (
 	//	"strings"
 	//	"os"
 	"roq/eval"
+	"roq/version"
 	"roq/lib/ast"
 	"roq/lib/parser"
 	"roq/lib/scanner"
@@ -19,6 +20,8 @@ import (
 var TRACE bool
 var DEBUG bool
 var ECHO bool
+var MAJOR string
+var MINOR string
 
 func myerrorhandler(pos token.Position, msg string) {
 	println("SCANNER ERROR", pos.Filename, pos.Line, pos.Column, msg)
@@ -70,8 +73,12 @@ func mainParse(filePtr *string, src interface{}, parserOpts parser.Mode) {
 
 func main() {
 
+	MAJOR := "0"
+	MINOR := "1.4"
+
 	scanPtr := flag.Bool("scan", false, "scan")
 	parsePtr := flag.Bool("parse", false, "parse")
+	versionPtr := flag.Bool("version", false, "version")
 	traceLongPtr := flag.Bool("trace", false, "trace")
 	traceFlagPtr := flag.Bool("T", false, "trace")
 	debugLongPtr := flag.Bool("debug", false, "debug")
@@ -103,7 +110,9 @@ func main() {
 		src = *exprPtr
 	}
 
-	if *scanPtr {
+	if *versionPtr {
+		version.PrintVersion(MAJOR, MINOR)
+	} else if *scanPtr {
 		mainScan(filePtr, *exprPtr, ECHO)
 	} else if *parsePtr {
 		var parserOpts parser.Mode
@@ -138,6 +147,7 @@ func main() {
 			parserOpts = parserOpts | parser.Echo
 		}
 
-		eval.EvalMain(filePtr, src, parserOpts, TRACE, DEBUG)
+		eval.EvalMain(filePtr, src, parserOpts, TRACE, DEBUG, MAJOR, MINOR)
 	}
 }
+

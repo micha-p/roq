@@ -6,32 +6,15 @@
 a <- 3
 3 -> d
 
+r = 1  +2 %% 10 + . ;
+a.a=23. + .1 * a_2 + ..b * ._c / a...b
+C= 1 +2 * 3 ^ 2 / 1 * .
+
 
 af <- function(a,b,c) {
-	#s = 's#c'
-	#r = 1  +2 %% 10 + .
 	a+1
 }
-
-
-zero <- function() {
-	return(0)
-}
-
-#r = 1  +2 %% 10 + . ;
-
-#a.a=23. + .1 * a_2 + ..b * ._c / a...b
-
-#C= 1 +2 * 3 ^ 2 / 1 * .
-
-#a <- 3
-#3 -> d
-
-af <- function(a,b,c) {
-	#s = 's#c'
-	#r = 1  +2 %% 10 + .
-	a+1
-}
+af(1,0,0)
 
 void <- function(a) {
 	return()
@@ -41,41 +24,7 @@ zero <- function() {
 	return(0)
 }
 
-#r = 1  +2 %% 10 + . ;
 
-#a.a=23. + .1 * a_2 + ..b * ._c / a...b
-
-#C= 1 +2 * 3 ^ 2 / 1 * .
-
-#a <- 3
-#3 -> d
-
-if (TRUE) {1} else {2}
-
-if (TRUE) 3 else {4};
-if (TRUE) 3 else {4}
-
-if (1>0) {3} else 4;
-if (1>0) {3} else 4
-
-#r = 1  +2 %% 10 + . ;
-
-#a.a=23. + .1 * a_2 + ..b * ._c / a...b
-
-#C= 1 +2 * 3 ^ 2 / 1 * .
-
-#a <- 3
-#3 -> d
-
-if (TRUE) {1} else {2}
-if (TRUE) {7}
-
-if (TRUE) 3 else {4};
-if (TRUE) 3 else {4}
-if (TRUE) 6
-
-if (1>0) {3} else 4;
-if (1>0) {3} else 4
 
 
 5.5
@@ -366,32 +315,16 @@ if(1)1 else 33
 if(0){1}else{33}
 if(0)1 else 33
 
-#f<-function(a,b)a+b
-#f(1,2)
-##[1] 3
+if (TRUE) {1} else {2}
+if (TRUE) {7}
 
-#f<-function(a,b) a+b
-#f(1,2)
-##[1] 3
+if (TRUE) 3 else {4};
+if (TRUE) 3 else {4}
+if (TRUE) 6
 
-#f<-function(a,b) a+b; 10+11
-##[1] 21
+if (1>0) {3} else 4;
+if (1>0) {3} else 4
 
-#f(1,2)
-##[1] 3
-
-#a<-1
-#f<-function(a,b) a<-2
-#f(1,2)
-#a
-##[1] 1
-
-
-##f<-function(a,b) if(a)a else 33
-##f(1,2)
-###[1] 1
-##f(0,2)
-###[1] 33
 
 f<-function(a,b)a+b
 f(1,2)
@@ -595,8 +528,6 @@ if(0<2) 3 else 4
 # 	if (m==15) {break}
 # }
 
-
-version
 c(1,2,3)
 cat("\n")
 

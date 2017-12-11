@@ -34,6 +34,8 @@ type Evaluator struct {
 	// Tracing/debugging
 	Trace  bool
 	Debug  bool
+	Major  string
+	Minor  string
 	indent int // indentation
 
 	Invisible bool
@@ -81,13 +83,13 @@ func un(e *Evaluator) {
 	}
 }
 
-func EvalInit(fset *token.FileSet, filename string, src interface{}, mode parser.Mode, traceflag bool, debugflag bool) (r *Evaluator, err error) {
+func EvalInit(fset *token.FileSet, filename string, src interface{}, mode parser.Mode, traceflag bool, debugflag bool, MAJOR string, MINOR string) (r *Evaluator, err error) {
 
 	if fset == nil {
 		panic("roq/eval.evalInit: no token.FileSet provided (fset == nil)")
 	}
 
-	e := Evaluator{Trace: traceflag, Debug: debugflag, indent: 0, topFrame: nil}
+	e := Evaluator{Trace: traceflag, Debug: debugflag, indent: 0, topFrame: nil, Major: MAJOR, Minor: MINOR}
 	e.topFrame = NewFrame(e.topFrame)
 	return &e, err
 }
