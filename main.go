@@ -74,7 +74,7 @@ func mainParse(filePtr *string, src interface{}, parserOpts parser.Mode) {
 func main() {
 
 	MAJOR := "0"
-	MINOR := "1.4"
+	MINOR := "1.5"
 
 	scanPtr := flag.Bool("scan", false, "scan")
 	parsePtr := flag.Bool("parse", false, "parse")
