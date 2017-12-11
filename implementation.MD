@@ -19,6 +19,7 @@ RSEXP	cons		pointer
 ## Other objects
 
 NSEXP	false		bool
+ESEXP	token		token (various errors and break conditions)
 
 # Input
 

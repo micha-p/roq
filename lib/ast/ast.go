@@ -391,6 +391,10 @@ type (
 		From, To token.Pos // position range of bad statement
 	}
 
+	EOFStmt struct {
+		EOF token.Pos     // position of EOF
+	}
+
 	// An EmptyStmt node represents an empty statement.
 	// The "position" of the empty statement is the position
 	// of the immediately following (explicit or implicit) semicolon.
@@ -469,6 +473,7 @@ type (
 // Pos and End implementations for statement nodes.
 
 func (s *BadStmt) Pos() token.Pos     { return s.From }
+func (s *EOFStmt) Pos() token.Pos     { return s.EOF }
 func (s *EmptyStmt) Pos() token.Pos   { return s.Semicolon }
 func (s *ExprStmt) Pos() token.Pos    { return s.X.Pos() }
 func (s *AssignStmt) Pos() token.Pos  { return s.Lhs.Pos() }
@@ -484,6 +489,7 @@ func (s *ForStmt) Pos() token.Pos     { return s.Keyword }
 func (s *VersionStmt) Pos() token.Pos { return s.Keyword }
 
 func (s *BadStmt) End() token.Pos { return s.To }
+func (s *EOFStmt) End() token.Pos { return s.EOF }
 func (s *EmptyStmt) End() token.Pos {
 	if s.Implicit {
 		return s.Semicolon
@@ -518,6 +524,7 @@ func (s *ForStmt) End() token.Pos     { return s.Body.End() }
 // assigned to a Stmt.
 //
 func (*BadStmt) stmtNode()     {}
+func (*EOFStmt) stmtNode()     {}
 func (*EmptyStmt) stmtNode()   {}
 func (*ExprStmt) stmtNode()    {}
 func (*AssignStmt) stmtNode()  {}

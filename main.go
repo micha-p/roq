@@ -99,8 +99,8 @@ func main() {
 		src = nil
 	} else {
 		filename := "EXPRESSION"
-                filePtr = &filename
-                src = *exprPtr
+		filePtr = &filename
+		src = *exprPtr
 	}
 
 	if *scanPtr {

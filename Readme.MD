@@ -18,12 +18,12 @@ git clone https://github.com/micha-p/roq.git
 cd roq
 
 go run main.go -expr "1+2"
-go run main.go
+go run main.go -file example.r
 go test
 go build
 
 # run a collection of statements
-./roq -E -file demo.r
+./roq -E -file example.r
 ```
 
 # Short summary

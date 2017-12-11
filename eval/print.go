@@ -92,6 +92,11 @@ func PrintResultE(ev *Evaluator, r *ESEXP) {
 		}
 	case token.VERSION:
 		PrintVersion()
+	case token.EOF:
+		DEBUG := ev.Debug
+		if DEBUG {
+			println("EOF")
+		}
 	default:
 		println(r.Message)
 	}

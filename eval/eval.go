@@ -25,6 +25,7 @@ const (
 	loopState
 	breakState
 	nextState
+	eofState
 )
 
 // derived of type parser
@@ -154,6 +155,9 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) (r SEXPItf) {
 	case *ast.VersionStmt:
 		ev.state = nextState
 		return &ESEXP{Kind: token.VERSION}
+	case *ast.EOFStmt:
+		ev.state = eofState
+		return &ESEXP{Kind: token.EOF}
 	default:
 		givenType := reflect.TypeOf(s)
 		println("?Stmt:", givenType.String())
