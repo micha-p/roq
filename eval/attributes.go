@@ -3,6 +3,7 @@ package eval
 
 import (
 	"roq/lib/ast"
+	"fmt"
 )
 
 
@@ -13,8 +14,7 @@ func doAttributeReplacement(ev *Evaluator,lhs *ast.CallExpr, rhs ast.Expr) SEXPI
 	}
 	funcobject := lhs.Fun
 	attribute := funcobject.(*ast.BasicLit).Value
-	defer un(trace(ev, attribute + "<-"))
-	// TODO len(lhs.Args) != 1
+	defer un(trace(ev, attribute + "<-"))				// TODO len(lhs.Args) != 1
 	identifier := getIdent(ev, lhs.Args[0])
 	object := ev.topFrame.Lookup(identifier)
 	value := EvalExpr(ev, rhs)
@@ -34,17 +34,18 @@ func doAttributeReplacement(ev *Evaluator,lhs *ast.CallExpr, rhs ast.Expr) SEXPI
 		}
 		object.DimSet(dim)
 	case "dimnames":
+		vlen := value.Length()
 		if object.Dim()==nil {
-			println("ERROR: 'dimnames' applied to non-array")
+			fmt.Printf("ERROR: 'dimnames' applied to non-array\n")
 			return nil
-		} else if value.Length() != len(object.Dim()) {
-			print("ERROR: ","length of 'dimnames' [",value.Length(),"] must match that of 'dims' [",len(object.Dim()),"]\n")
+		} else if vlen != len(object.Dim()) {
+			fmt.Printf("ERROR: length of 'dimnames' [%d] must match that of 'dims' [%d]\n",vlen,len(object.Dim()))
 			return nil
 		} else {
 			slice := value.(*RSEXP).Slice
 			for n,v := range object.Dim() {
 				if slice[n].Length() != v {
-					print("ERROR: ","length of 'dimnames' [",n+1,"] not equal to array extent\n")
+					fmt.Printf("ERROR: length of 'dimnames' [%d] not equal to array extent\n",n+1)
 					return nil
 				}
 			}

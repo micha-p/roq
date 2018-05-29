@@ -44,43 +44,43 @@ func PrintResultR(ev *Evaluator, r *RSEXP) {
 		return
 	}
 	if r.Slice == nil {
-		println("[[1]]")
+		fmt.Printf("[[1]]\n")
 		PrintResult(ev, r.CAR)
-		println()
-		println("[[2]]")
+		fmt.Printf("\n")
+		fmt.Printf("[[2]]\n")
 		PrintResult(ev, r.CDR)
-		println()
+		fmt.Printf("\n")
 	} else {
 		for n, v := range r.Slice {
-			print("[[", n+1, "]]\n")
+			fmt.Printf("[[%d]]\n", n+1)
 			PrintResult(ev, v)
-			println()
+			fmt.Printf("\n")
 		}
 	}
 }
 
 func PrintResultT(ev *Evaluator, r *TSEXP) {
 	if r.Slice == nil {
-		println("[1]", "\""+r.String+"\"")
+		fmt.Printf("[1] \"%s\"",r.String)
 	} else {
-		print("[", len(r.Slice), "]")
+		fmt.Printf("[%d]", len(r.Slice))
 		for _, v := range r.Slice {
-			print(" \"", v, "\"")
+			fmt.Printf(" \"%s\"", v)
 		}
-		println()
+		fmt.Printf("\n")
 	}
 }
 
 func PrintResultI(ev *Evaluator, r *ISEXP) {
 	rdim := r.Dim()
 	if rdim == nil {
-		println("[1]", r.Integer)
+		fmt.Printf("[1] %d\n", r.Integer)
 	} else {
-		print("[", len(rdim), "]")
+		fmt.Printf("[%d]", len(rdim))
 		for _, v := range rdim {
 			fmt.Printf(" %d", v)
 		}
-		println()
+		fmt.Printf("\n")
 	}
 }
 
@@ -98,15 +98,14 @@ func PrintResultE(ev *Evaluator, r *ESEXP) {
 			println("EOF")
 		}
 	default:
-		println(r.Message)
+		fmt.Printf("%s",r.Message)
 	}
 }
 
 func PrintResultV(ev *Evaluator, r *VSEXP) {
-
 	DEBUG := ev.Debug
 	if r== nil {
-		println("nil")
+		fmt.Printf("nil")
 	} else if r.Body != nil {
 		if DEBUG {
 			print("function(")
@@ -125,14 +124,14 @@ func PrintResultV(ev *Evaluator, r *VSEXP) {
 	} else {
 		if r.Slice == nil {
 			if r.Immediate == math.NaN(){
-				println("NAN")
+				fmt.Printf("NAN\n")
 			} else {
 				fmt.Printf("[1] %g\n", r.Immediate) // R has small e for exponential format
 			}
 		} else {
 			rdim := r.Dim()
 			if rdim == nil {
-				print("[", r.Length(), "]")
+				fmt.Printf("[%d]", r.Length())
 				printArray(r.Slice)
 			} else if len(rdim) == 2 && r.Dimnames() != nil {
 				printMatrixDimnames(r.Slice,
@@ -143,14 +142,14 @@ func PrintResultV(ev *Evaluator, r *VSEXP) {
 			} else if len(rdim) == 2 {
 				printMatrix(r.Slice, rdim[0], rdim[1])
 			} else {
-				print("[")
+				fmt.Printf("[")
 				for n, v := range rdim {
 					if n > 0 {
-						print(",")
+						fmt.Printf(",")
 					}
 					fmt.Printf("%d", v)
 				}
-				print("]")
+				fmt.Printf("]")
 				printArray(r.Slice)
 			}
 		}
@@ -161,41 +160,41 @@ func printArray(slice []float64) {
 	for _, v := range slice {
 		fmt.Printf(" %g", v)
 	}
-	println()
+	fmt.Printf("\n")
 }
 
 func printMatrixDimnames(slice []float64, rows int, cols int, rownames []string, colnames []string) {
 	for col := 0; col < cols; col++ {
 		if col < len(colnames) {
-			print("\t", colnames[col])
+			fmt.Printf("\t%s", colnames[col])
 		} else {
-			print("\t[,", col+1, "]")
+			fmt.Printf("\t[,%d]", col+1)
 		}
 	}
-	println()
+	fmt.Printf("\n")
 	for row := 0; row < rows; row++ {
 		if row < len(rownames) {
-			print(rownames[row])
+			fmt.Printf("%s",rownames[row])
 		} else {
-			print("[", row+1, ",]")
+			fmt.Printf("[%d]", row+1)
 		}
 		for col := 0; col < cols; col++ {
-			fmt.Printf(" %7g", slice[row+rows*col])
+			fmt.Printf("\t%s", fmt.Sprintf("%g",slice[row+rows*col]))
 		}
-		println()
+		fmt.Printf("\n")
 	}
 }
 
 func printMatrix(slice []float64, rows int, cols int) {
 	for col := 0; col < cols; col++ {
-		print("\t[,", col+1, "]")
+		fmt.Printf("\t[,%d]", col+1)
 	}
-	println()
+	fmt.Printf("\n")
 	for row := 0; row < rows; row++ {
-		print("[", row+1, ",]")
+		fmt.Printf("[%d]", row+1)
 		for col := 0; col < cols; col++ {
-			fmt.Printf(" %7g", slice[row+rows*col])
+			fmt.Printf("\t%s", fmt.Sprintf("%g",slice[row+rows*col]))
 		}
-		println()
+		fmt.Printf("\n")
 	}
 }

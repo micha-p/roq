@@ -244,19 +244,19 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 		defer un(trace(ev, "BasicLit ", node.Kind.String()))
 		switch node.Kind {
 		case token.FLOAT:
-			vfloat, err := strconv.ParseFloat(node.Value, 64) 	// TODO: support for all R formatted values
+			vfloat, err := strconv.ParseFloat(node.Value, 64) 		// TODO: support for all R formatted values
 			if err != nil {
 				print("ERROR:")
 				println(err)
 			}
 			return &VSEXP{ValuePos: node.ValuePos, Immediate: vfloat}
-		case token.INT: // in value domain, all numbers should be double
-			vfloat, err := strconv.ParseFloat(node.Value, 64) 	// TODO: support for all R formatted values
+		case token.INT: 											// in value domain, all numbers should be double float
+			vfloat, err := strconv.ParseFloat(node.Value, 64) 		// TODO: support for all R formatted values
 			if err != nil {
 				print("ERROR:")
 				println(err)
 			}
-			vint, err := strconv.Atoi(node.Value) 			// TODO: support for all R formatted values
+			vint, err := strconv.Atoi(node.Value) 					// TODO: support for all R formatted values
 			if err != nil {
 				print("ERROR:")
 				println(err)
@@ -266,7 +266,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 			return &TSEXP{ValuePos: node.ValuePos, String: node.Value}
 		case token.TRUE:
 			return &VSEXP{ValuePos: node.ValuePos, Immediate: 1}   	// in R: TRUE+1 = 2
-		case token.NULL, token.FALSE:					// TODO just return nil?
+		case token.NULL, token.FALSE:								// TODO just return nil?
 			return &NSEXP{ValuePos: node.ValuePos}
 		case token.INF:
 			return &VSEXP{ValuePos: node.ValuePos, Immediate: math.Inf(+1)}

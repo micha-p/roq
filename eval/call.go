@@ -8,6 +8,7 @@ package eval
 import (
 	"roq/lib/ast"
 	"roq/lib/token"
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -35,7 +36,7 @@ func arityOK(funcname string, arity int, node *ast.CallExpr) bool {
 	if len(node.Args) == arity {
 		return true
 	} else {
-		print(len(node.Args), " arguments passed to '", funcname, "' which requires ", arity, "\n")
+		fmt.Printf("%d arguments passed to '%s' which requires %d\n", len(node.Args), funcname, arity)
 		return false
 	}
 }

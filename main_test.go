@@ -2,15 +2,10 @@ package main
 
 import (
 	"roq/eval"
-	"testing"
+//	"testing" // not needed for Examples
 )
 
-func TestOK(t *testing.T) {
-	x := 1
-	if x == 2 {
-		t.Error("1 equal 2")
-	}
-}
+// Example testing does not work with print, only with fmt
 
 func ExampleArithmeticOperators() {
 	eval.EvalStringForTest("1+2\n2*3.1\n5-1\n7/8\n11%%2\n3^2")
@@ -24,10 +19,11 @@ func ExampleArithmeticOperators() {
 }
 
 func ExamplePrecedenceOperators() {
-	eval.EvalStringForTest(`1+2*3
-				(1+2)*3
-				10-3^2
-				2*3/4`)
+	eval.EvalStringForTest(`
+		1+2*3
+		(1+2)*3
+		10-3^2
+		2*3/4`)
 	// Output:
 	// [1] 7
 	// [1] 9
@@ -36,12 +32,13 @@ func ExamplePrecedenceOperators() {
 }
 
 func ExampleMissingValues() {
-	eval.EvalStringForTest(`r = 1  +2 %% 10 + .
-				r
-				r = 1  +2 %% 10 + NaN
-				r
-				r = 1  +2 %% 10 + NA
-				r`)
+	eval.EvalStringForTest(`
+		r = 1  +2 %% 10 + .
+		r
+		r = 1  +2 %% 10 + NaN
+		r
+		r = 1  +2 %% 10 + NA
+		r`)
 	// Output:
 	// [1] NaN
 	// [1] NaN
@@ -50,12 +47,13 @@ func ExampleMissingValues() {
 
 
 func ExampleAssignment() {
-	eval.EvalStringForTest(`a <- 3
-				4 -> d
-				b = 2 +a 
-				a
-				d
-				b`)
+	eval.EvalStringForTest(`
+		a <- 3
+		4 -> d
+		b = 2 +a 
+		a
+		d
+		b`)
 	// Output:
 	// [1] 3
 	// [1] 4
