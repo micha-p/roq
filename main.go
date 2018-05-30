@@ -125,7 +125,6 @@ func main() {
 			parserOpts = parserOpts | parser.Debug
 		}
 		if ECHO {
-
 			parserOpts = parserOpts | parser.Echo
 		}
 		mainParse(filePtr, src, parserOpts)
@@ -146,7 +145,6 @@ func main() {
 		if ECHO {
 			parserOpts = parserOpts | parser.Echo
 		}
-
 		eval.EvalMain(filePtr, src, parserOpts, TRACE, DEBUG, MAJOR, MINOR)
 	}
 }

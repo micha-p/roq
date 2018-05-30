@@ -89,9 +89,10 @@ func EvalCallBuiltin(ev *Evaluator, node *ast.CallExpr, funcname string) (r SEXP
 			ev.topFrame.Delete(arg.(*ast.BasicLit).Value, DEBUG)
 		}
 	case "quit":
-		panic("quit")
+		ev.state = eofState
+		return &ESEXP{Kind: token.EOF}
 	default:
-		println("Error: could not find function \"" + funcname + "\"")
+		fmt.Printf("Error: could not find function \"%s\"\n",funcname)
 		return &ESEXP{Kind: token.ILLEGAL}
 	}
 	return

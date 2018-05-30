@@ -2,13 +2,13 @@ package main
 
 import (
 	"roq/eval"
-//	"testing" // not needed for Examples
 )
 
 // TODO length(vector()) 		length(NULL)
 
 func ExampleLength() {
-	eval.EvalStringForTest(`a=c(11,22,33)
+	eval.EvalStringForTest(`
+		a=c(11,22,33)
 		length(a)
 		length(c(1,2))
 		length(c(1,2),c(1,3))

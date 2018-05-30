@@ -14,6 +14,7 @@ func EvalStringForTest(src interface{}){
 
 func EvalMain(filePtr *string, src interface{}, parserOpts parser.Mode, TRACE bool, DEBUG bool, MAJOR string, MINOR string) {
 	fset := token.NewFileSet() // positions are relative to fset
+
 	p, errp := parser.ParseInit(fset, *filePtr, src, parserOpts)
 	if errp != nil {
 		fmt.Println(errp)
@@ -27,13 +28,23 @@ func EvalMain(filePtr *string, src interface{}, parserOpts parser.Mode, TRACE bo
 
 	for true {
 		stmt, tok := parser.ParseIter(p) // main iterator calls parse.stmt
+		if tok == token.EOF {
+			if DEBUG {
+				println("EOF token found")
+			}
+			break
+		}
 		sexp := EvalStmt(ev, stmt)
 		if sexp != nil {
 			PrintResult(ev, sexp)
-		}
-		parser.StartLine(p)
-		if tok == token.EOF {
-			return
+			if ev.state == eofState {
+				if DEBUG {
+					println("terminating...")
+				}
+				break
+			}
+		} else {
+			parser.StartLine(p)
 		}
 	}
 }

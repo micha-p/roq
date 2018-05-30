@@ -17,7 +17,7 @@ func PrintResult(ev *Evaluator, r SEXPItf) {
 		ev.Invisible = false
 		return
 	} else if r == nil {
-		println("FALSE/NULL")
+		fmt.Printf("FALSE/NULL")
 	} else {
 		switch r.(type) {
 		case *VSEXP:
@@ -40,7 +40,7 @@ func PrintResult(ev *Evaluator, r SEXPItf) {
 
 func PrintResultR(ev *Evaluator, r *RSEXP) {
 	if r == nil {
-		println("ERROR: uncatched NULL pointer: ", r)
+		println("ERROR: uncatched NULL pointer: ", r) // TODO fatalState
 		return
 	}
 	if r.Slice == nil {
@@ -95,7 +95,7 @@ func PrintResultE(ev *Evaluator, r *ESEXP) {
 		version.PrintVersion(ev.Major,ev.Minor)
 	case token.EOF:
 		if DEBUG {
-			println("EOF")
+			println("EOF AS RESULT")
 		}
 	default:
 		fmt.Printf("%s",r.Message)
