@@ -110,7 +110,7 @@ func EvalApply(ev *Evaluator, funcname string, f *VSEXP, argNames []string, coll
 	}
 	for n, v := range collectedArgs {
 		if v != nil {
-			val := EvalExpr(ev, v)
+			val := EvalExprOrAssignment(ev, v)
 			evaluatedArgs[int(n)] = val
 		}
 	}
@@ -133,8 +133,8 @@ func EvalApply(ev *Evaluator, funcname string, f *VSEXP, argNames []string, coll
 			if value == nil {
 				defaultExpr := f.Fieldlist[n].Default
 				if defaultExpr == nil { 
-					print("Error in ", funcname, "(")
-					print(") : argument \"", fieldname, " is missing, with no default\n")
+					fmt.Printf("Error in %s(", funcname)
+					fmt.Printf(") : argument \"%s is missing, with no default\n", fieldname)
 					return nil
 				} else {
 					if DEBUG {
@@ -309,26 +309,26 @@ func EvalCallFunction(ev *Evaluator, node *ast.CallExpr, funcname string, f *VSE
 			collectedArgs[fieldindex] = v
 			delete(taggedArgs, k)
 		} else if len(matchList) > 1 {
-			println("argument", k, "matches multiple formal arguments")
+			fmt.Printf("argument %s matches multiple formal arguments", k)
 		}
 	}
 
-	// check unused tagged arguments
+	// check unused named arguments // TODO double check
 	if len(taggedArgs) > 0 {
-		print("unused argument")
+		fmt.Printf("unused named argument")
 		if len(taggedArgs) > 1 {
-			print("s")
+			fmt.Printf("s")
 		}
-		print(" (")
+		fmt.Printf(" (")
 		start := true
 		for k, _ := range taggedArgs {
 			if !start {
-				print(", ")
+				fmt.Printf(", ")
 			}
-			print(k)
+			fmt.Printf(k)
 			start = false
 		}
-		print(")\n")
+		fmt.Printf(")\n")
 		return &ESEXP{Kind: token.ILLEGAL}
 	}
 
@@ -345,21 +345,21 @@ func EvalCallFunction(ev *Evaluator, node *ast.CallExpr, funcname string, f *VSE
 	// check unused positional arguments
 	if len(untaggedArgs) > j { // CONT
 
-		print("unused argument")
+		fmt.Printf("unused positional argument")
 		if len(untaggedArgs)-j > 1 {
-			print("s")
+			fmt.Printf("s")
 		}
-		print(" (")
+		fmt.Printf(" (")
 		start := true
 		// TODO: some caching
 		for n := len(argNames) + 1; n < len(argNames)+len(untaggedArgs)+1; n++ {
 			if !start {
-				print(", ")
+				fmt.Printf(", ")
 			}
-			print(n)
+			fmt.Printf("%d",n)
 			start = false
 		}
-		print(")\n")
+		fmt.Printf(")\n")
 		return &ESEXP{Kind: token.ILLEGAL}
 	}
 	return EvalApply(ev, funcname, f, argNames, collectedArgs)
