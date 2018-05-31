@@ -24,9 +24,9 @@ func ExampleFunctions() {
 //[1] 1
 //[1] 2
 //[1] 3
-//Error in f() : argument "x is missing, with no default
-//unused positional argument (2, 3)
-//unused positional argument (2)
+//Error in f() : argument "x" is missing, with no default
+//Error in f() : unused argument (pos 2, pos 3)
+//Error in f() : unused argument (pos 2)
 //Error: could not find function "unknown"
 }
 

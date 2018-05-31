@@ -16,20 +16,24 @@ import (
 // function definition -> formal arguments
 // function call -> actual arguments
 
-func tryPartialMatch(partial string, argNames []string, collectedArgs []ast.Expr) []int {
-	//  println("  try to match:",partial)
-	matches := make([]int, len(argNames))
+func tryPartialMatch(partial string, argNames []string, collectedArgs []ast.Expr, DEBUG bool) (int,int) {
+	if DEBUG {
+		println("Search for partial match: " + partial)
+	}
 	i := 0
+	fieldindex := 0
 	for n, name := range argNames {
-		if strings.Contains(name, partial) {
-			//          print("    found: ",name)
-			if collectedArgs[n] == nil {
-				matches[i] = n
+		if strings.Contains("^"+name, "^"+partial) {
+			if DEBUG {
+				println("    found: ",name)
+			}
+			if collectedArgs[n] == nil { 
+				fieldindex = n
 				i += 1
 			}
 		}
 	}
-	return matches
+	return i,fieldindex 
 }
 
 func arityOK(funcname string, arity int, node *ast.CallExpr) bool {
@@ -98,65 +102,6 @@ func EvalCallBuiltin(ev *Evaluator, node *ast.CallExpr, funcname string) (r SEXP
 	return
 }
 
-func EvalApply(ev *Evaluator, funcname string, f *VSEXP, argNames []string, collectedArgs []ast.Expr) (r SEXPItf) {
-	TRACE := ev.Trace
-	DEBUG := ev.Debug
-
-	evaluatedArgs := make([]SEXPItf, len(collectedArgs))
-
-	// eval args
-	if TRACE {
-		println("Eval args " + funcname)
-	}
-	for n, v := range collectedArgs {
-		if v != nil {
-			val := EvalExprOrAssignment(ev, v)
-			evaluatedArgs[int(n)] = val
-		}
-	}
-
-	ev.openFrame()
-	defer ev.closeFrame()
-
-	if TRACE {
-		println("Apply function " + funcname)
-	}
-	if DEBUG {
-		println("apply function", funcname, "to call:")
-	}
-	for n, fieldname := range argNames {
-		if DEBUG {
-			print("arg[", n, "]\t", fieldname)
-		}
-		if fieldname != "..." {
-			value := evaluatedArgs[n]
-			if value == nil {
-				defaultExpr := f.Fieldlist[n].Default
-				if defaultExpr == nil { 
-					fmt.Printf("Error in %s(", funcname)
-					fmt.Printf(") : argument \"%s is missing, with no default\n", fieldname)
-					return nil
-				} else {
-					if DEBUG {
-						print("\tDEFAULT")
-					}
-					value = EvalExpr(ev, defaultExpr)
-				}
-			} else {
-					if DEBUG {
-						print("\t")
-					}
-			}	
-			if DEBUG {
-				print("\t")
-				PrintResult(ev, value)
-			}
-			ev.topFrame.Insert(fieldname, value)
-		}
-	}
-	return EvalStmt(ev, f.Body)
-}
-
 func EvalCallEllipsisFunction(ev *Evaluator, node *ast.CallExpr, funcname string, f *VSEXP) (r SEXPItf) {
 	TRACE := ev.Trace
 	DEBUG := ev.Debug
@@ -187,6 +132,7 @@ func EvalCallEllipsisFunction(ev *Evaluator, node *ast.CallExpr, funcname string
 	}
 
 	// this map uses the same index as argNames (instead of using a structure)
+	// and is filled with correctly identified args during this procedure
 	collectedArgs := make([]ast.Expr, len(argNames))
 
 	// this slice covers the actual arguments of the call
@@ -210,17 +156,17 @@ func EvalCallEllipsisFunction(ev *Evaluator, node *ast.CallExpr, funcname string
 
 	// find partially matching tags
 	for fieldname, callindex := range taggedArgs {
-		matchList := tryPartialMatch(fieldname, argNames, collectedArgs)
-		if len(matchList) == 1 {
-			fieldindex := matchList[0]
+		matches, fieldindex := tryPartialMatch(fieldname, argNames, collectedArgs, DEBUG)
+		if matches > 1 {
+			fmt.Printf("argument %s matches multiple formal arguments\n", fieldname)
+			return &ESEXP{Kind: token.ILLEGAL}
+		} else if matches == 1 {
 			if TRACE {
 				println("argument", fieldname, "matches one formal argument:", argNames[fieldindex])
 			}
 			collectedArgs[fieldindex] = node.Args[callindex-1]
 			usedArgs[callindex-1] = true
 			delete(taggedArgs, fieldname)
-		} else if len(matchList) > 1 {
-			println("argument", fieldname, "matches multiple formal arguments")
 		}
 	}
 
@@ -261,6 +207,7 @@ func EvalCallEllipsisFunction(ev *Evaluator, node *ast.CallExpr, funcname string
 }
 
 func EvalCallFunction(ev *Evaluator, node *ast.CallExpr, funcname string, f *VSEXP) (r SEXPItf) {
+	DEBUG := ev.Debug
 	TRACE := ev.Trace
 
 	// collect field names
@@ -271,13 +218,13 @@ func EvalCallFunction(ev *Evaluator, node *ast.CallExpr, funcname string, f *VSE
 	}
 
 	// this map uses the same index as argNames (instead of using a structure)
+	// and is filled with correctly identified args during this procedure
 	collectedArgs := make([]ast.Expr, len(argNames))
 
 	// collect tagged and untagged arguments (unevaluated)
 	taggedArgs := make(map[string]ast.Expr, len(argNames))
 	untaggedArgs := make(map[int]ast.Expr, len(argNames))
 	i := 0
-
 	for _, arg := range node.Args {
 		switch arg.(type) {
 		case *ast.TaggedExpr:
@@ -300,22 +247,24 @@ func EvalCallFunction(ev *Evaluator, node *ast.CallExpr, funcname string, f *VSE
 
 	// find partially matching tags
 	for k, v := range taggedArgs {
-		matchList := tryPartialMatch(k, argNames, collectedArgs)
-		if len(matchList) == 1 {
-			fieldindex := matchList[0]
+		matches, fieldindex := tryPartialMatch(k, argNames, collectedArgs, DEBUG)
+		if matches > 1 {
+			fmt.Printf("Error in %s() : ",funcname)
+			fmt.Printf("argument %s matches multiple formal arguments\n", k)
+			return &ESEXP{Kind: token.ILLEGAL}
+		} else if matches == 1 {
 			if TRACE {
 				println("argument", k, "matches one formal argument:", argNames[fieldindex])
 			}
 			collectedArgs[fieldindex] = v
 			delete(taggedArgs, k)
-		} else if len(matchList) > 1 {
-			fmt.Printf("argument %s matches multiple formal arguments", k)
 		}
 	}
 
 	// check unused named arguments // TODO double check
 	if len(taggedArgs) > 0 {
-		fmt.Printf("unused named argument")
+		fmt.Printf("Error in %s() : ",funcname)
+		fmt.Printf("unused argument")
 		if len(taggedArgs) > 1 {
 			fmt.Printf("s")
 		}
@@ -325,7 +274,7 @@ func EvalCallFunction(ev *Evaluator, node *ast.CallExpr, funcname string, f *VSE
 			if !start {
 				fmt.Printf(", ")
 			}
-			fmt.Printf(k)
+			fmt.Printf("%s =", k) // TODO: should ast.expressions carry their input string?
 			start = false
 		}
 		fmt.Printf(")\n")
@@ -344,8 +293,8 @@ func EvalCallFunction(ev *Evaluator, node *ast.CallExpr, funcname string, f *VSE
 
 	// check unused positional arguments
 	if len(untaggedArgs) > j { // CONT
-
-		fmt.Printf("unused positional argument")
+		fmt.Printf("Error in %s() : ",funcname)
+		fmt.Printf("unused argument")
 		if len(untaggedArgs)-j > 1 {
 			fmt.Printf("s")
 		}
@@ -356,7 +305,7 @@ func EvalCallFunction(ev *Evaluator, node *ast.CallExpr, funcname string, f *VSE
 			if !start {
 				fmt.Printf(", ")
 			}
-			fmt.Printf("%d",n)
+			fmt.Printf("pos %d",n)
 			start = false
 		}
 		fmt.Printf(")\n")
@@ -388,4 +337,63 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 			return EvalCallFunction(ev, node, funcname, f.(*VSEXP))
 		}
 	}
+}
+
+func EvalApply(ev *Evaluator, funcname string, f *VSEXP, argNames []string, collectedArgs []ast.Expr) (r SEXPItf) {
+	TRACE := ev.Trace
+	DEBUG := ev.Debug
+
+	evaluatedArgs := make([]SEXPItf, len(collectedArgs))
+
+	// eval args
+	if TRACE {
+		println("Eval args " + funcname)
+	}
+	for n, v := range collectedArgs {
+		if v != nil {
+			val := EvalExprOrAssignment(ev, v)
+			evaluatedArgs[int(n)] = val
+		}
+	}
+
+	ev.openFrame()
+	defer ev.closeFrame()
+
+	if TRACE {
+		println("Apply function " + funcname)
+	}
+	if DEBUG {
+		println("apply function", funcname, "to call:")
+	}
+	for n, fieldname := range argNames {
+		if DEBUG {
+			print("arg[", n, "]\t", fieldname)
+		}
+		if fieldname != "..." {
+			value := evaluatedArgs[n]
+			if value == nil {
+				defaultExpr := f.Fieldlist[n].Default
+				if defaultExpr == nil { 
+					fmt.Printf("Error in %s() : ", funcname)
+					fmt.Printf("argument \"%s\" is missing, with no default\n", fieldname)
+					return nil
+				} else {
+					if DEBUG {
+						print("\tDEFAULT")
+					}
+					value = EvalExpr(ev, defaultExpr)
+				}
+			} else {
+					if DEBUG {
+						print("\t")
+					}
+			}	
+			if DEBUG {
+				print("\t")
+				PrintResult(ev, value)
+			}
+			ev.topFrame.Insert(fieldname, value)
+		}
+	}
+	return EvalStmt(ev, f.Body)
 }
