@@ -438,4 +438,3 @@ class("a")
 class(NULL)
 #class(list(1,2,3))
 #class(pairlist(1,2))
-

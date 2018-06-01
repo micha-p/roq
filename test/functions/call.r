@@ -1,0 +1,10 @@
+f<-function(x){1}
+f(1)
+g<-function(x){x+1}
+g(1)
+f<-function(x){x+2}
+f(1)
+f()
+f(1,2)
+f(x=1,2)
+unknown(1)

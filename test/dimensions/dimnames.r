@@ -1,0 +1,10 @@
+x <- c(1,2,3,4,5,6)
+dim(x)
+dimnames(x) <- list(c("a1","a2"),c("b1","b2","b3"))
+dim(x) <- c(2,3)
+dimnames(x) <- list(c("a1","a2"),c("b1","b2","b3"))
+x
+dimnames(x) <- list(c("a1","a2"),c("b1","b2","b3"),c("d"))
+dimnames(x) <- list(c("a1","a2"),c("b1","b2"))
+dimnames(x) <- list(c("a1","a2"),c("b1","b2","b3","b4"))
+dimnames(x) <- list(c("a1"),c("b1","b2","b3"))

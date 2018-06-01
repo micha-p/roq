@@ -1,0 +1,7 @@
+a=c(11,22,33)
+length(a)
+length(c(1,2))
+length(a[1])
+length(a[2.2])
+length(a[1:2])
+length(a[1:3])

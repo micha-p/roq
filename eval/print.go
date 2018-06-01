@@ -67,8 +67,8 @@ func PrintResultT(ev *Evaluator, r *TSEXP) {
 		for _, v := range r.Slice {
 			fmt.Printf(" \"%s\"", v)
 		}
-		fmt.Printf("\n")
 	}
+	fmt.Printf("\n")
 }
 
 func PrintResultI(ev *Evaluator, r *ISEXP) {

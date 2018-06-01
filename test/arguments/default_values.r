@@ -1,0 +1,9 @@
+g<-function(a,b){10*a+b}
+g(1,2)
+g(a=1)
+g(b=2)
+g<-function(a=5,b=6){10*a+b}
+g(1,2)
+g(1)
+g(b=2)
+g()
