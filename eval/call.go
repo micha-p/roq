@@ -53,6 +53,14 @@ func EvalCallBuiltin(ev *Evaluator, node *ast.CallExpr, funcname string) (r SEXP
 		println("Search for builtin: " + funcname)
 	}
 	switch funcname {
+	case "print":
+		if arityOK(funcname, 1, node) {
+			value := EvalExpr(ev, node.Args[0])
+			PrintResult(ev, value)
+			return nil
+		} else {
+			return &ESEXP{Kind: token.ILLEGAL}
+		}
 	case "list":
 		return EvalList(ev, node)
 	case "pairlist":
@@ -96,7 +104,7 @@ func EvalCallBuiltin(ev *Evaluator, node *ast.CallExpr, funcname string) (r SEXP
 		ev.state = eofState
 		return &ESEXP{Kind: token.EOF}
 	default:
-		fmt.Printf("Error: could not find function \"%s\"\n",funcname)
+		fmt.Printf("Error in %s(): could not find function \"%s\"\n",funcname,funcname)
 		return &ESEXP{Kind: token.ILLEGAL}
 	}
 	return
@@ -347,7 +355,7 @@ func EvalApply(ev *Evaluator, funcname string, f *VSEXP, argNames []string, coll
 
 	// eval args
 	if TRACE {
-		println("Eval args " + funcname)
+		println("Eval args for function \"" + funcname + "\"")
 	}
 	for n, v := range collectedArgs {
 		if v != nil {
@@ -359,15 +367,12 @@ func EvalApply(ev *Evaluator, funcname string, f *VSEXP, argNames []string, coll
 	ev.openFrame()
 	defer ev.closeFrame()
 
-	if TRACE {
-		println("Apply function " + funcname)
-	}
-	if DEBUG {
-		println("apply function", funcname, "to call:")
+	if (TRACE || DEBUG) {
+		println("Apply function \"" + funcname + "\" to call:")
 	}
 	for n, fieldname := range argNames {
-		if DEBUG {
-			print("arg[", n, "]\t", fieldname)
+		if (TRACE || DEBUG) {
+			print("\targ[",n, "]\t", fieldname)
 		}
 		if fieldname != "..." {
 			value := evaluatedArgs[n]
@@ -383,17 +388,21 @@ func EvalApply(ev *Evaluator, funcname string, f *VSEXP, argNames []string, coll
 					}
 					value = EvalExpr(ev, defaultExpr)
 				}
-			} else {
-					if DEBUG {
-						print("\t")
-					}
-			}	
-			if DEBUG {
+			} 
+			if (TRACE || DEBUG) {
 				print("\t")
 				PrintResult(ev, value)
 			}
 			ev.topFrame.Insert(fieldname, value)
 		}
 	}
-	return EvalStmt(ev, f.Body)
+	if (TRACE || DEBUG) {
+		println("Eval body of function \"" + funcname + "\":")
+	}
+	r=EvalStmt(ev, f.Body)
+	if (TRACE || DEBUG) {
+		print("Return from function \"" + funcname + "\" with: ")
+		PrintResult(ev,r)
+	}
+	return r
 }

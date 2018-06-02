@@ -110,7 +110,8 @@ func (p *parser) parseAssignment() ast.Stmt {
 	var s *ast.AssignStmt
 
 	switch p.tok {
-	case token.SHORTASSIGNMENT, token.LEFTASSIGNMENT, token.RIGHTASSIGNMENT:
+	case token.SHORTASSIGNMENT, token.LEFTASSIGNMENT, token.RIGHTASSIGNMENT, 
+		 token.SUPERLEFTASSIGNMENT, token.SUPERRIGHTASSIGNMENT:
 		p.next()
 		y = p.parseRhs()
 		s = &ast.AssignStmt{Lhs: x, TokPos: pos, Tok: tok, Rhs: y}
@@ -320,6 +321,7 @@ func (p *parser) parseStmt() (s ast.Stmt) {
 		// a semicolon may be omitted before a closing "}"
 		s = &ast.EmptyStmt{Semicolon: p.pos, Implicit: true}
 	case token.EOF:
+		println("EOF encountered during parseStmt")
 		s = &ast.EOFStmt{EOF: p.pos}
 	default:
 		// no statement found

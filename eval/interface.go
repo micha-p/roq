@@ -49,8 +49,6 @@ func EvalMain(filePtr *string, src interface{}, parserOpts parser.Mode, TRACE bo
 				}
 				break
 			}
-		} else {
-			parser.StartLine(p)
 		}
 	}
 }

@@ -43,6 +43,7 @@ type Evaluator struct {
 
 	// frame
 	topFrame *Frame // top-most frame; may be pkgFrame
+	globalFrame *Frame // top-most frame; may be pkgFrame
 }
 
 func (e *Evaluator) openFrame() {
@@ -91,6 +92,7 @@ func EvalInit(fset *token.FileSet, filename string, src interface{}, mode parser
 
 	e := Evaluator{Trace: traceflag, Debug: debugflag, indent: 0, topFrame: nil, Major: MAJOR, Minor: MINOR}
 	e.topFrame = NewFrame(e.topFrame)
+	e.globalFrame = e.topFrame
 	return &e, err
 }
 
@@ -107,7 +109,11 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) (r SEXPItf) {
 		return EvalExprOrAssignment(ev, e.X)
 	case *ast.EmptyStmt:
 		if DEBUG {
-			println("emptyStmt")
+			if s.(*ast.EmptyStmt).Implicit{
+				// println("emptyStmt (implicit)") // too many messages
+			} else {
+				println("emptyStmt")
+			}
 		}
 		return nil
 	case *ast.IfStmt:
@@ -151,7 +157,8 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) (r SEXPItf) {
 			}
 		}
 		if TRACE {
-			println("return: " /*, r.Kind.String()*/) // TODO typoeofstring
+			print("blockStmt return: ")
+			PrintResult(ev,r)
 		}
 		return r
 	case *ast.VersionStmt:
@@ -182,6 +189,21 @@ func doAssignment(ev *Evaluator, lhs ast.Expr, rhs ast.Expr) SEXPItf {
 	return value
 }
 
+func doSuperAssignment(ev *Evaluator, lhs ast.Expr, rhs ast.Expr) SEXPItf {
+	var value SEXPItf
+	switch lhs.(type) {
+	case *ast.CallExpr:
+		doAttributeReplacement(ev, lhs.(*ast.CallExpr), rhs)
+	case *ast.BasicLit:
+		target := getIdent(ev, lhs)
+		defer un(trace(ev, "superassignment: "+target+" <<- "))
+		value = EvalExpr(ev, rhs)
+		ev.globalFrame.Insert(target, value)
+	}
+	ev.Invisible = true // just for the following print
+	return value
+}
+
 // Assignments might be Expressions or Stmts, the first return a SEXP during evaluation,
 // the latter an invisible object
 
@@ -189,15 +211,18 @@ func EvalAssignment(ev *Evaluator, e *ast.AssignStmt) SEXPItf {
 
 	//	defer un(trace(ev, "assignStmt"))
 
-	var target, value ast.Expr
-	if e.Tok == token.RIGHTASSIGNMENT {
-		target = e.Rhs
-		value = e.Lhs
-	} else {
-		target = e.Lhs
-		value = e.Rhs
+	switch e.Tok {
+	case token.LEFTASSIGNMENT:
+		return doAssignment(ev, e.Lhs, e.Rhs)
+	case token.RIGHTASSIGNMENT:
+		return doAssignment(ev, e.Rhs, e.Lhs)
+	case token.SUPERLEFTASSIGNMENT:
+		return doSuperAssignment(ev, e.Lhs, e.Rhs)
+	case token.SUPERRIGHTASSIGNMENT:
+		return doSuperAssignment(ev, e.Rhs, e.Lhs)
+	default:
+		panic("panic during assignment")
 	}
-	return doAssignment(ev, target, value)
 }
 
 func EvalExprOrAssignment(ev *Evaluator, ex ast.Expr) SEXPItf {
@@ -215,6 +240,10 @@ func EvalExprOrAssignment(ev *Evaluator, ex ast.Expr) SEXPItf {
 			return doAssignment(ev, node.X, node.Y)
 		case token.RIGHTASSIGNMENT:
 			return doAssignment(ev, node.X, node.Y)
+		case token.SUPERLEFTASSIGNMENT:
+			return doSuperAssignment(ev, node.X, node.Y)
+		case token.SUPERRIGHTASSIGNMENT:
+			return doSuperAssignment(ev, node.Y, node.X)
 		}
 	}
 	return EvalExpr(ev, ex)
@@ -273,6 +302,9 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 		case token.NAN, token.NA:
 			return &VSEXP{ValuePos: node.ValuePos, Immediate: math.NaN()}
 		case token.IDENT:
+			if DEBUG {
+				print("Retrieving ident: ", node.Value," = ")
+			}
 			return ev.topFrame.Recursive(node.Value)
 		default:
 			panic("Unknown basic literal:"+node.Kind.String())

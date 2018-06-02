@@ -13,7 +13,7 @@ func ExampleFunctionCalls() {
 //Error in f() : argument "x" is missing, with no default
 //Error in f() : unused argument (pos 2, pos 3)
 //Error in f() : unused argument (pos 2)
-//Error: could not find function "unknown"
+//Error in unknown(): could not find function "unknown"
 }
 
 func ExampleFunctionArguments() {

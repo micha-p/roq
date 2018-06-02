@@ -145,9 +145,6 @@ func ParseInit(fset *token.FileSet, filename string, src interface{}, mode Mode)
 	return &p, err
 }
 
-func StartLine(p *parser)() {
-	p.scanner.Start()
-}
 
 func ParseIter(p *parser) (s ast.Stmt, tok token.Token) {
 
@@ -156,25 +153,6 @@ func ParseIter(p *parser) (s ast.Stmt, tok token.Token) {
 	if true /* p.mode&ImportsOnly == 0 */ {
 		s = p.parseStmt()
 	}
-
-	// TODO resolve global identifiers within the same scope
-	/*
-		i := 0
-
-		for _, ident := range p.unresolved {
-
-			print("RESOLVE: ")
-			ast.Print(nil, ident)
-
-			// i <= index for current ident
-			assert(ident.Obj == unresolved, "object already resolved")
-			ident.Obj = p.pkgScope.Lookup(ident.Name) // also removes unresolved sentinel
-			if ident.Obj == nil {
-				p.unresolved[i] = ident
-				i++
-			}
-		}
-	*/
 
 	return s, p.tok
 }

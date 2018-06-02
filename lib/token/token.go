@@ -142,8 +142,8 @@ const (
 	SHORTASSIGNMENT      // =	SOMEHOW FORGOTTEN IN DOCUMENTATION
 	LEFTASSIGNMENT       // <-	Left assignment, binary
 	RIGHTASSIGNMENT      // ->	Right assignment, binary
-	SUPERLEFTASSIGNMENT  // <-	Left assignment, binary
-	SUPERRIGHTASSIGNMENT // ->	Right assignment, binary
+	SUPERLEFTASSIGNMENT  // <<-	Left assignment, binary
+	SUPERRIGHTASSIGNMENT // ->>	Right assignment, binary
 	SUBSET               // $	List subset, binary
 	SLOT                 // @	List subset, binary
 	DOUBLECOLON          // ::	List subset, binary

@@ -63,7 +63,6 @@ func mainParse(filePtr *string, src interface{}, parserOpts parser.Mode) {
 		case *ast.EmptyStmt:
 		default:
 			ast.Print(fset, stmt)
-			parser.StartLine(p)
 		}
 		if tok == token.EOF {
 			return

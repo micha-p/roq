@@ -18,7 +18,7 @@ func ExamplePositionalParameters() {
 func ExampleUnusedArguments() {
 	eval.EvalFileForTest("test/arguments/unused.r")
 // Output:
-//Error: could not find function "options"
+//Error in options(): could not find function "options"
 //[1] 1234
 //Error in f() : unused argument (x =)
 //Error in f() : unused argument (x =)

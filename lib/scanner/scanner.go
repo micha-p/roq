@@ -42,6 +42,7 @@ type Scanner struct {
 	rdOffset   int  // reading offset (position after current character)
 	lineOffset int  // current line offset
 	insertSemi bool // insert a semicolon before next newline
+	lastchar   bool // if last char is reached
 
 	// public state - ok to modify
 	ErrorCount int // number of errors encountered
@@ -49,18 +50,12 @@ type Scanner struct {
 
 const bom = 0xFEFF // byte order mark, only permitted as very first character
 
-func (s *Scanner) Start() {
-	s.start=true
-//	println("startline")
-}
-
 // echo should print at the beginning of a line
 // but deal correctly with lookahead
 
 func (s *Scanner) Echo() {
 	printline := func(s *Scanner) {
 		i := 0
-		s.start=true
 		for (s.lineOffset+i) < len(s.src) {   		// print complete line
 			c := s.src[s.lineOffset+i]
 			if c>32 {s.start=false}      			// lines containing only whitespace won't unset start
@@ -70,16 +65,8 @@ func (s *Scanner) Echo() {
 		}
 	}
 
-	if s.rdOffset==0 {								// start of very first line
-		//print("> "); printline()
-	} else {
+	if s.rdOffset>0 {
 		if s.lineOffset == s.offset {		// lookahead will go past end of last line
-			if s.start {
-				print("> ")
-				s.start=false
-			} else {
-				print("  ")
-			}
 			printline(s)
 		}
 	}
@@ -158,8 +145,7 @@ func (s *Scanner) Init(file *token.File, src []byte, err ErrorHandler, echo bool
 	s.lineOffset = 0
 	s.insertSemi = false
 	s.ErrorCount = 0
-	
-	s.Start()
+
 	s.next()
 	if s.ch == bom {
 		s.next() // ignore BOM at file beginning
@@ -231,7 +217,6 @@ exit:
 	if hasCR {
 		lit = stripCR(lit)
 	}
-	s.Start()
 	return string(lit)
 }
 
@@ -297,6 +282,7 @@ func (s *Scanner) scanIdentifier() string {
 	for isLetter(s.ch) || isDigit(s.ch) || s.ch == '_' || s.ch == '.' {
 		s.next()
 	}
+	s.insertSemi=true
 	return string(s.src[offs:s.offset])
 }
 
@@ -622,7 +608,7 @@ scanAgain:
 			// keywords are longer than one letter - avoid lookup otherwise
 			tok = token.Lookup(lit)
 			switch tok {
-			case token.BREAK, token.NEXT, token.RETURN, token.NULL, token.NA, token.INF, token.NAN, token.TRUE, token.FALSE:
+			case token.BREAK, token.NEXT, token.EOF, token.RETURN, token.NULL, token.NA, token.INF, token.NAN, token.TRUE, token.FALSE:
 				insertSemi = true
 				return pos, tok, ""
 			}
@@ -637,11 +623,12 @@ scanAgain:
 		s.next() // always make progress
 		switch ch {
 		case -1:
-			if s.insertSemi {
-				s.insertSemi = false // EOF consumed
-				return pos, token.SEMICOLON, "\n"
+			if s.lastchar {
+				return pos, token.EOF, "EOF"
+			} else {
+				s.lastchar=true
+				return pos, token.SEMICOLON, "EOF"
 			}
-			tok = token.EOF
 		case '\n':
 			// we only reach here if s.insertSemi was
 			// set in the first place and exited early
@@ -703,7 +690,12 @@ scanAgain:
 		case '-':
 			if s.ch == '>' {
 				s.next()
-				tok = token.RIGHTASSIGNMENT
+				if s.ch == '>' {
+					s.next()
+					tok = token.SUPERRIGHTASSIGNMENT
+				} else {
+					tok = token.RIGHTASSIGNMENT
+				}
 			} else {
 				tok = token.MINUS
 			}
@@ -739,6 +731,14 @@ scanAgain:
 			} else if s.ch == '=' {
 				s.next()
 				tok = token.LESSEQUAL
+			} else if s.ch == '<' {
+				s.next()
+				if s.ch == '-' {
+					s.next()
+					tok = token.SUPERLEFTASSIGNMENT
+				} else {				
+					tok = token.ILLEGAL
+				}
 			} else {
 				tok = token.LESS
 			}

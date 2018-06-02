@@ -925,14 +925,14 @@ func (p *parser) parseParameter() ast.Expr {
 // The result may be a type or even a raw type ([...]int).
 func (p *parser) parseExpr(lhs bool) ast.Expr {
 	if p.trace {
-		defer un(trace(p, "Expression or shortassignment"))
+		defer un(trace(p, "Parsing expression or shortassignment"))
 	}
 	return p.parseBinaryExpr(lhs, 3)
 }
 
 func (p *parser) parseExprOrAssignment(lhs bool) ast.Expr {
 	if p.trace {
-		defer un(trace(p, "Expression or Assignment"))
+		defer un(trace(p, "Parsing expression or assignment"))
 	}
 	return p.parseBinaryExpr(lhs, 1)
 }

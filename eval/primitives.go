@@ -27,7 +27,7 @@ func EvalLength(ev *Evaluator, node *ast.CallExpr) (r *ISEXP) {
 func EvalCat(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 	TRACE := ev.Trace
 	if TRACE {
-		println("PrintExpr")
+		println("CatExpr")
 	}
 	for n := 0; n < len(node.Args); n++ {
 		r = EvalExpr(ev, node.Args[n])
