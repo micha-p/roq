@@ -62,7 +62,7 @@ func getIdent(ev *Evaluator, ex ast.Expr) string {
 }
 
 // Insert attempts to insert a named object obj into the frame s.
-// If the frame already contains an object alt with the same name, this object is overwritten
+// If the frame already contains an object with the same name, this object is overwritten
 func (s *Frame) Insert(identifier string, obj SEXPItf) (alt SEXPItf) {
 	s.Objects[identifier] = obj
 	return
