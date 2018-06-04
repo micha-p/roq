@@ -1,37 +1,53 @@
 package eval
 
 import (
-	"fmt"
 	"roq/lib/parser"
 	"roq/lib/token"
 )
 
 // TODO EvalStringForValues => needed for tests with assert
 
+
 func EvalStringForTest(src string){
 	filename:=""
-	EvalMain(&filename, src, parser.AllErrors, false, false,"0","0.0")
+	TRACE := false
+	DEBUG := false
+	MAJOR := "0"
+	MINOR := "0.0"
+	EvalMain(&filename, src, parser.AllErrors, TRACE, DEBUG, MAJOR, MINOR)
 }
 
 func EvalFileForTest(filename string){
-	EvalMain(&filename, nil, parser.AllErrors, false, false,"0","0.0")
+	TRACE := false
+	DEBUG := false
+	MAJOR := "0"
+	MINOR := "0.0"
+	EvalMain(&filename, nil, parser.AllErrors, TRACE, DEBUG, MAJOR, MINOR)
 }
 
+
 // parser might be started with filename or various other sources (string, []byte, *bytes.Buffer, io.Reader)
-func EvalMain(filePtr *string, src interface{}, parserOpts parser.Mode, TRACE bool, DEBUG bool, MAJOR string, MINOR string) {
+func EvalPreInit(filePtr *string, src interface{}, parserOpts parser.Mode, TRACE bool, DEBUG bool, MAJOR string, MINOR string)(*parser.Parser, *Evaluator){
+
 	fset := token.NewFileSet() // positions are relative to fset
 
 	p, errp := parser.ParseInit(fset, *filePtr, src, parserOpts)
 	if errp != nil {
-		fmt.Println(errp)
-		return
+		panic(errp)
 	}
 	ev, erre := EvalInit(fset, *filePtr, src, parser.AllErrors, TRACE, DEBUG, MAJOR, MINOR)
 	if erre != nil {
-		fmt.Println(erre)
-		return
+		panic(erre)
 	}
+	return p, ev
+}
 
+// parser might be started with filename or various other sources (string, []byte, *bytes.Buffer, io.Reader)
+func EvalMain(filePtr *string, src interface{}, parserOpts parser.Mode, TRACE bool, DEBUG bool, MAJOR string, MINOR string) {
+	
+	var p *parser.Parser
+	var ev *Evaluator
+	p, ev = EvalPreInit(filePtr, src, parserOpts, TRACE, DEBUG, MAJOR, MINOR)
 	for true {
 		stmt, tok := parser.ParseIter(p) // main iterator calls parse.stmt
 		if tok == token.EOF {
@@ -53,3 +69,19 @@ func EvalMain(filePtr *string, src interface{}, parserOpts parser.Mode, TRACE bo
 	}
 }
 
+func EvalStringforValue(src string) float64{
+	filename := ""
+	TRACE := false
+	DEBUG := false
+	MAJOR := "0"
+	MINOR := "0.0"
+	
+	var p *parser.Parser
+	var ev *Evaluator
+	p, ev = EvalPreInit(&filename, src, parser.AllErrors, TRACE, DEBUG, MAJOR, MINOR)
+
+	stmt, _ := parser.ParseIter(p)
+	sexp := EvalStmt(ev, stmt)
+	r := sexp.(*VSEXP)
+	return r.Immediate
+}

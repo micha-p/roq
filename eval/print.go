@@ -2,13 +2,11 @@ package eval
 
 import (
 	"roq/version"
-	"math"
 	"fmt"
+	"math"
 	"roq/lib/ast"
 	"roq/lib/token"
 )
-
-// length is used instead of linecount
 
 // visibility is stored in the evaluator and unset after every print
 // TODO typeswitch should depend on Kind
@@ -105,7 +103,7 @@ func PrintResultE(ev *Evaluator, r *ESEXP) {
 func PrintResultV(ev *Evaluator, r *VSEXP) {
 	DEBUG := ev.Debug
 	if r== nil {
-		fmt.Printf("nil")
+		fmt.Printf("nil\n")
 	} else if r.Body != nil {
 		if DEBUG {
 			print("function(")

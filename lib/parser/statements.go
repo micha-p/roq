@@ -27,7 +27,7 @@ import (
 // ----------------------------------------------------------------------------
 // Blocks
 
-func (p *parser) parseStmtList() (list []ast.Stmt) {
+func (p *Parser) parseStmtList() (list []ast.Stmt) {
 	if p.debug {
 		defer un(trace(p, "StatementList"))
 	}
@@ -39,7 +39,7 @@ func (p *parser) parseStmtList() (list []ast.Stmt) {
 	return
 }
 
-func (p *parser) parseBody(scope *ast.Scope) *ast.BlockStmt {
+func (p *Parser) parseBody(scope *ast.Scope) *ast.BlockStmt {
 	if p.trace {
 		defer un(trace(p, "Body"))
 	}
@@ -55,7 +55,7 @@ func (p *parser) parseBody(scope *ast.Scope) *ast.BlockStmt {
 	return r
 }
 
-func (p *parser) parseBlockStmt() *ast.BlockStmt {
+func (p *Parser) parseBlockStmt() *ast.BlockStmt {
 	if p.trace {
 		defer un(trace(p, "BlockStmt"))
 	}
@@ -70,7 +70,7 @@ func (p *parser) parseBlockStmt() *ast.BlockStmt {
 }
 
 // return one single statement as list of length 1
-func (p *parser) parseBlockStmt1() *ast.BlockStmt {
+func (p *Parser) parseBlockStmt1() *ast.BlockStmt {
 	if p.trace {
 		defer un(trace(p, "BlockStmt1"))
 	}
@@ -99,7 +99,7 @@ const (
 // of a range clause (with mode == rangeOk). The returned statement is an
 // assignment with a right-hand side that is a single unary expression of
 // the form "range x". No guarantees are given for the left-hand side.
-func (p *parser) parseAssignment() ast.Stmt {
+func (p *Parser) parseAssignment() ast.Stmt {
 	if p.trace {
 		defer un(trace(p, "Assignment (or expr)"))
 	}
@@ -122,7 +122,7 @@ func (p *parser) parseAssignment() ast.Stmt {
 	}
 }
 
-func (p *parser) parseReturnStmt() *ast.ReturnStmt {
+func (p *Parser) parseReturnStmt() *ast.ReturnStmt {
 	if p.trace {
 		defer un(trace(p, "ReturnStmt"))
 	}
@@ -142,7 +142,7 @@ func (p *parser) parseReturnStmt() *ast.ReturnStmt {
 	return &ast.ReturnStmt{Return: pos, Result: x}
 }
 
-func (p *parser) makeExpr(s ast.Stmt, kind string) ast.Expr {
+func (p *Parser) makeExpr(s ast.Stmt, kind string) ast.Expr {
 	if s == nil {
 		return nil
 	}
@@ -153,7 +153,7 @@ func (p *parser) makeExpr(s ast.Stmt, kind string) ast.Expr {
 	return &ast.BadExpr{From: s.Pos(), To: p.safePos(s.End())}
 }
 
-func (p *parser) parseIfStmt() *ast.IfStmt {
+func (p *Parser) parseIfStmt() *ast.IfStmt {
 	if p.trace {
 		defer un(trace(p, "IfStmt"))
 	}
@@ -198,7 +198,7 @@ func (p *parser) parseIfStmt() *ast.IfStmt {
 	return &ast.IfStmt{Keyword: pos, Cond: x, Body: body, Else: else_}
 }
 
-func (p *parser) parseWhileStmt() *ast.WhileStmt {
+func (p *Parser) parseWhileStmt() *ast.WhileStmt {
 	if p.trace {
 		defer un(trace(p, "WhileStmt"))
 	}
@@ -223,7 +223,7 @@ func (p *parser) parseWhileStmt() *ast.WhileStmt {
 	return &ast.WhileStmt{Keyword: pos, Cond: x, Body: body}
 }
 
-func (p *parser) parseRepeatStmt() *ast.RepeatStmt {
+func (p *Parser) parseRepeatStmt() *ast.RepeatStmt {
 	if p.trace {
 		defer un(trace(p, "RepeatStmt"))
 	}
@@ -243,7 +243,7 @@ func (p *parser) parseRepeatStmt() *ast.RepeatStmt {
 	return &ast.RepeatStmt{Keyword: pos, Body: body}
 }
 
-func (p *parser) parseForStmt() ast.Stmt {
+func (p *Parser) parseForStmt() ast.Stmt {
 	if p.trace {
 		defer un(trace(p, "ForStmt"))
 	}
@@ -275,7 +275,7 @@ func (p *parser) parseForStmt() ast.Stmt {
 	}
 }
 
-func (p *parser) parseStmt() (s ast.Stmt) {
+func (p *Parser) parseStmt() (s ast.Stmt) {
 	if p.trace {
 		defer un(trace(p, "Statement"))
 	}

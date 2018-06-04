@@ -125,7 +125,7 @@ func ParseFile(fset *token.FileSet, filename string, src interface{}, mode Mode)
 */
 
 // parserInit and parseIter are derived from SPLITTED ParseFile and parseFile to allow for subsequent parsing
-func ParseInit(fset *token.FileSet, filename string, src interface{}, mode Mode) (r *parser, err error) {
+func ParseInit(fset *token.FileSet, filename string, src interface{}, mode Mode) (r *Parser, err error) {
 
 	if fset == nil {
 		panic("parser.ParseFile: no token.FileSet provided (fset == nil)")
@@ -137,7 +137,7 @@ func ParseInit(fset *token.FileSet, filename string, src interface{}, mode Mode)
 		return nil, err
 	}
 
-	var p parser
+	var p Parser
 	p.init(fset, filename, text, mode)
 	assert(&p != nil, "nil instead of parser")
 	p.openScope()
@@ -146,7 +146,7 @@ func ParseInit(fset *token.FileSet, filename string, src interface{}, mode Mode)
 }
 
 
-func ParseIter(p *parser) (s ast.Stmt, tok token.Token) {
+func ParseIter(p *Parser) (s ast.Stmt, tok token.Token) {
 
 	p.pkgScope = p.topScope
 
@@ -173,7 +173,7 @@ func ParseExprFrom(fset *token.FileSet, filename string, src interface{}, mode M
 		return nil, err
 	}
 
-	var p parser
+	var p Parser
 	defer func() {
 		if e := recover(); e != nil {
 			// resume same panic if it's not a bailout

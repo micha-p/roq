@@ -25,7 +25,7 @@ import (
 )
 
 // The parser structure holds the parser's internal state.
-type parser struct {
+type Parser struct {
 	file    *token.File
 	errors  scanner.ErrorList
 	scanner scanner.Scanner
@@ -59,7 +59,7 @@ type parser struct {
 	imports    []*ast.ImportSpec // list of imports
 }
 
-func (p *parser) init(fset *token.FileSet, filename string, src []byte, mode Mode) {
+func (p *Parser) init(fset *token.FileSet, filename string, src []byte, mode Mode) {
 	p.file = fset.AddFile(filename, -1, len(src))
 
 	p.trace = mode&Trace != 0 // for convenience (p.trace is used frequently)
@@ -76,15 +76,15 @@ func (p *parser) init(fset *token.FileSet, filename string, src []byte, mode Mod
 // ----------------------------------------------------------------------------
 // Scoping support
 
-func (p *parser) openScope() {
+func (p *Parser) openScope() {
 	p.topScope = ast.NewScope(p.topScope)
 }
 
-func (p *parser) closeScope() {
+func (p *Parser) closeScope() {
 	p.topScope = p.topScope.Outer
 }
 
-func (p *parser) declare(decl, data interface{}, scope *ast.Scope, kind ast.ObjKind, idents ...*ast.Ident) {
+func (p *Parser) declare(decl, data interface{}, scope *ast.Scope, kind ast.ObjKind, idents ...*ast.Ident) {
 	for _, ident := range idents {
 		assert(ident.Obj == nil, "identifier already declared or resolved")
 		obj := ast.NewObj(kind, ident.Name)
@@ -115,7 +115,7 @@ var unresolved = new(ast.Object)
 // set, x is marked as unresolved and collected in the list of unresolved
 // identifiers.
 //
-func (p *parser) tryResolve(x ast.Expr, collectUnresolved bool) {
+func (p *Parser) tryResolve(x ast.Expr, collectUnresolved bool) {
 	// nothing to do if x is not an identifier or the blank identifier
 	ident, _ := x.(*ast.Ident)
 	if ident == nil {
@@ -142,14 +142,14 @@ func (p *parser) tryResolve(x ast.Expr, collectUnresolved bool) {
 	}
 }
 
-func (p *parser) resolve(x ast.Expr) {
+func (p *Parser) resolve(x ast.Expr) {
 	p.tryResolve(x, true)
 }
 
 // ----------------------------------------------------------------------------
 // Parsing support
 
-func (p *parser) printTrace(a ...interface{}) {
+func (p *Parser) printTrace(a ...interface{}) {
 	const dots = ". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . "
 	const n = len(dots)
 	pos := p.file.Position(p.pos)
@@ -164,25 +164,25 @@ func (p *parser) printTrace(a ...interface{}) {
 	fmt.Println(a...)
 }
 
-func trace0(p *parser, msg string) *parser {
+func trace0(p *Parser, msg string) *Parser {
 	p.printTrace(msg)
 	return p
 }
 
-func trace(p *parser, msg string) *parser {
+func trace(p *Parser, msg string) *Parser {
 	p.printTrace(msg, "(")
 	p.indent++
 	return p
 }
 
 // Usage pattern: defer un(trace(p, "..."))
-func un(p *parser) {
+func un(p *Parser) {
 	p.indent--
 	p.printTrace(")")
 }
 
 // Advance to the next token.
-func (p *parser) next() {
+func (p *Parser) next() {
 	// Because of one-token look-ahead, print the previous token
 	// when tracing as it provides a more readable output. The
 	// very first token (!p.pos.IsValid()) is not initialized
@@ -205,12 +205,12 @@ func (p *parser) next() {
 // A bailout panic is raised to indicate early termination.
 type bailout struct{}
 
-func (p *parser) error(pos token.Pos, msg string) {
+func (p *Parser) error(pos token.Pos, msg string) {
 	epos := p.file.Position(pos)
 	p.errors.Add(epos, msg)
 }
 
-func (p *parser) errorExpected(pos token.Pos, msg string) {
+func (p *Parser) errorExpected(pos token.Pos, msg string) {
 	msg = "expected " + msg
 	if pos == p.pos {
 		// the error happened at the current position;
@@ -227,7 +227,7 @@ func (p *parser) errorExpected(pos token.Pos, msg string) {
 	p.error(pos, msg)
 }
 
-func (p *parser) expect(tok token.Token) token.Pos {
+func (p *Parser) expect(tok token.Token) token.Pos {
 	if p.debug {
 		defer trace0(p, "EXPECT: "+tok.String()+"  GIVEN: "+p.tok.String())
 	}
@@ -243,7 +243,7 @@ func (p *parser) expect(tok token.Token) token.Pos {
 // expectClosing is like expect but provides a better error message
 // for the common case of a missing comma before a newline.
 //
-func (p *parser) expectClosing(tok token.Token, context string) token.Pos {
+func (p *Parser) expectClosing(tok token.Token, context string) token.Pos {
 	if p.tok != tok && p.tok == token.SEMICOLON && p.lit == "\n" {
 		p.error(p.pos, "missing ',' before newline in "+context)
 		p.next()
@@ -251,7 +251,7 @@ func (p *parser) expectClosing(tok token.Token, context string) token.Pos {
 	return p.expect(tok)
 }
 
-func (p *parser) expectSemi() {
+func (p *Parser) expectSemi() {
 	// semicolon is optional before a closing ')' or '}'
 	if p.tok != token.RPAREN && p.tok != token.RBRACE {
 		switch p.tok {
@@ -268,7 +268,7 @@ func (p *parser) expectSemi() {
 	}
 }
 
-func (p *parser) atComma(context string, follow token.Token) bool {
+func (p *Parser) atComma(context string, follow token.Token) bool {
 	if p.tok == token.COMMA {
 		return true
 	}
@@ -292,7 +292,7 @@ func assert(cond bool, msg string) {
 // syncStmt advances to the next statement.
 // Used for synchronization after an error.
 //
-func syncStmt(p *parser) {
+func syncStmt(p *Parser) {
 	for {
 		switch p.tok {
 		case token.BREAK, token.CONST, token.NEXT, token.FOR,
@@ -329,7 +329,7 @@ func syncStmt(p *parser) {
 // syncDecl advances to the next declaration.
 // Used for synchronization after an error.
 //
-func syncDecl(p *parser) {
+func syncDecl(p *Parser) {
 	for {
 		switch p.tok {
 		case token.CONST, token.TYPE, token.VAR:
@@ -360,7 +360,7 @@ func syncDecl(p *parser) {
 // may be past the file's EOF position, which would lead to panics if used
 // later on.
 //
-func (p *parser) safePos(pos token.Pos) (res token.Pos) {
+func (p *Parser) safePos(pos token.Pos) (res token.Pos) {
 	defer func() {
 		if recover() != nil {
 			res = token.Pos(p.file.Base() + p.file.Size()) // EOF position
@@ -373,7 +373,7 @@ func (p *parser) safePos(pos token.Pos) (res token.Pos) {
 // ----------------------------------------------------------------------------
 // Identifiers
 
-func (p *parser) parseIdent() *ast.Ident {
+func (p *Parser) parseIdent() *ast.Ident {
 	pos := p.pos
 	name := "_"
 	if p.tok == token.IDENT {
@@ -385,7 +385,7 @@ func (p *parser) parseIdent() *ast.Ident {
 	return &ast.Ident{NamePos: pos, Name: name}
 }
 
-func (p *parser) parseIdentList() (list []*ast.Ident) {
+func (p *Parser) parseIdentList() (list []*ast.Ident) {
 	if p.trace {
 		defer un(trace(p, "IdentList"))
 	}
@@ -403,7 +403,7 @@ func (p *parser) parseIdentList() (list []*ast.Ident) {
 // Common productions
 
 // If lhs is set, result list elements which are identifiers are not resolved.
-func (p *parser) parseExprList(lhs bool) (list []ast.Expr) {
+func (p *Parser) parseExprList(lhs bool) (list []ast.Expr) {
 	if p.trace {
 		defer un(trace(p, "ExpressionList"))
 	}
@@ -420,7 +420,7 @@ func (p *parser) parseExprList(lhs bool) (list []ast.Expr) {
 // ----------------------------------------------------------------------------
 // Types
 
-func (p *parser) parseType() ast.Expr {
+func (p *Parser) parseType() ast.Expr {
 	if p.trace {
 		defer un(trace(p, "Type"))
 	}
@@ -438,7 +438,7 @@ func (p *parser) parseType() ast.Expr {
 }
 
 // If the result is an identifier, it is not resolved.
-func (p *parser) parseTypeName() ast.Expr {
+func (p *Parser) parseTypeName() ast.Expr {
 	if p.trace {
 		defer un(trace(p, "TypeName"))
 	}
@@ -458,7 +458,7 @@ func (p *parser) parseTypeName() ast.Expr {
 }
 
 
-func (p *parser) parseFuncParameterList(scope *ast.Scope, ellipsisOk bool) (list []*ast.Field) {
+func (p *Parser) parseFuncParameterList(scope *ast.Scope, ellipsisOk bool) (list []*ast.Field) {
 	if p.trace {
 		defer un(trace(p, "ParameterList: "+p.lit))
 	}
@@ -491,7 +491,7 @@ func (p *parser) parseFuncParameterList(scope *ast.Scope, ellipsisOk bool) (list
 	return
 }
 
-func (p *parser) parseFuncParameters(scope *ast.Scope, ellipsisOk bool) *ast.FieldList {
+func (p *Parser) parseFuncParameters(scope *ast.Scope, ellipsisOk bool) *ast.FieldList {
 
 	if p.trace {
 		defer un(trace(p, "Parameters: "+p.lit))
@@ -508,7 +508,7 @@ func (p *parser) parseFuncParameters(scope *ast.Scope, ellipsisOk bool) *ast.Fie
 	return &ast.FieldList{Opening: lparen, List: params, Closing: rparen}
 }
 
-func (p *parser) parseFuncType() (*ast.FuncType, *ast.Scope) {
+func (p *Parser) parseFuncType() (*ast.FuncType, *ast.Scope) {
 	if p.trace {
 		defer un(trace(p, "FuncType"))
 	}
@@ -521,7 +521,7 @@ func (p *parser) parseFuncType() (*ast.FuncType, *ast.Scope) {
 }
 
 // If the result is an identifier, it is not resolved.
-func (p *parser) tryIdentOrType() ast.Expr {
+func (p *Parser) tryIdentOrType() ast.Expr {
 	switch p.tok {
 	case token.IDENT:
 		return p.parseTypeName()
@@ -542,7 +542,7 @@ func (p *parser) tryIdentOrType() ast.Expr {
 	return nil
 }
 
-func (p *parser) tryType() ast.Expr {
+func (p *Parser) tryType() ast.Expr {
 	typ := p.tryIdentOrType()
 	if typ != nil {
 		p.resolve(typ)
@@ -554,7 +554,7 @@ func (p *parser) tryType() ast.Expr {
 // ----------------------------------------------------------------------------
 // Expressions
 
-func (p *parser) parseFuncLit() ast.Expr {
+func (p *Parser) parseFuncLit() ast.Expr {
 	if p.trace {
 		defer un(trace(p, "FuncLit"))
 	}
@@ -576,7 +576,7 @@ func (p *parser) parseFuncLit() ast.Expr {
 // types of the form [...]T. Callers must verify the result.
 // If lhs is set and the result is an identifier, it is not resolved.
 //
-func (p *parser) parseOperand(lhs bool) ast.Expr {
+func (p *Parser) parseOperand(lhs bool) ast.Expr {
 	if p.trace {
 		defer un(trace(p, "Operand"))
 	}
@@ -619,7 +619,7 @@ func (p *parser) parseOperand(lhs bool) ast.Expr {
 	return &ast.BadExpr{From: pos, To: p.pos}
 }
 
-func (p *parser) parseSelector(x ast.Expr) ast.Expr {
+func (p *Parser) parseSelector(x ast.Expr) ast.Expr {
 	if p.trace {
 		defer un(trace(p, "Selector"))
 	}
@@ -629,7 +629,7 @@ func (p *parser) parseSelector(x ast.Expr) ast.Expr {
 	return &ast.SelectorExpr{X: x, Sel: sel}
 }
 
-func (p *parser) parseIndex(x ast.Expr) ast.Expr {
+func (p *Parser) parseIndex(x ast.Expr) ast.Expr {
 	if p.trace {
 		defer un(trace(p, "IndexOrSlice"))
 	}
@@ -645,7 +645,7 @@ func (p *parser) parseIndex(x ast.Expr) ast.Expr {
 	return &ast.IndexExpr{Array: x, Lbrack: lbrack, Index: index, Rbrack: rbrack}
 }
 
-func (p *parser) parseCall(fun ast.Expr) *ast.CallExpr {
+func (p *Parser) parseCall(fun ast.Expr) *ast.CallExpr {
 	if p.trace {
 		defer un(trace(p, "Call"))
 	}
@@ -673,7 +673,7 @@ func (p *parser) parseCall(fun ast.Expr) *ast.CallExpr {
 
 // TODO vector literals consisting just of floats
 
-//func (p *parser) parseVector(start token.Pos) *ast.VectorLit {
+//func (p *Parser) parseVector(start token.Pos) *ast.VectorLit {
 	//if p.trace {
 		//defer un(trace(p, "Vector"))
 	//}
@@ -692,7 +692,7 @@ func (p *parser) parseCall(fun ast.Expr) *ast.CallExpr {
 	//return &ast.VectorLit{Lparen: lparen, Args: list, Rparen: rparen}
 //}
 
-func (p *parser) parseValue(keyOk bool) ast.Expr {
+func (p *Parser) parseValue(keyOk bool) ast.Expr {
 	if p.trace {
 		defer un(trace(p, "Element"))
 	}
@@ -734,7 +734,7 @@ func (p *parser) parseValue(keyOk bool) ast.Expr {
 	return x
 }
 
-func (p *parser) parseElement() ast.Expr {
+func (p *Parser) parseElement() ast.Expr {
 	if p.trace {
 		defer un(trace(p, "Element"))
 	}
@@ -749,7 +749,7 @@ func (p *parser) parseElement() ast.Expr {
 	return x
 }
 
-func (p *parser) parseElementList() (list []ast.Expr) {
+func (p *Parser) parseElementList() (list []ast.Expr) {
 	if p.trace {
 		defer un(trace(p, "ElementList"))
 	}
@@ -765,7 +765,7 @@ func (p *parser) parseElementList() (list []ast.Expr) {
 	return
 }
 
-func (p *parser) parseLiteralValue(typ ast.Expr) ast.Expr {
+func (p *Parser) parseLiteralValue(typ ast.Expr) ast.Expr {
 	if p.trace {
 		defer un(trace(p, "LiteralValue"))
 	}
@@ -805,7 +805,7 @@ func unparen(x ast.Expr) ast.Expr {
 }
 
 // If lhs is set and the result is an identifier, it is not resolved.
-func (p *parser) parsePrimaryExpr(lhs bool) ast.Expr {
+func (p *Parser) parsePrimaryExpr(lhs bool) ast.Expr {
 	if p.trace && p.debug {
 		defer un(trace(p, "PrimaryExpr"))
 	}
@@ -858,7 +858,7 @@ L:
 }
 
 // If lhs is set and the result is an identifier, it is not resolved.
-func (p *parser) parseUnaryExpr(lhs bool) ast.Expr {
+func (p *Parser) parseUnaryExpr(lhs bool) ast.Expr {
 	if p.trace && p.debug {
 		defer un(trace(p, "UnaryExpr"))
 	}
@@ -874,13 +874,13 @@ func (p *parser) parseUnaryExpr(lhs bool) ast.Expr {
 	return p.parsePrimaryExpr(lhs)
 }
 
-func (p *parser) tokPrec() (token.Token, int) {
+func (p *Parser) tokPrec() (token.Token, int) {
 	tok := p.tok
 	return tok, tok.Precedence()
 }
 
 // If lhs is set and the result is an identifier, it is not resolved.
-func (p *parser) parseBinaryExpr(lhs bool, prec1 int) ast.Expr {
+func (p *Parser) parseBinaryExpr(lhs bool, prec1 int) ast.Expr {
 	if p.trace {
 		defer un(trace(p, "BinaryExpr "+strconv.Itoa(prec1)))
 
@@ -903,7 +903,7 @@ func (p *parser) parseBinaryExpr(lhs bool, prec1 int) ast.Expr {
 	return x
 }
 
-func (p *parser) parseParameter() ast.Expr {
+func (p *Parser) parseParameter() ast.Expr {
 	if p.trace {
 		defer un(trace(p, "Parameter"))
 	}
@@ -923,21 +923,21 @@ func (p *parser) parseParameter() ast.Expr {
 
 // If lhs is set and the result is an identifier, it is not resolved.
 // The result may be a type or even a raw type ([...]int).
-func (p *parser) parseExpr(lhs bool) ast.Expr {
+func (p *Parser) parseExpr(lhs bool) ast.Expr {
 	if p.trace {
 		defer un(trace(p, "Parsing expression or shortassignment"))
 	}
 	return p.parseBinaryExpr(lhs, 3)
 }
 
-func (p *parser) parseExprOrAssignment(lhs bool) ast.Expr {
+func (p *Parser) parseExprOrAssignment(lhs bool) ast.Expr {
 	if p.trace {
 		defer un(trace(p, "Parsing expression or assignment"))
 	}
 	return p.parseBinaryExpr(lhs, 1)
 }
 
-func (p *parser) parseRhs() ast.Expr {
+func (p *Parser) parseRhs() ast.Expr {
 	old := p.inRhs
 	p.inRhs = true
 	x := p.parseExprOrAssignment(false)
