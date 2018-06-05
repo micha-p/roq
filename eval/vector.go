@@ -22,7 +22,35 @@ func intMax(x int, y int) int {
 	}
 }
 
-// TODO work on slices of same length instead of single values
+// TODO map on slices of same length instead of single values
+func fEQUAL(x float64, y float64) float64 {
+	if x == y {
+		return x
+	} else {
+		return math.NaN()
+	}
+}
+func fUNEQUAL(x float64, y float64) float64 {
+	if x != y {
+		return x
+	} else {
+		return math.NaN()
+	}
+}
+func fLESS(x float64, y float64) float64 { 
+	if x < y {
+		return y
+	} else {
+		return math.NaN()
+	}
+}
+func fLESSEQUAL(x float64, y float64) float64 { 
+	if x <= y {
+		return y
+	} else {
+		return math.NaN()
+	}
+}
 func fPLUS(x float64, y float64) float64 { 
 	return x + y
 }
@@ -95,61 +123,24 @@ func EvalVectorOp(x *VSEXP, y *VSEXP, FUN func(float64, float64) float64) *VSEXP
 // As evaluation is from left to right, y value has to be returned
 
 func EvalComp(op token.Token, x *VSEXP, y *VSEXP) *VSEXP {
-	// false and true are not really the same. false is rather the base level.
 	if x == nil || y == nil {
 		return nil
 	}
-	var o1,o2 float64
-	if x.Slice==nil {
-		o1 = x.Immediate
-	} else {
-		o1 = x.Slice[0]
-	}
-	if y.Slice==nil {
-		o2 = y.Immediate
-	} else {
-		o2 = y.Slice[0]
-	}
-	// println("?",o1,op.String(),o2)
 	switch op {
-	case token.LESS:
-		if o1 < o2 {
-			return y
-		} else {
-			return nil
-		}
-	case token.LESSEQUAL:
-		if o1 <= o2 {
-			return y
-		} else {
-			return nil
-		}
-	case token.GREATER:
-		if o1 > o2 {
-			return y
-		} else {
-			return nil
-		}
-	case token.GREATEREQUAL:
-		if o1 >= o2 {
-			return y
-		} else {
-			return nil
-		}
 	case token.EQUAL:
-		if o1 == o2 {
-			return y
-		} else {
-			return nil
-		}
+		return EvalVectorOp(x,y,fEQUAL)
 	case token.UNEQUAL:
-		if o1 != o2 {
-			return y
-		} else {
-			return nil
-		}
+		return EvalVectorOp(x,y,fUNEQUAL)
+	case token.LESS:
+		return EvalVectorOp(x,y,fLESS)
+	case token.LESSEQUAL:
+		return EvalVectorOp(x,y,fLESSEQUAL)
+	case token.GREATER:
+		return EvalVectorOp(y,x,fLESS)
+	case token.GREATEREQUAL:
+		return EvalVectorOp(y,x,fLESSEQUAL)
 	default:
-		panic("?Comp: " + op.String())
+		panic("?Vcomp: " + op.String())
 	}
 }
 

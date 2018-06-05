@@ -32,20 +32,20 @@ func EvalCat(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 	for n := 0; n < len(node.Args); n++ {
 		r = EvalExpr(ev, node.Args[n])
 		if n > 0 {
-			print(" ")
+			fmt.Printf(" ")
 		}
 		switch r.(type) {
 		case *TSEXP:
-			print(strings.Replace(r.(*TSEXP).String, "\\n", "\n", -1)) // needs strings.Map
+			fmt.Printf(strings.Replace(r.(*TSEXP).String, "\\n", "\n", -1)) // needs strings.Map
 		case *ISEXP:
 			fmt.Printf("%g", r.(*ISEXP).Immediate) // TODO
 		case *VSEXP:
 			if r.(*VSEXP).Slice == nil {
-				print(r.(*VSEXP).Immediate)
+				fmt.Printf("%g",r.(*VSEXP).Immediate)
 			} else {
 				for n, v := range r.(*VSEXP).Slice {
 					if n > 0 {
-						print(" ")
+						fmt.Printf(" ")
 					}
 					fmt.Printf(" %g", v) // R has small e for exponential format
 				}

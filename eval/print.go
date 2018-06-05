@@ -115,7 +115,7 @@ func PrintResultV(r *VSEXP) {
 		} else {
 			rdim := r.Dim()
 			if rdim == nil {
-				fmt.Printf("[%d]", r.Length())
+				fmt.Printf("[1]")
 				printArray(r.Slice)
 			} else if len(rdim) == 2 && r.Dimnames() != nil {
 				printMatrixDimnames(r.Slice,
