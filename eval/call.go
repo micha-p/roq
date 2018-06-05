@@ -100,6 +100,8 @@ func EvalCallBuiltin(ev *Evaluator, node *ast.CallExpr, funcname string) (r SEXP
 		for _, arg := range node.Args {
 			ev.topFrame.Delete(arg.(*ast.BasicLit).Value, DEBUG)
 		}
+	case "options":
+		return nil
 	case "quit":
 		ev.state = eofState
 		return &ESEXP{Kind: token.EOF}
