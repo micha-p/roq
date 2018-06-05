@@ -2,7 +2,12 @@ package version
 
 import "runtime"
 
-func PrintVersion(MAJOR string, MINOR string) {
+const MAJOR = "0"
+const MINOR = "1.5"
+
+
+func PrintVersion() {
+	print("platform       "); println(runtime.GOARCH + "-pc-" + runtime.GOOS)
 	print("arch           "); println(runtime.GOARCH)
 	print("os             "); println(runtime.GOOS)
 	print("status         "); println("proof of concept")

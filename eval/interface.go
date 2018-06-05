@@ -12,22 +12,18 @@ func EvalStringForTest(src string){
 	filename:=""
 	TRACE := false
 	DEBUG := false
-	MAJOR := "0"
-	MINOR := "0.0"
-	EvalMain(&filename, src, parser.AllErrors, TRACE, DEBUG, MAJOR, MINOR)
+	EvalMain(&filename, src, parser.AllErrors, TRACE, DEBUG)
 }
 
 func EvalFileForTest(filename string){
 	TRACE := false
 	DEBUG := false
-	MAJOR := "0"
-	MINOR := "0.0"
-	EvalMain(&filename, nil, parser.AllErrors, TRACE, DEBUG, MAJOR, MINOR)
+	EvalMain(&filename, nil, parser.AllErrors, TRACE, DEBUG)
 }
 
 
 // parser might be started with filename or various other sources (string, []byte, *bytes.Buffer, io.Reader)
-func EvalPreInit(filePtr *string, src interface{}, parserOpts parser.Mode, TRACE bool, DEBUG bool, MAJOR string, MINOR string)(*parser.Parser, *Evaluator){
+func EvalPreInit(filePtr *string, src interface{}, parserOpts parser.Mode, TRACE bool, DEBUG bool)(*parser.Parser, *Evaluator){
 
 	fset := token.NewFileSet() // positions are relative to fset
 
@@ -35,7 +31,7 @@ func EvalPreInit(filePtr *string, src interface{}, parserOpts parser.Mode, TRACE
 	if errp != nil {
 		panic(errp)
 	}
-	ev, erre := EvalInit(fset, *filePtr, src, parser.AllErrors, TRACE, DEBUG, MAJOR, MINOR)
+	ev, erre := EvalInit(fset, *filePtr, src, parser.AllErrors, TRACE, DEBUG)
 	if erre != nil {
 		panic(erre)
 	}
@@ -43,11 +39,10 @@ func EvalPreInit(filePtr *string, src interface{}, parserOpts parser.Mode, TRACE
 }
 
 // parser might be started with filename or various other sources (string, []byte, *bytes.Buffer, io.Reader)
-func EvalMain(filePtr *string, src interface{}, parserOpts parser.Mode, TRACE bool, DEBUG bool, MAJOR string, MINOR string) {
-	
+func EvalMain(filePtr *string, src interface{}, parserOpts parser.Mode, TRACE bool, DEBUG bool){
 	var p *parser.Parser
 	var ev *Evaluator
-	p, ev = EvalPreInit(filePtr, src, parserOpts, TRACE, DEBUG, MAJOR, MINOR)
+	p, ev = EvalPreInit(filePtr, src, parserOpts, TRACE, DEBUG)
 	for true {
 		stmt, tok := parser.ParseIter(p) // main iterator calls parse.stmt
 		if tok == token.EOF {
@@ -73,12 +68,10 @@ func EvalStringforValue(src string) float64{
 	filename := ""
 	TRACE := false
 	DEBUG := false
-	MAJOR := "0"
-	MINOR := "0.0"
 	
 	var p *parser.Parser
 	var ev *Evaluator
-	p, ev = EvalPreInit(&filename, src, parser.AllErrors, TRACE, DEBUG, MAJOR, MINOR)
+	p, ev = EvalPreInit(&filename, src, parser.AllErrors, TRACE, DEBUG)
 
 	stmt, _ := parser.ParseIter(p)
 	sexp := EvalStmt(ev, stmt)

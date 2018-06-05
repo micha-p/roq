@@ -84,13 +84,13 @@ func un(e *Evaluator) {
 	}
 }
 
-func EvalInit(fset *token.FileSet, filename string, src interface{}, mode parser.Mode, traceflag bool, debugflag bool, MAJOR string, MINOR string) (r *Evaluator, err error) {
+func EvalInit(fset *token.FileSet, filename string, src interface{}, mode parser.Mode, traceflag bool, debugflag bool) (r *Evaluator, err error) {
 
 	if fset == nil {
 		panic("roq/eval.evalInit: no token.FileSet provided (fset == nil)")
 	}
 
-	e := Evaluator{Trace: traceflag, Debug: debugflag, indent: 0, topFrame: nil, Major: MAJOR, Minor: MINOR}
+	e := Evaluator{Trace: traceflag, Debug: debugflag, indent: 0, topFrame: nil}
 	e.topFrame = NewFrame(e.topFrame)
 	e.globalFrame = e.topFrame
 	return &e, err
@@ -303,9 +303,19 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 			return &VSEXP{ValuePos: node.ValuePos, Immediate: math.NaN()}
 		case token.IDENT:
 			if DEBUG {
-				print("Retrieving ident: ", node.Value," = ")
+				println("Retrieving identifier: " + node.Value)
 			}
-			return ev.topFrame.Recursive(node.Value)
+			r :=  ev.topFrame.Recursive(node.Value)
+			if r==nil {
+				if node.Value=="version" {
+					return &ESEXP{Kind: token.VERSION}
+				} else {
+					print("Error: object '", node.Value, "' not found\n")
+					return nil
+				}
+			} else {
+				return r
+			}
 		default:
 			panic("Unknown basic literal:"+node.Kind.String())
 		}

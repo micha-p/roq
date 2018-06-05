@@ -90,7 +90,7 @@ func PrintResultE(ev *Evaluator, r *ESEXP) {
 			println("ILLEGAL RESULT")
 		}
 	case token.VERSION:
-		version.PrintVersion(ev.Major,ev.Minor)
+		version.PrintVersion()
 	case token.EOF:
 		if DEBUG {
 			println("EOF AS RESULT")

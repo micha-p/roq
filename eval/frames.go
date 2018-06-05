@@ -33,7 +33,6 @@ func (f *Frame) Recursive(name string) (r SEXPItf) {
 		if f.Outer != nil {
 			return f.Outer.Recursive(name)
 		} else {
-			print("Error: object '", name, "' not found\n")
 			return nil
 		}
 	}

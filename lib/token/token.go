@@ -22,6 +22,7 @@ const (
 	ILLEGAL Token = iota
 	EOF
 	COMMENT
+	VERSION
 
 	literal_beg
 	// Identifiers and basic type literals
@@ -192,9 +193,6 @@ const (
 	NEXT
 	BREAK
 
-	// special command
-	VERSION
-
 	keyword_end
 )
 
@@ -202,6 +200,7 @@ var tokens = [...]string{
 	ILLEGAL: "ILLEGAL",
 	EOF:     "EOF",
 	COMMENT: "COMMENT",
+	VERSION:  "VERSION",
 
 	IDENT: "IDENT",
 	INT:   "INT",
@@ -295,7 +294,6 @@ var tokens = [...]string{
 	IN:       "in",
 	NEXT:     "next",
 	BREAK:    "break",
-	VERSION:  "version",
 }
 
 // String returns the string corresponding to the token tok.

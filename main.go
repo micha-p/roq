@@ -20,8 +20,6 @@ import (
 var TRACE bool
 var DEBUG bool
 var ECHO bool
-var MAJOR string
-var MINOR string
 
 func myerrorhandler(pos token.Position, msg string) {
 	println("SCANNER ERROR", pos.Filename, pos.Line, pos.Column, msg)
@@ -72,9 +70,6 @@ func mainParse(filePtr *string, src interface{}, parserOpts parser.Mode) {
 
 func main() {
 
-	MAJOR := "0"
-	MINOR := "1.5"
-
 	scanPtr := flag.Bool("scan", false, "scan")
 	parsePtr := flag.Bool("parse", false, "parse")
 	versionPtr := flag.Bool("version", false, "version")
@@ -110,7 +105,7 @@ func main() {
 	}
 
 	if *versionPtr {
-		version.PrintVersion(MAJOR, MINOR)
+		version.PrintVersion()
 	} else if *scanPtr {
 		mainScan(filePtr, *exprPtr, ECHO)
 	} else if *parsePtr {
@@ -144,7 +139,7 @@ func main() {
 		if ECHO {
 			parserOpts = parserOpts | parser.Echo
 		}
-		eval.EvalMain(filePtr, src, parserOpts, TRACE, DEBUG, MAJOR, MINOR)
+		eval.EvalMain(filePtr, src, parserOpts, TRACE, DEBUG)
 	}
 }
 
