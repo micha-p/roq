@@ -83,6 +83,7 @@ type SEXP struct {
 	dimnames *RSEXP
 	class    *string
 	Test     int
+	hidden   bool
 }
 
 // value domain

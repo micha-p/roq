@@ -53,7 +53,11 @@ func EvalMain(filePtr *string, src interface{}, parserOpts parser.Mode, TRACE bo
 		}
 		sexp := EvalStmt(ev, stmt)
 		if sexp != nil {
-			PrintResult(ev, sexp)
+			if ev.Invisible { 				// invisibility is stored in the evaluator and is set during assignment
+				ev.Invisible = false		// unsetting invisiblity again
+			} else {
+				PrintResult(sexp)
+			}
 			if ev.state == eofState {
 				if DEBUG {
 					println("terminating...")
@@ -64,7 +68,7 @@ func EvalMain(filePtr *string, src interface{}, parserOpts parser.Mode, TRACE bo
 	}
 }
 
-func EvalStringforValue(src string) float64{
+func EvalStringForValue(src string) SEXPItf{
 	filename := ""
 	TRACE := false
 	DEBUG := false
@@ -75,6 +79,5 @@ func EvalStringforValue(src string) float64{
 
 	stmt, _ := parser.ParseIter(p)
 	sexp := EvalStmt(ev, stmt)
-	r := sexp.(*VSEXP)
-	return r.Immediate
+	return sexp
 }

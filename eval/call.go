@@ -56,7 +56,7 @@ func EvalCallBuiltin(ev *Evaluator, node *ast.CallExpr, funcname string) (r SEXP
 	case "print":
 		if arityOK(funcname, 1, node) {
 			value := EvalExpr(ev, node.Args[0])
-			PrintResult(ev, value)
+			PrintResult(value)
 			return nil
 		} else {
 			return &ESEXP{Kind: token.ILLEGAL}
@@ -391,7 +391,7 @@ func EvalApply(ev *Evaluator, funcname string, f *VSEXP, argNames []string, coll
 			} 
 			if (TRACE || DEBUG) {
 				print("\t")
-				PrintResult(ev, value)
+				PrintResult(value)
 			}
 			ev.topFrame.Insert(fieldname, value)
 		}
@@ -402,7 +402,7 @@ func EvalApply(ev *Evaluator, funcname string, f *VSEXP, argNames []string, coll
 	r=EvalStmt(ev, f.Body)
 	if (TRACE || DEBUG) {
 		print("Return from function \"" + funcname + "\" with: ")
-		PrintResult(ev,r)
+		PrintResult(r)
 	}
 	return r
 }

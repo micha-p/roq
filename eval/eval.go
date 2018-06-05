@@ -158,7 +158,7 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) (r SEXPItf) {
 		}
 		if TRACE {
 			print("blockStmt return: ")
-			PrintResult(ev,r)
+			PrintResult(r)
 		}
 		return r
 	case *ast.VersionStmt:

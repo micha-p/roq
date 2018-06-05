@@ -8,26 +8,22 @@ import (
 	"roq/lib/token"
 )
 
-// visibility is stored in the evaluator and unset after every print
 // TODO typeswitch should depend on Kind
-func PrintResult(ev *Evaluator, r SEXPItf) {
-	if ev.Invisible {
-		ev.Invisible = false
-		return
-	} else if r == nil {
+func PrintResult(r SEXPItf) {
+	if r == nil {
 		fmt.Printf("FALSE/NULL")
 	} else {
 		switch r.(type) {
 		case *VSEXP:
-			PrintResultV(ev, r.(*VSEXP))
+			PrintResultV(r.(*VSEXP))
 		case *ISEXP:
-			PrintResultI(ev, r.(*ISEXP))
+			PrintResultI(r.(*ISEXP))
 		case *RSEXP:
-			PrintResultR(ev, r.(*RSEXP))
+			PrintResultR(r.(*RSEXP))
 		case *TSEXP:
-			PrintResultT(ev, r.(*TSEXP))
+			PrintResultT(r.(*TSEXP))
 		case *ESEXP:
-			PrintResultE(ev, r.(*ESEXP))
+			PrintResultE(r.(*ESEXP))
 		case *NSEXP:
 			println("NULL")
 		default:
@@ -36,28 +32,28 @@ func PrintResult(ev *Evaluator, r SEXPItf) {
 	}
 }
 
-func PrintResultR(ev *Evaluator, r *RSEXP) {
+func PrintResultR(r *RSEXP) {
 	if r == nil {
 		println("ERROR: uncatched NULL pointer: ", r) // TODO fatalState
 		return
 	}
 	if r.Slice == nil {
 		fmt.Printf("[[1]]\n")
-		PrintResult(ev, r.CAR)
+		PrintResult(r.CAR)
 		fmt.Printf("\n")
 		fmt.Printf("[[2]]\n")
-		PrintResult(ev, r.CDR)
+		PrintResult(r.CDR)
 		fmt.Printf("\n")
 	} else {
 		for n, v := range r.Slice {
 			fmt.Printf("[[%d]]\n", n+1)
-			PrintResult(ev, v)
+			PrintResult(v)
 			fmt.Printf("\n")
 		}
 	}
 }
 
-func PrintResultT(ev *Evaluator, r *TSEXP) {
+func PrintResultT(r *TSEXP) {
 	if r.Slice == nil {
 		fmt.Printf("[1] \"%s\"",r.String)
 	} else {
@@ -69,7 +65,7 @@ func PrintResultT(ev *Evaluator, r *TSEXP) {
 	fmt.Printf("\n")
 }
 
-func PrintResultI(ev *Evaluator, r *ISEXP) {
+func PrintResultI(r *ISEXP) {
 	rdim := r.Dim()
 	if rdim == nil {
 		fmt.Printf("[1] %d\n", r.Integer)
@@ -82,43 +78,33 @@ func PrintResultI(ev *Evaluator, r *ISEXP) {
 	}
 }
 
-func PrintResultE(ev *Evaluator, r *ESEXP) {
-	DEBUG := ev.Debug
+func PrintResultE(r *ESEXP) {
 	switch r.Kind {
 	case token.ILLEGAL:
-		if DEBUG {
-			println("ILLEGAL RESULT")
-		}
+		//if DEBUG {
+			//println("ILLEGAL RESULT")
+		//}
 	case token.VERSION:
 		version.PrintVersion()
 	case token.EOF:
-		if DEBUG {
-			println("EOF AS RESULT")
-		}
 	default:
 		fmt.Printf("%s",r.Message)
 	}
 }
 
-func PrintResultV(ev *Evaluator, r *VSEXP) {
-	DEBUG := ev.Debug
+func PrintResultV(r *VSEXP) {
 	if r== nil {
 		fmt.Printf("nil\n")
 	} else if r.Body != nil {
-		if DEBUG {
-			print("function(")
-			for n, field := range r.Fieldlist {
-				//for _,ident := range field.Names {
-				//	print(ident)
-				//}
-				identifier := field.Type.(*ast.Ident)
-				if n > 0 {
-					print(",")
-				}
-				print(identifier.Name)
+		print("function(")
+		for n, field := range r.Fieldlist {
+			identifier := field.Type.(*ast.Ident)
+			if n > 0 {
+				print(",")
 			}
-			println(")")
+			print(identifier.Name)
 		}
+		println(")")
 	} else {
 		if r.Slice == nil {
 			if r.Immediate == math.NaN(){
