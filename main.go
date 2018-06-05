@@ -86,6 +86,7 @@ func main() {
 	TRACE = *traceFlagPtr || *traceLongPtr
 	DEBUG = *debugFlagPtr || *debugLongPtr
 	ECHO = *echoFlagPtr || *echoLongPtr
+	PRINT := true
 
 	if DEBUG == false {
 		defer func() {
@@ -139,7 +140,7 @@ func main() {
 		if ECHO {
 			parserOpts = parserOpts | parser.Echo
 		}
-		eval.EvalMain(filePtr, src, parserOpts, TRACE, DEBUG)
+		eval.EvalMain(filePtr, src, parserOpts, TRACE, DEBUG, PRINT)
 	}
 }
 
