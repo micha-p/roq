@@ -48,12 +48,7 @@ func quicktestValue(t *testing.T, s string, expected float64, epsilon float64) {
 	}
 }
 
-func quicktestSlice(t *testing.T, s string, expected []float64, epsilon float64) {
-	r := eval.EvalStringForValue(s).(*eval.VSEXP).Slice
-	if !testEqSlice(r, expected, epsilon) {
-		t.Error("Error in Slice Test \"", s, "\" :", r, "!=", expected)
-	}
-}
+
 
 func TestArithmetic(t *testing.T) {
 	quicktestValue(t, "2.0+3.0*4.0", 14, 0)
@@ -61,27 +56,6 @@ func TestArithmetic(t *testing.T) {
 	quicktestValue(t, "10000000*0.0000001", 1, 0)
 	quicktestValue(t, "2^2", 4, 0)
 	quicktestValue(t, "3.4 %% 1.0", 0.4, 0.0000001)
-}
-
-func testEqSlice(a, b []float64, epsilon float64) bool {
-
-	if a == nil || b == nil {
-		panic("Testing empty slice for equality")
-	}
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		diff := math.Abs(a[i] - b[i])
-		if diff > epsilon {
-			return false
-		}
-	}
-	return true
-}
-
-func TestArrayArithmetic(t *testing.T) {
-	quicktestSlice(t, "c(1,2,3) + c(4,5,6)", []float64{5, 7, 9}, 0)
 }
 
 func ExampleComparison() {
