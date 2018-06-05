@@ -96,15 +96,15 @@ func PrintResultV(r *VSEXP) {
 	if r== nil {
 		fmt.Printf("nil\n")
 	} else if r.Body != nil {
-		print("function(")
+		fmt.Printf("function(")
 		for n, field := range r.Fieldlist {
 			identifier := field.Type.(*ast.Ident)
 			if n > 0 {
-				print(",")
+				fmt.Printf(",")
 			}
-			print(identifier.Name)
+			fmt.Printf(identifier.Name)
 		}
-		println(")")
+		fmt.Printf(")\n")
 	} else {
 		if r.Slice == nil {
 			if r.Immediate == math.NaN(){

@@ -310,7 +310,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 				if node.Value=="version" {
 					return &ESEXP{Kind: token.VERSION}
 				} else {
-					print("Error: object '", node.Value, "' not found\n")
+					fmt.Printf("Error: object '%s' not found\n", node.Value)
 					return nil
 				}
 			} else {

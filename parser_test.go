@@ -5,6 +5,30 @@ import (
 	"roq/eval"
 )
 
+func ExampleIdentifiers() {
+	eval.EvalFileForTest("test/parser/identifiers.r")
+// Output:
+//Error: object 'a_2' not found
+//Error: object '..b' not found
+//Error: object '._c' not found
+//Error: object 'a...b' not found
+}
+
+
+func ExampleNan() {
+	eval.EvalFileForTest("test/parser/nan.r")
+// Output:
+//[1] NaN
+//[1] NaN
+//[1] NaN
+//[1] NaN
+}
+
+func ExampleReturnFunction() {
+	eval.EvalFileForTest("test/parser/functions.r")
+// Output:
+// function(x)
+}
 
 func ExampleVersionOverwrite() {
 	eval.EvalFileForTest("test/parser/version.r")
