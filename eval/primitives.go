@@ -123,14 +123,15 @@ func EvalColumn(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 func EvalList(ev *Evaluator, node *ast.CallExpr) (r *RSEXP) {
 	TRACE := ev.Trace
 	DEBUG := ev.Debug
-	if len(node.Args)>0 && node.Args[0].(*ast.BasicLit).Kind==token.ELLIPSIS {
+	if len(node.Args)==1 && node.Args[0].(*ast.BasicLit).Kind==token.ELLIPSIS {
 		if TRACE {
 			println("Accelerator for list(...)")
 		}
-		elements := make([]SEXPItf,0,len(node.Args))
+
 		if DEBUG {
 			println("evaluating ellipsis, processing dotdot-arguments of topFrame")
 		}
+		elements := make([]SEXPItf,0,len(node.Args))
 		for key,obj := range ev.topFrame.Objects {
 			if strings.Contains("^"+key, "^.."){
 				if DEBUG {

@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"errors"
 )
 
 // function definition -> formal arguments
@@ -127,7 +128,7 @@ func getArgNames(thefunction *VSEXP) (argnames []string) {
 	return argNames
 }
 
-func CollectArgsWithEllipsis(ev *Evaluator, node *ast.CallExpr, funcname string, argNames []string) ([]string, []ast.Expr) {
+func CollectArgsWithEllipsis(ev *Evaluator, node *ast.CallExpr, funcname string, argNames []string) ([]string, []ast.Expr, error) {
 	TRACE := ev.Trace
 	DEBUG := ev.Debug
 
@@ -172,7 +173,7 @@ func CollectArgsWithEllipsis(ev *Evaluator, node *ast.CallExpr, funcname string,
 	for fieldname, callindex := range taggedArgs {
 		matches, fieldindex := tryPartialMatch(fieldname, argNames, collectedArgs, DEBUG)
 		if matches > 1 {
-			panic("argument %s matches multiple formal arguments"+ fieldname + "\n")
+			return nil, nil, errors.New("Golang error: argument matches multiple formal arguments" )
 		} else if matches == 1 {
 			if TRACE {
 				println("argument", fieldname, "matches one formal argument:", argNames[fieldindex])
@@ -216,10 +217,10 @@ func CollectArgsWithEllipsis(ev *Evaluator, node *ast.CallExpr, funcname string,
 			j++
 		}
 	}
-	return argNames, collectedArgs
+	return argNames, collectedArgs, nil
 }
 
-func CollectArgs(ev *Evaluator, node *ast.CallExpr, funcname string, argNames []string) ([]ast.Expr) {
+func CollectArgs(ev *Evaluator, node *ast.CallExpr, funcname string, argNames []string) ([]ast.Expr, error) {
 	DEBUG := ev.Debug
 	TRACE := ev.Trace
 
@@ -257,7 +258,7 @@ func CollectArgs(ev *Evaluator, node *ast.CallExpr, funcname string, argNames []
 		if matches > 1 {
 			fmt.Printf("Error in %s() : ",funcname)
 			fmt.Printf("argument %s matches multiple formal arguments\n", k)
-			panic("terminating...\n")
+			return nil, errors.New("Golang error: argument matches multiple formal arguments" )
 		} else if matches == 1 {
 			if TRACE {
 				println("argument", k, "matches one formal argument:", argNames[fieldindex])
@@ -284,7 +285,7 @@ func CollectArgs(ev *Evaluator, node *ast.CallExpr, funcname string, argNames []
 			start = false
 		}
 		fmt.Printf(")\n")
-		panic("terminating...\n")
+		return nil, errors.New("Golang error: Unused named arg" )
 	}
 
 	// match positional arguments
@@ -315,9 +316,9 @@ func CollectArgs(ev *Evaluator, node *ast.CallExpr, funcname string, argNames []
 			start = false
 		}
 		fmt.Printf(")\n")
-		panic("terminating...\n")
+		return nil, errors.New("Golang error: Unused positional arg" )
 	}
-	return collectedArgs
+	return collectedArgs, nil
 }
 
 func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
@@ -342,16 +343,25 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 			if TRACE {
 				println("Call to function of variable arity: " + funcname)
 			}
-			extendedArgNames, collectedArgs := CollectArgsWithEllipsis(ev, node, funcname, argNames)
-			evaluatedArgs := EvalArgs(ev, funcname, collectedArgs)
-			return EvalApply(ev, funcname, f.(*VSEXP), extendedArgNames, evaluatedArgs)
+			extendedArgNames, collectedArgs, err := CollectArgsWithEllipsis(ev, node, funcname, argNames)
+			if err != nil {
+				return &ESEXP{Kind: token.ILLEGAL}
+			} else {
+				evaluatedArgs := EvalArgs(ev, funcname, collectedArgs)
+				return EvalApply(ev, funcname, f.(*VSEXP), extendedArgNames, evaluatedArgs)
+			}
 		} else {
 			if TRACE {
 				println("Call to function: " + funcname)
 			}
-			collectedArgs := CollectArgs(ev, node, funcname, argNames)
-			evaluatedArgs := EvalArgs(ev, funcname, collectedArgs)
-			return EvalApply(ev, funcname, f.(*VSEXP), argNames, evaluatedArgs)
+			collectedArgs, err := CollectArgs(ev, node, funcname, argNames)
+			if err != nil {
+				return &ESEXP{Kind: token.ILLEGAL}
+			} else {
+				evaluatedArgs := EvalArgs(ev, funcname, collectedArgs)
+				return EvalApply(ev, funcname, f.(*VSEXP), argNames, evaluatedArgs)
+			}
+			
 		}
 	}
 }

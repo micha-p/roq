@@ -253,6 +253,7 @@ func EvalExprOrAssignment(ev *Evaluator, ex ast.Expr) SEXPItf {
 }
 
 func EvalBasicLiteral(ev *Evaluator, node *ast.BasicLit) SEXPItf {
+	DEBUG := ev.Debug
 	defer un(ev)
 	trace(ev, "BasicLit ", node.Kind.String())
 	switch node.Kind {
@@ -310,6 +311,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 	DEBUG := ev.Debug
 
 	//	defer un(ev)trace(ev, "EvalExpr"))
+	ev.Invisible = false
 	switch ex.(type) {
 	case *ast.FuncLit:
 		node := ex.(*ast.FuncLit)
@@ -326,30 +328,24 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 		}
 		return &VSEXP{Fieldlist: node.Type.Params.List, Body: node.Body, ellipsis: withEllipsis}
 	case *ast.BasicLit:
-		ev.Invisible = false
-		return EvalBasicLiteral(ev, ex.(*ast.BasicLit)
+		return EvalBasicLiteral(ev, ex.(*ast.BasicLit))
 	case *ast.BinaryExpr:
-		ev.Invisible = false
 		return evalBinary(ev, ex.(*ast.BinaryExpr))
 	case *ast.CallExpr:
-		ev.Invisible = false
 		return EvalCall(ev, ex.(*ast.CallExpr))
 	case *ast.IndexExpr:
-		ev.Invisible = false
 		return EvalIndexExpr(ev, ex.(*ast.IndexExpr))
 	case *ast.ParenExpr:
-		ev.Invisible = false
 		node := ex.(*ast.ParenExpr)
 		if DEBUG {
 			println("ParenExpr")
 		}
 		return EvalExpr(ev, node.X)
 	default:
-		ev.Invisible = false
 		givenType := reflect.TypeOf(ex)
 		println("?Expr:", givenType.String())
+		return &ESEXP{Kind: token.ILLEGAL}
 	}
-	return &ESEXP{Kind: token.ILLEGAL}
 }
 
 
