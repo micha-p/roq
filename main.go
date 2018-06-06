@@ -43,7 +43,11 @@ func mainScan(filePtr *string, srcString string, ECHO bool) {
 		if tok == token.EOF {
 			break
 		}
-		fmt.Printf("%s\t%s\t%q\n", fset.Position(pos), tok, lit)
+		if lit =="" {
+			fmt.Printf("%s\t%s\t \n", fset.Position(pos), tok)
+		} else {
+			fmt.Printf("%s\t%s\t%q\n", fset.Position(pos), tok, lit)
+		}
 	}
 }
 

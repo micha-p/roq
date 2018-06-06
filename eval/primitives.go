@@ -3,10 +3,12 @@ package eval
 import (
 	"fmt"
 	"roq/lib/ast"
+	"roq/lib/token"
 	"strings"
 )
 
 // https://cran.r-project.org/doc/manuals/R-ints.html#g_t_002eInternal-vs-_002ePrimitive
+// these functions are responsible for evaluation
 
 func EvalLength(ev *Evaluator, node *ast.CallExpr) (r *ISEXP) {
 	TRACE := ev.Trace
@@ -59,14 +61,13 @@ func EvalCat(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 }
 
 // strongly stripped down call of c()
-// Therefore, all elements are evaluated withon the context of the call
+// Therefore, all elements are evaluated within the context of the call
 // TODO recursive=TRUE/FALSE
 // TODO faster vector literals, composed just of floats
 
 // TODO document difference!
-// R returns double, if there is at least one double
-// here we decide on first type
-// inside string vectors, there is now conversion of numbers, but an error thrown!
+// - R returns double, if there is at least one double, here we decide on first type
+// - inside string vectors, there is no conversion of numbers but an error thrown!
 
 /* The output type is determined from the highest type of the
    components in the hierarchy NULL < raw < logical < integer <
@@ -86,10 +87,6 @@ func EvalColumn(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 			evaluatedArgs[n] = val
 		}
 		switch evaluatedArgs[0].(type) {
-
-		// TODO document difference!
-		// R returns double, if there is at least one double
-		// here we decide on first type
 		case *ISEXP:
 			c := make([]int, len(evaluatedArgs))
 			for n, v := range evaluatedArgs {
@@ -125,18 +122,37 @@ func EvalColumn(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 
 func EvalList(ev *Evaluator, node *ast.CallExpr) (r *RSEXP) {
 	TRACE := ev.Trace
-	if TRACE {
-		println("List")
+	DEBUG := ev.Debug
+	if len(node.Args)>0 && node.Args[0].(*ast.BasicLit).Kind==token.ELLIPSIS {
+		if TRACE {
+			println("Accelerator for list(...)")
+		}
+		elements := make([]SEXPItf,0,len(node.Args))
+		if DEBUG {
+			println("evaluating ellipsis, processing dotdot-arguments of topFrame")
+		}
+		for key,obj := range ev.topFrame.Objects {
+			if strings.Contains("^"+key, "^.."){
+				if DEBUG {
+					print("\t",key,"=")
+					PrintResult(obj)
+				}
+				elements = append(elements, obj)
+			}
+		}
+		return &RSEXP{ValuePos: node.Fun.Pos(), Slice: elements}
+	} else {
+		if TRACE {
+			println("list")
+		}
+		evaluatedArgs := make([]SEXPItf, len(node.Args))
+		for n, v := range node.Args { // TODO: strictly left to right
+			var val SEXPItf
+			val = EvalExprOrAssignment(ev, v)
+			evaluatedArgs[n] = val
+		}
+		return &RSEXP{ValuePos: node.Fun.Pos(), Slice: evaluatedArgs}
 	}
-
-	evaluatedArgs := make([]SEXPItf, len(node.Args))
-	for n, v := range node.Args { // TODO: strictly left to right
-		var val SEXPItf
-		val = EvalExprOrAssignment(ev, v)
-		evaluatedArgs[n] = val
-	}
-
-	return &RSEXP{ValuePos: node.Fun.Pos(), Slice: evaluatedArgs}
 }
 
 // TODO documentation and comparison

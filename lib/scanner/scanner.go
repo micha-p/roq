@@ -607,8 +607,10 @@ scanAgain:
 		if len(lit) > 1 {
 			// keywords are longer than one letter - avoid lookup otherwise
 			tok = token.Lookup(lit)
-			switch tok {
-			case token.BREAK, token.NEXT, token.EOF, token.RETURN, token.NULL, token.NA, token.INF, token.NAN, token.TRUE, token.FALSE:
+			if tok.IsLiteral(){
+				insertSemi = true
+				return pos, tok, lit
+			} else {
 				insertSemi = true
 				return pos, tok, ""
 			}

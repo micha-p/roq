@@ -77,7 +77,7 @@ func traceff(e *Evaluator, args ...interface{}) *Evaluator {
 	return e
 }
 
-// Usage pattern: defer un(trace(p, "..."))
+// Usage pattern: defer un(ev)
 func un(e *Evaluator) {
 	if e.Trace {
 		e.indent--
@@ -99,12 +99,15 @@ func EvalInit(fset *token.FileSet, filename string, src interface{}, mode parser
 
 
 func EvalStmt(ev *Evaluator, s ast.Stmt) (r SEXPItf) {
-	TRACE := ev.Trace
 	DEBUG := ev.Debug
 	switch s.(type) {
 	case *ast.AssignStmt:
+		defer un(ev)
+		trace(ev, "assignStmt")
 		return EvalAssignment(ev, s.(*ast.AssignStmt))
 	case *ast.ExprStmt:
+		defer un(ev)
+		trace(ev, "exprStmt")
 		e := s.(*ast.ExprStmt)
 		return EvalExprOrAssignment(ev, e.X)
 	case *ast.EmptyStmt:
@@ -117,7 +120,8 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) (r SEXPItf) {
 		}
 		return nil
 	case *ast.IfStmt:
-		defer un(trace(ev, "ifStmt"))
+		defer un(ev)
+		trace(ev, "ifStmt")
 		e := s.(*ast.IfStmt)
 		testresult := EvalExpr(ev, e.Cond)
 		if testresult != nil && isTrue(testresult) {
@@ -126,28 +130,32 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) (r SEXPItf) {
 			return EvalStmt(ev, e.Else)
 		}
 	case *ast.WhileStmt:
-		defer un(trace(ev, "whileStmt"))
+		defer un(ev)
+		trace(ev, "whileStmt")
 		e := s.(*ast.WhileStmt)
 		return EvalLoop(ev, e.Body, e.Cond)
 	case *ast.RepeatStmt:
-		defer un(trace(ev, "repeatStmt"))
+		defer un(ev)
+		trace(ev, "repeatStmt")
 		e := s.(*ast.RepeatStmt)
 		return EvalLoop(ev, e.Body, nil)
 	case *ast.ForStmt:
-		defer un(trace(ev, "forStmt"))
+		defer un(ev)
+		trace(ev, "forStmt")
 		e := s.(*ast.ForStmt)
 		ex := EvalExpr(ev, e.Iterable)
 		return EvalFor(ev, e.Body, e.Parameter.String(), ex)
 	case *ast.BreakStmt:
+		defer un(ev)
+		trace(ev, "breakStmt")
 		ev.state = breakState
 		return &ESEXP{Kind: token.BREAK}
 	case *ast.NextStmt:
 		ev.state = nextState
 		return &ESEXP{Kind: token.NEXT}
 	case *ast.BlockStmt:
-		if TRACE {
-			println("blockStmt")
-		}
+		defer un(ev)
+		trace(ev, "BlockStmt")
 		e := s.(*ast.BlockStmt)
 		for _, stmt := range e.List {
 			switch stmt.(type) {
@@ -155,10 +163,6 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) (r SEXPItf) {
 			default:
 				r = EvalStmt(ev, stmt)
 			}
-		}
-		if TRACE {
-			print("blockStmt return: ")
-			PrintResult(r)
 		}
 		return r
 	case *ast.VersionStmt:
@@ -181,7 +185,8 @@ func doAssignment(ev *Evaluator, lhs ast.Expr, rhs ast.Expr) SEXPItf {
 		doAttributeReplacement(ev, lhs.(*ast.CallExpr), rhs)
 	case *ast.BasicLit:
 		target := getIdent(ev, lhs)
-		defer un(trace(ev, "assignment: "+target+" <- "))
+		defer un(ev)
+		trace(ev, "assignment: "+target+" <- ")
 		value = EvalExpr(ev, rhs)
 		ev.topFrame.Insert(target, value)
 	}
@@ -196,7 +201,8 @@ func doSuperAssignment(ev *Evaluator, lhs ast.Expr, rhs ast.Expr) SEXPItf {
 		doAttributeReplacement(ev, lhs.(*ast.CallExpr), rhs)
 	case *ast.BasicLit:
 		target := getIdent(ev, lhs)
-		defer un(trace(ev, "superassignment: "+target+" <<- "))
+		defer un(ev)
+		trace(ev, "superassignment: "+target+" <<- ")
 		value = EvalExpr(ev, rhs)
 		ev.globalFrame.Insert(target, value)
 	}
@@ -208,9 +214,6 @@ func doSuperAssignment(ev *Evaluator, lhs ast.Expr, rhs ast.Expr) SEXPItf {
 // the latter an invisible object
 
 func EvalAssignment(ev *Evaluator, e *ast.AssignStmt) SEXPItf {
-
-	//	defer un(trace(ev, "assignStmt"))
-
 	switch e.Tok {
 	case token.LEFTASSIGNMENT:
 		return doAssignment(ev, e.Lhs, e.Rhs)
@@ -249,14 +252,69 @@ func EvalExprOrAssignment(ev *Evaluator, ex ast.Expr) SEXPItf {
 	return EvalExpr(ev, ex)
 }
 
+func EvalBasicLiteral(ev *Evaluator, node *ast.BasicLit) SEXPItf {
+	defer un(ev)
+	trace(ev, "BasicLit ", node.Kind.String())
+	switch node.Kind {
+	case token.FLOAT:
+		vfloat, err := strconv.ParseFloat(node.Value, 64) 		// TODO: support for all R formatted values
+		if err != nil {
+			print("ERROR:")
+			println(err)
+		}
+		return &VSEXP{ValuePos: node.ValuePos, Immediate: vfloat}
+	case token.INT: 											// in value domain, all numbers should be double float
+		vfloat, err := strconv.ParseFloat(node.Value, 64) 		// TODO: support for all R formatted values
+		if err != nil {
+			print("ERROR:")
+			println(err)
+		}
+		vint, err := strconv.Atoi(node.Value) 					// TODO: support for all R formatted values
+		if err != nil {
+			print("ERROR:")
+			println(err)
+		}
+		return &ISEXP{ValuePos: node.ValuePos, Immediate: vfloat, Integer: vint}
+	case token.STRING:
+		return &TSEXP{ValuePos: node.ValuePos, String: node.Value}
+	case token.TRUE:
+		return &VSEXP{ValuePos: node.ValuePos, Immediate: 1}   	// in R: TRUE+1 = 2
+	case token.NULL, token.FALSE:								// TODO just return nil?
+		return &NSEXP{ValuePos: node.ValuePos}
+	case token.INF:
+		return &VSEXP{ValuePos: node.ValuePos, Immediate: math.Inf(+1)}
+	case token.NAN, token.NA:
+		return &VSEXP{ValuePos: node.ValuePos, Immediate: math.NaN()}
+	case token.IDENT:
+		if DEBUG {
+			println("Retrieving identifier: " + node.Value)
+		}
+		r :=  ev.topFrame.Recursive(node.Value)
+		if r==nil {
+			if node.Value=="version" {
+				return &ESEXP{Kind: token.VERSION}
+			} else {
+				fmt.Printf("Error: object '%s' not found\n", node.Value)
+				return nil
+			}
+		} else {
+			return r
+		}
+	default:
+		panic("Unknown basic literal:"+node.Kind.String()+"\n")
+	}
+}
+
+
 func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 	DEBUG := ev.Debug
 
-	//	defer un(trace(ev, "EvalExpr"))
+	//	defer un(ev)trace(ev, "EvalExpr"))
 	switch ex.(type) {
 	case *ast.FuncLit:
 		node := ex.(*ast.FuncLit)
-		defer un(trace(ev, "FuncLit"))
+		defer un(ev)
+		trace(ev, "FuncLit")
 		
 		withEllipsis := false
 		for _, field := range node.Type.Params.List {
@@ -269,56 +327,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 		return &VSEXP{Fieldlist: node.Type.Params.List, Body: node.Body, ellipsis: withEllipsis}
 	case *ast.BasicLit:
 		ev.Invisible = false
-		node := ex.(*ast.BasicLit)
-		defer un(trace(ev, "BasicLit ", node.Kind.String()))
-		switch node.Kind {
-		case token.FLOAT:
-			vfloat, err := strconv.ParseFloat(node.Value, 64) 		// TODO: support for all R formatted values
-			if err != nil {
-				print("ERROR:")
-				println(err)
-			}
-			return &VSEXP{ValuePos: node.ValuePos, Immediate: vfloat}
-		case token.INT: 											// in value domain, all numbers should be double float
-			vfloat, err := strconv.ParseFloat(node.Value, 64) 		// TODO: support for all R formatted values
-			if err != nil {
-				print("ERROR:")
-				println(err)
-			}
-			vint, err := strconv.Atoi(node.Value) 					// TODO: support for all R formatted values
-			if err != nil {
-				print("ERROR:")
-				println(err)
-			}
-			return &ISEXP{ValuePos: node.ValuePos, Immediate: vfloat, Integer: vint}
-		case token.STRING:
-			return &TSEXP{ValuePos: node.ValuePos, String: node.Value}
-		case token.TRUE:
-			return &VSEXP{ValuePos: node.ValuePos, Immediate: 1}   	// in R: TRUE+1 = 2
-		case token.NULL, token.FALSE:								// TODO just return nil?
-			return &NSEXP{ValuePos: node.ValuePos}
-		case token.INF:
-			return &VSEXP{ValuePos: node.ValuePos, Immediate: math.Inf(+1)}
-		case token.NAN, token.NA:
-			return &VSEXP{ValuePos: node.ValuePos, Immediate: math.NaN()}
-		case token.IDENT:
-			if DEBUG {
-				println("Retrieving identifier: " + node.Value)
-			}
-			r :=  ev.topFrame.Recursive(node.Value)
-			if r==nil {
-				if node.Value=="version" {
-					return &ESEXP{Kind: token.VERSION}
-				} else {
-					fmt.Printf("Error: object '%s' not found\n", node.Value)
-					return nil
-				}
-			} else {
-				return r
-			}
-		default:
-			panic("Unknown basic literal:"+node.Kind.String())
-		}
+		return EvalBasicLiteral(ev, ex.(*ast.BasicLit)
 	case *ast.BinaryExpr:
 		ev.Invisible = false
 		return evalBinary(ev, ex.(*ast.BinaryExpr))
@@ -343,8 +352,10 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 	return &ESEXP{Kind: token.ILLEGAL}
 }
 
+
 func evalBinary(ev *Evaluator, node *ast.BinaryExpr) SEXPItf {
-	defer un(trace(ev, "BinaryExpr"))
+	defer un(ev)
+	trace(ev, "BinaryExpr")
 	x := EvalExpr(ev, node.X)
 	un(traceff(ev, node.Op.String()))
 	switch node.Op {

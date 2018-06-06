@@ -1,3 +1,7 @@
+// call: collect args
+// args: evaluate args
+// apply: jump into closure, insert into topFrame, jump into body
+
 // https://cran.r-project.org/doc/manuals/R-lang.html#Argument-matching
 // 1.) Exact matching on tags
 // 2.) Partial matching on tags
@@ -47,11 +51,7 @@ func arityOK(funcname string, arity int, node *ast.CallExpr) bool {
 
 // TODO use results field of funcType
 func EvalCallBuiltin(ev *Evaluator, node *ast.CallExpr, funcname string) (r SEXPItf) {
-	TRACE := ev.Trace
 	DEBUG := ev.Debug
-	if TRACE {
-		println("Search for builtin: " + funcname)
-	}
 	switch funcname {
 	case "print":
 		if arityOK(funcname, 1, node) {
@@ -112,13 +112,10 @@ func EvalCallBuiltin(ev *Evaluator, node *ast.CallExpr, funcname string) (r SEXP
 	return
 }
 
-func EvalCallEllipsisFunction(ev *Evaluator, node *ast.CallExpr, funcname string, f *VSEXP) (r SEXPItf) {
-	TRACE := ev.Trace
-	DEBUG := ev.Debug
-
-	// collect field names of formals in function definition
-	argNames := make([]string, 0, len(f.Fieldlist)+len(node.Args))
-	for _, field := range f.Fieldlist {
+// collect field names of formals in function definition
+func getArgNames(thefunction *VSEXP) (argnames []string) {
+	argNames := make([]string, 0, len(thefunction.Fieldlist))
+	for _, field := range thefunction.Fieldlist {
 		switch field.Type.(type) {
 		case *ast.Ident:
 			identifier := field.Type.(*ast.Ident)
@@ -127,6 +124,16 @@ func EvalCallEllipsisFunction(ev *Evaluator, node *ast.CallExpr, funcname string
 			argNames = append(argNames, "...")
 		}
 	}
+	return argNames
+}
+
+func CollectArgsWithEllipsis(ev *Evaluator, node *ast.CallExpr, funcname string, argNames []string) ([]string, []ast.Expr) {
+	TRACE := ev.Trace
+	DEBUG := ev.Debug
+
+	// this slice covers the actual arguments of the call and is set to false by default
+	// for every used argument it will be set to true
+	usedArgs := make([]bool, len(node.Args))
 
 	// collect tagged arguments (unevaluated)
 	taggedArgs := make(map[string]int, len(node.Args))
@@ -136,7 +143,7 @@ func EvalCallEllipsisFunction(ev *Evaluator, node *ast.CallExpr, funcname string
 			a := arg.(*ast.TaggedExpr)
 			taggedArgs[a.Tag] = n + 1 // one above default zero value
 			if DEBUG {
-				println("parameter collected:", a.Tag, n)
+				println("tagged argument collected:", a.Tag, n)
 			}
 		}
 	}
@@ -145,10 +152,7 @@ func EvalCallEllipsisFunction(ev *Evaluator, node *ast.CallExpr, funcname string
 	// and is filled with correctly identified args during this procedure
 	collectedArgs := make([]ast.Expr, len(argNames))
 
-	// this slice covers the actual arguments of the call
-	usedArgs := make([]bool, len(node.Args))
-
-	// match tagged arguments
+	// match defined argument names against tagged arguments
 	for fieldindex, fieldname := range argNames {
 		if DEBUG {
 			println("searching parameter:", fieldname)
@@ -168,8 +172,7 @@ func EvalCallEllipsisFunction(ev *Evaluator, node *ast.CallExpr, funcname string
 	for fieldname, callindex := range taggedArgs {
 		matches, fieldindex := tryPartialMatch(fieldname, argNames, collectedArgs, DEBUG)
 		if matches > 1 {
-			fmt.Printf("argument %s matches multiple formal arguments\n", fieldname)
-			return &ESEXP{Kind: token.ILLEGAL}
+			panic("argument %s matches multiple formal arguments"+ fieldname + "\n")
 		} else if matches == 1 {
 			if TRACE {
 				println("argument", fieldname, "matches one formal argument:", argNames[fieldindex])
@@ -205,7 +208,7 @@ func EvalCallEllipsisFunction(ev *Evaluator, node *ast.CallExpr, funcname string
 		if isUsed != true {
 			fieldname := ".." + strconv.Itoa(j)
 			if DEBUG {
-				println("appending parameter:", fieldname)
+				println("appending unused argument:", fieldname)
 			}
 			arg := node.Args[n]
 			collectedArgs = append(collectedArgs, arg)
@@ -213,19 +216,12 @@ func EvalCallEllipsisFunction(ev *Evaluator, node *ast.CallExpr, funcname string
 			j++
 		}
 	}
-	return EvalApply(ev, funcname, f, argNames, collectedArgs)
+	return argNames, collectedArgs
 }
 
-func EvalCallFunction(ev *Evaluator, node *ast.CallExpr, funcname string, f *VSEXP) (r SEXPItf) {
+func CollectArgs(ev *Evaluator, node *ast.CallExpr, funcname string, argNames []string) ([]ast.Expr) {
 	DEBUG := ev.Debug
 	TRACE := ev.Trace
-
-	// collect field names
-	argNames := make([]string, len(f.Fieldlist), len(f.Fieldlist)+len(node.Args))
-	for i, field := range f.Fieldlist {
-		identifier := field.Type.(*ast.Ident)
-		argNames[i] = identifier.Name
-	}
 
 	// this map uses the same index as argNames (instead of using a structure)
 	// and is filled with correctly identified args during this procedure
@@ -261,7 +257,7 @@ func EvalCallFunction(ev *Evaluator, node *ast.CallExpr, funcname string, f *VSE
 		if matches > 1 {
 			fmt.Printf("Error in %s() : ",funcname)
 			fmt.Printf("argument %s matches multiple formal arguments\n", k)
-			return &ESEXP{Kind: token.ILLEGAL}
+			panic("terminating...\n")
 		} else if matches == 1 {
 			if TRACE {
 				println("argument", k, "matches one formal argument:", argNames[fieldindex])
@@ -288,7 +284,7 @@ func EvalCallFunction(ev *Evaluator, node *ast.CallExpr, funcname string, f *VSE
 			start = false
 		}
 		fmt.Printf(")\n")
-		return &ESEXP{Kind: token.ILLEGAL}
+		panic("terminating...\n")
 	}
 
 	// match positional arguments
@@ -319,58 +315,76 @@ func EvalCallFunction(ev *Evaluator, node *ast.CallExpr, funcname string, f *VSE
 			start = false
 		}
 		fmt.Printf(")\n")
-		return &ESEXP{Kind: token.ILLEGAL}
+		panic("terminating...\n")
 	}
-	return EvalApply(ev, funcname, f, argNames, collectedArgs)
+	return collectedArgs
 }
 
 func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 	TRACE := ev.Trace
 	funcobject := node.Fun
 	funcname := funcobject.(*ast.BasicLit).Value
-	if TRACE {
-		println("CallExpr: " + funcname)
-	}
 	if funcname == "c" {
 		if TRACE {
-			println("Call to special: " + funcname)
+			println("Call to protected special: " + funcname)
 		}
 		return EvalColumn(ev, node)
 	}
 	f := ev.topFrame.Lookup(funcname)
 	if f == nil {
+		if TRACE {
+			println("Call to builtin: " + funcname)
+		}
 		return EvalCallBuiltin(ev, node, funcname)
 	} else {
+		argNames := getArgNames(f.(*VSEXP))
 		if f.(*VSEXP).ellipsis {
-			return EvalCallEllipsisFunction(ev, node, funcname, f.(*VSEXP))
+			if TRACE {
+				println("Call to function of variable arity: " + funcname)
+			}
+			extendedArgNames, collectedArgs := CollectArgsWithEllipsis(ev, node, funcname, argNames)
+			evaluatedArgs := EvalArgs(ev, funcname, collectedArgs)
+			return EvalApply(ev, funcname, f.(*VSEXP), extendedArgNames, evaluatedArgs)
 		} else {
-			return EvalCallFunction(ev, node, funcname, f.(*VSEXP))
+			if TRACE {
+				println("Call to function: " + funcname)
+			}
+			collectedArgs := CollectArgs(ev, node, funcname, argNames)
+			evaluatedArgs := EvalArgs(ev, funcname, collectedArgs)
+			return EvalApply(ev, funcname, f.(*VSEXP), argNames, evaluatedArgs)
 		}
 	}
 }
 
-func EvalApply(ev *Evaluator, funcname string, f *VSEXP, argNames []string, collectedArgs []ast.Expr) (r SEXPItf) {
-	TRACE := ev.Trace
+func EvalArgs(ev *Evaluator, funcname string, collectedArgs []ast.Expr) ([]SEXPItf) {
 	DEBUG := ev.Debug
-
 	evaluatedArgs := make([]SEXPItf, len(collectedArgs))
 
-	// eval args
-	if TRACE {
-		println("Eval args for function \"" + funcname + "\"")
+	if DEBUG {
+		println("Eval args for function \"" + funcname + "\":")
 	}
 	for n, v := range collectedArgs {
 		if v != nil {
 			val := EvalExprOrAssignment(ev, v)
+			if DEBUG {
+				print("\targ[",n,"] = ")
+				PrintResult(val)
+			}
 			evaluatedArgs[int(n)] = val
 		}
 	}
+	return evaluatedArgs
+}
+
+func EvalApply(ev *Evaluator, funcname string, f *VSEXP, argNames []string, evaluatedArgs []SEXPItf) (r SEXPItf) {
+	TRACE := ev.Trace
+	DEBUG := ev.Debug
 
 	ev.openFrame()
 	defer ev.closeFrame()
 
 	if (TRACE || DEBUG) {
-		println("Apply function \"" + funcname + "\" to call:")
+		println("Insert arguments of call to function \"" + funcname + "\" into new top frame:")
 	}
 	for n, fieldname := range argNames {
 		if (TRACE || DEBUG) {
@@ -392,7 +406,7 @@ func EvalApply(ev *Evaluator, funcname string, f *VSEXP, argNames []string, coll
 				}
 			} 
 			if (TRACE || DEBUG) {
-				print("\t")
+				print("\t= ")
 				PrintResult(value)
 			}
 			ev.topFrame.Insert(fieldname, value)
@@ -403,8 +417,9 @@ func EvalApply(ev *Evaluator, funcname string, f *VSEXP, argNames []string, coll
 	}
 	r=EvalStmt(ev, f.Body)
 	if (TRACE || DEBUG) {
-		print("Return from function \"" + funcname + "\" with: ")
+		println("Return from function \"" + funcname + "\" with result: ")
 		PrintResult(r)
+		println("End of result")
 	}
 	return r
 }

@@ -56,6 +56,7 @@ const (
 	NAN
 	TRUE
 	FALSE
+	ELLIPSIS // ...
 
 	constant_end
 
@@ -111,10 +112,7 @@ const (
 	RBRACE    // }
 	SEMICOLON // ;
 
-	operator_beg
-	// Operators and delimiters
-
-	ELLIPSIS // ...
+	operator_beg         // Operators and delimiters
 
 	// R Operators
 
@@ -196,7 +194,7 @@ const (
 	keyword_end
 )
 
-var tokens = [...]string{
+var tokenNames = [...]string{
 	ILLEGAL: "ILLEGAL",
 	EOF:     "EOF",
 	COMMENT: "COMMENT",
@@ -221,6 +219,7 @@ var tokens = [...]string{
 	NAN:   "NaN",
 	TRUE:  "TRUE",
 	FALSE: "FALSE",
+	ELLIPSIS: "...",
 
 	// R Operators
 	MINUS:                "-",  // -	Minus, can be unary or binary
@@ -251,8 +250,6 @@ var tokens = [...]string{
 	SUBSET:               "$",  // $	List subset, binary
 	SLOT:                 "@",  // $	List subset, binary
 	DOUBLECOLON:          "::", // Namespace
-
-	ELLIPSIS: "...",
 
 	LPAREN: "(",
 	LBRACK: "[",
@@ -304,8 +301,8 @@ var tokens = [...]string{
 //
 func (tok Token) String() string {
 	s := ""
-	if 0 <= tok && tok < Token(len(tokens)) {
-		s = tokens[tok]
+	if 0 <= tok && tok < Token(len(tokenNames)) {
+		s = tokenNames[tok]
 	}
 	if s == "" {
 		s = "token(" + strconv.Itoa(int(tok)) + ")"
@@ -393,10 +390,10 @@ var keywords map[string]Token
 func init() {
 	keywords = make(map[string]Token)
 	for i := keyword_beg + 1; i < keyword_end; i++ {
-		keywords[tokens[i]] = i
+		keywords[tokenNames[i]] = i
 	}
 	for i := constant_beg + 1; i < constant_end; i++ {
-		keywords[tokens[i]] = i
+		keywords[tokenNames[i]] = i
 	}
 }
 
