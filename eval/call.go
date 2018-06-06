@@ -420,6 +420,10 @@ func EvalApply(ev *Evaluator, funcname string, f *VSEXP, argNames []string, eval
 				PrintResult(value)
 			}
 			ev.topFrame.Insert(fieldname, value)
+		} else {
+			if (TRACE || DEBUG) {
+				println()
+			}
 		}
 	}
 	if (TRACE || DEBUG) {

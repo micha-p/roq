@@ -1,5 +1,7 @@
 package eval
 
+import "math"
+
 // https://cran.r-project.org/doc/manuals/R-lang.html#if
 
 // If value1 is a logical vector with first element TRUE then statement2 is evaluated.
@@ -14,24 +16,30 @@ func isTrue(e SEXPItf) bool {
 	}
 	switch e.(type){
 		case *VSEXP:
-			if e.(*VSEXP).Immediate != 0 {
-				return true
-			}
-			//  THIS MAIN DIFFERENCE IS MENTIONED HERE
-			//  TODO: better documentation on zero=true/false
-			if e.(*VSEXP).Immediate == 0 {
-				return true
-			}
-			if e.(*VSEXP).Slice != nil && e.Length() > 0 {
-				if e.(*VSEXP).Slice[0] == 0 { // R like behaviour
+			if e.(*VSEXP).Slice == nil {
+				//  THIS MAIN DIFFERENCE IS MENTIONED HERE
+				//  TODO: better documentation on zero=true/false
+				if e.(*VSEXP).Immediate == 0 {
+					return true
+				} else if math.IsNaN(e.(*VSEXP).Immediate) {
 					return false
 				} else {
 					return true
+				}
+			} else {
+				if e.Length() > 0 {   // TODO this case needs better checks
+					if e.(*VSEXP).Slice[0] == 0 { // R like behaviour
+						return false
+					} else {
+						println("true like R")
+						return true
+					}
+				} else {
+					return false
 				}
 			}
 		default:
 			return false
 	}
-
 	return false
 }

@@ -29,11 +29,54 @@ func EvalLoop(ev *Evaluator, e *ast.BlockStmt, cond ast.Expr) SEXPItf {
 	ev.Invisible = true
 	return &NSEXP{}
 }
+
 func EvalFor(ev *Evaluator, e *ast.BlockStmt, identifier string, iterable SEXPItf) SEXPItf {
+	switch iterable.(type) {
+	case *VSEXP:
+		return EvalForLoopOverVector(ev, e, identifier, iterable)
+	case *RSEXP:
+		return EvalForLoopOverList(ev, e, identifier, iterable)
+	default:
+		panic("For loop over unknown s-expression")
+	}
+}
+
+
+func EvalForLoopOverList(ev *Evaluator, e *ast.BlockStmt, identifier string, iterable SEXPItf) SEXPItf {
+	if iterable.(*RSEXP).Slice == nil {
+		panic("List expected")
+	}
+	defer un(trace(ev, "LoopOverList"))
+	var evloop Evaluator
+	evloop = *ev
+	evloop.state = loopState
+	var rstate LoopState
+	for _, v := range iterable.(*RSEXP).Slice {
+		evloop.state = loopState
+		ev.topFrame.Insert(identifier, v)
+		for n := 0; n < len(e.List); n++ {
+			EvalStmt(&evloop, e.List[n])
+			rstate = evloop.state
+			if rstate == nextState {
+				break
+			}
+		}
+		if rstate == nextState {
+			continue
+		}
+		if rstate == breakState {
+			break
+		}
+	}
+	ev.Invisible = true
+	return &NSEXP{}
+}
+
+func EvalForLoopOverVector(ev *Evaluator, e *ast.BlockStmt, identifier string, iterable SEXPItf) SEXPItf {
 	if iterable.(*VSEXP).Slice == nil {
 		panic("Vector expected")
 	}
-	defer un(trace(ev, "LoopBody"))
+	defer un(trace(ev, "LoopOverVector"))
 	var evloop Evaluator
 	evloop = *ev
 	evloop.state = loopState
@@ -59,4 +102,3 @@ func EvalFor(ev *Evaluator, e *ast.BlockStmt, identifier string, iterable SEXPIt
 	ev.Invisible = true
 	return &NSEXP{}
 }
-

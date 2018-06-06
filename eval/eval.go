@@ -125,8 +125,10 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) (r SEXPItf) {
 		e := s.(*ast.IfStmt)
 		testresult := EvalExpr(ev, e.Cond)
 		if testresult != nil && isTrue(testresult) {
+			if DEBUG {println("TRUE")}
 			return EvalStmt(ev, e.Body)
 		} else if e.Else != nil {
+			if DEBUG {println("FALSE")}
 			return EvalStmt(ev, e.Else)
 		}
 	case *ast.WhileStmt:
@@ -255,38 +257,42 @@ func EvalExprOrAssignment(ev *Evaluator, ex ast.Expr) SEXPItf {
 func EvalBasicLiteral(ev *Evaluator, node *ast.BasicLit) SEXPItf {
 	DEBUG := ev.Debug
 	defer un(ev)
-	trace(ev, "BasicLit ", node.Kind.String())
 	switch node.Kind {
 	case token.FLOAT:
 		vfloat, err := strconv.ParseFloat(node.Value, 64) 		// TODO: support for all R formatted values
 		if err != nil {
-			print("ERROR:")
-			println(err)
+			panic(err)
 		}
+		trace(ev, "BasicLit ", node.Kind.String()," = ", vfloat)
 		return &VSEXP{ValuePos: node.ValuePos, Immediate: vfloat}
 	case token.INT: 											// in value domain, all numbers should be double float
 		vfloat, err := strconv.ParseFloat(node.Value, 64) 		// TODO: support for all R formatted values
 		if err != nil {
-			print("ERROR:")
-			println(err)
+			panic(err)
 		}
 		vint, err := strconv.Atoi(node.Value) 					// TODO: support for all R formatted values
 		if err != nil {
-			print("ERROR:")
-			println(err)
+			panic(err)
 		}
+		trace(ev, "BasicLit ", node.Kind.String()," = ", vint)
 		return &ISEXP{ValuePos: node.ValuePos, Immediate: vfloat, Integer: vint}
 	case token.STRING:
+		trace(ev, "BasicLit ", node.Kind.String()," = ", node.Value)
 		return &TSEXP{ValuePos: node.ValuePos, String: node.Value}
 	case token.TRUE:
+		trace(ev, "BasicLit ", node.Kind.String())
 		return &VSEXP{ValuePos: node.ValuePos, Immediate: 1}   	// in R: TRUE+1 = 2
 	case token.NULL, token.FALSE:								// TODO just return nil?
+		trace(ev, "BasicLit ", node.Kind.String())
 		return &NSEXP{ValuePos: node.ValuePos}
 	case token.INF:
+		trace(ev, "BasicLit ", node.Kind.String())
 		return &VSEXP{ValuePos: node.ValuePos, Immediate: math.Inf(+1)}
 	case token.NAN, token.NA:
+		trace(ev, "BasicLit ", node.Kind.String())
 		return &VSEXP{ValuePos: node.ValuePos, Immediate: math.NaN()}
 	case token.IDENT:
+		trace(ev, "BasicLit ", node.Kind.String()," = ", node.Value)
 		if DEBUG {
 			println("Retrieving identifier: " + node.Value)
 		}
