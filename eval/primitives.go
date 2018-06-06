@@ -123,37 +123,45 @@ func EvalColumn(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 func EvalList(ev *Evaluator, node *ast.CallExpr) (r *RSEXP) {
 	TRACE := ev.Trace
 	DEBUG := ev.Debug
-	if len(node.Args)==1 && node.Args[0].(*ast.BasicLit).Kind==token.ELLIPSIS {
-		if TRACE {
-			println("Accelerator for list(...)")
-		}
-
-		if DEBUG {
-			println("evaluating ellipsis, processing dotdot-arguments of topFrame")
-		}
-		elements := make([]SEXPItf,0,len(node.Args))
-		for key,obj := range ev.topFrame.Objects {
-			if strings.Contains("^"+key, "^.."){
-				if DEBUG {
-					print("\t",key,"=")
-					PrintResult(obj)
-				}
-				elements = append(elements, obj)
-			}
-		}
-		return &RSEXP{ValuePos: node.Fun.Pos(), Slice: elements}
-	} else {
-		if TRACE {
-			println("list")
-		}
-		evaluatedArgs := make([]SEXPItf, len(node.Args))
-		for n, v := range node.Args { // TODO: strictly left to right
-			var val SEXPItf
-			val = EvalExprOrAssignment(ev, v)
-			evaluatedArgs[n] = val
-		}
-		return &RSEXP{ValuePos: node.Fun.Pos(), Slice: evaluatedArgs}
+	if TRACE {
+		println("list")
 	}
+	evaluatedArgs := make([]SEXPItf, 0, len(node.Args))
+	if DEBUG {
+		println("process given arguments for list function")
+	}
+	for _, arg := range node.Args { // TODO: strictly left to right
+		var val SEXPItf
+		switch arg.(type) {
+		case *ast.BasicLit:
+			if arg.(*ast.BasicLit).Kind==token.ELLIPSIS{
+				for key,obj := range ev.topFrame.Objects {
+					if strings.Contains("^"+key, "^.."){
+						if DEBUG {
+							print("appending to arguments for list function: ", key, "=")
+							PrintResult(obj)
+						}
+						evaluatedArgs=append(evaluatedArgs,obj)
+					}
+				}
+			} else {
+				val = EvalExprOrAssignment(ev, arg)
+				if DEBUG {
+					print("appending to arguments for list function: ")
+					PrintResult(val)
+				}
+				evaluatedArgs=append(evaluatedArgs,val)
+			}
+		default:
+			val = EvalExprOrAssignment(ev, arg)
+			if DEBUG {
+				print("appending expr to arguments for list function: ")
+				PrintResult(val)
+			}
+			evaluatedArgs=append(evaluatedArgs,val)
+		}
+	}
+	return &RSEXP{ValuePos: node.Fun.Pos(), Slice: evaluatedArgs}
 }
 
 // TODO documentation and comparison

@@ -128,7 +128,7 @@ func getArgNames(thefunction *VSEXP) (argnames []string) {
 	return argNames
 }
 
-func CollectArgsWithEllipsis(ev *Evaluator, node *ast.CallExpr, funcname string, argNames []string) ([]string, []ast.Expr, error) {
+func CollectArgsWithVariableArity(ev *Evaluator, node *ast.CallExpr, funcname string, argNames []string) ([]string, []ast.Expr, error) {
 	TRACE := ev.Trace
 	DEBUG := ev.Debug
 
@@ -343,7 +343,7 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 			if TRACE {
 				println("Call to function of variable arity: " + funcname)
 			}
-			extendedArgNames, collectedArgs, err := CollectArgsWithEllipsis(ev, node, funcname, argNames)
+			extendedArgNames, collectedArgs, err := CollectArgsWithVariableArity(ev, node, funcname, argNames)
 			if err != nil {
 				return &ESEXP{Kind: token.ILLEGAL}
 			} else {

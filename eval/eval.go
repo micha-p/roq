@@ -337,6 +337,14 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 		return EvalBasicLiteral(ev, ex.(*ast.BasicLit))
 	case *ast.BinaryExpr:
 		return evalBinary(ev, ex.(*ast.BinaryExpr))
+	case *ast.UnaryExpr:
+		node := ex.(*ast.UnaryExpr)
+		if node.Op==token.MINUS {
+			targetExpr := EvalExpr(ev,node.X).(*VSEXP)
+			return EvalVectorOp(&VSEXP{Immediate: 0},targetExpr,fMINUS)
+		} else {
+			panic("Unknown unary operator")
+		}
 	case *ast.CallExpr:
 		return EvalCall(ev, ex.(*ast.CallExpr))
 	case *ast.IndexExpr:
