@@ -1,118 +1,19 @@
 package eval
 
 import (
+	"roq/calc"
 	"roq/lib/token"
-	"math"
 )
-
-
-func intMin(x int, y int) int {
-	if x < y {
-		return x
-	} else {
-		return y
-	}
-}
-
-func intMax(x int, y int) int {
-	if x > y {
-		return x
-	} else {
-		return y
-	}
-}
-
-// TODO map on slices of same length instead of single values
-func fEQUAL(x float64, y float64) float64 {
-	if x == y {
-		return x
-	} else {
-		return math.NaN()
-	}
-}
-func fUNEQUAL(x float64, y float64) float64 {
-	if x != y {
-		return x
-	} else {
-		return math.NaN()
-	}
-}
-func fLESS(x float64, y float64) float64 { 
-	if x < y {
-		return y
-	} else {
-		return math.NaN()
-	}
-}
-func fLESSEQUAL(x float64, y float64) float64 { 
-	if x <= y {
-		return y
-	} else {
-		return math.NaN()
-	}
-}
-func fPLUS(x float64, y float64) float64 { 
-	return x + y
-}
-func fMINUS(x float64, y float64) float64 { 
-	return x - y
-}
-func fMULTIPLICATION(x float64, y float64) float64 { 
-	return x * y
-}
-func fDIVISION(x float64, y float64) float64 { 
-	return x / y
-}
-func fMODULUS(x float64, y float64) float64 { 
-	return math.Mod(x, y)
-}
-func fEXPONENTIATION(x float64, y float64) float64 { 
-	return math.Pow(x, y)
-}
-
-func mapIA(FUN func(float64, float64) float64, x float64, y []float64) []float64 {
-	resultLen := len(y)
-	r := make([]float64,resultLen)
-	for n,value := range y {
-		r[n]=FUN(x,value)
-	}
-	return r
-}
-
-func mapAI(FUN func(float64, float64) float64, x []float64, y float64) []float64 {
-	resultLen := len(x)
-	r := make([]float64,resultLen)
-	for n,value := range x {
-		r[n]=FUN(value,y)
-	}
-	return r
-}
-
-func mapAA(FUN func(float64, float64) float64, x []float64, y []float64) []float64 {
-	lenx := len(x)
-	leny := len(y)
-	sliceLen := intMin(lenx,leny)
-	resultLen := intMax(lenx,leny)
-	
-	r := make([]float64,resultLen)
-
-	for base := 0; base < resultLen; base += sliceLen {
-		for i := base ; (i < (base+sliceLen) && i < resultLen); i++ {
-			r[i] = FUN(x[i % lenx], y[i % leny])
-		}
-	}
-	return r
-}
 
 func EvalVectorOp(x *VSEXP, y *VSEXP, FUN func(float64, float64) float64) *VSEXP {
 	if x.Slice==nil && y.Slice==nil {
 		return &VSEXP{Immediate: FUN(x.Immediate,y.Immediate)}
 	} else if x.Slice==nil {
-		return &VSEXP{Slice: mapIA(FUN,x.Immediate,y.Slice)}
+		return &VSEXP{Slice: calc.MapIA(FUN,x.Immediate,y.Slice)}
 	} else if y.Slice==nil {
-		return &VSEXP{Slice: mapAI(FUN,x.Slice,y.Immediate)}
+		return &VSEXP{Slice: calc.MapAI(FUN,x.Slice,y.Immediate)}
 	} else {
-		return &VSEXP{Slice: mapAA(FUN,x.Slice,y.Slice)}
+		return &VSEXP{Slice: calc.MapAA(FUN,x.Slice,y.Slice)}
 	}
 }
 
@@ -128,17 +29,17 @@ func EvalComp(op token.Token, x *VSEXP, y *VSEXP) *VSEXP {
 	}
 	switch op {
 	case token.EQUAL:
-		return EvalVectorOp(x,y,fEQUAL)
+		return EvalVectorOp(x,y,calc.FEQUAL)
 	case token.UNEQUAL:
-		return EvalVectorOp(x,y,fUNEQUAL)
+		return EvalVectorOp(x,y,calc.FUNEQUAL)
 	case token.LESS:
-		return EvalVectorOp(x,y,fLESS)
+		return EvalVectorOp(x,y,calc.FLESS)
 	case token.LESSEQUAL:
-		return EvalVectorOp(x,y,fLESSEQUAL)
+		return EvalVectorOp(x,y,calc.FLESSEQUAL)
 	case token.GREATER:
-		return EvalVectorOp(y,x,fLESS)
+		return EvalVectorOp(y,x,calc.FLESS)
 	case token.GREATEREQUAL:
-		return EvalVectorOp(y,x,fLESSEQUAL)
+		return EvalVectorOp(y,x,calc.FLESSEQUAL)
 	default:
 		panic("?Vcomp: " + op.String())
 	}
@@ -150,17 +51,17 @@ func EvalOp(op token.Token, x *VSEXP, y *VSEXP) *VSEXP {
 	}
 	switch op {
 	case token.PLUS:
-		return EvalVectorOp(x,y,fPLUS)
+		return EvalVectorOp(x,y,calc.FPLUS)
 	case token.MINUS:
-		return EvalVectorOp(x,y,fMINUS)
+		return EvalVectorOp(x,y,calc.FMINUS)
 	case token.MULTIPLICATION:
-		return EvalVectorOp(x,y,fMULTIPLICATION)
+		return EvalVectorOp(x,y,calc.FMULTIPLICATION)
 	case token.DIVISION:
-		return EvalVectorOp(x,y,fDIVISION)
+		return EvalVectorOp(x,y,calc.FDIVISION)
 	case token.EXPONENTIATION:
-		return EvalVectorOp(x,y,fEXPONENTIATION)
+		return EvalVectorOp(x,y,calc.FEXPONENTIATION)
 	case token.MODULUS:
-		return EvalVectorOp(x,y,fMODULUS)
+		return EvalVectorOp(x,y,calc.FMODULUS)
 	default:
 		panic("?Op: " + op.String())
 	}

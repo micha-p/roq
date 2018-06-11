@@ -51,6 +51,9 @@ func EvalMain(filePtr *string, src interface{}, parserOpts parser.Mode, TRACE bo
 			}
 			break
 		}
+		if stmt==nil {
+			panic("EvalMain: stmt==nil")
+		}
 		sexp := EvalStmt(ev, stmt)
 		if sexp != nil {
 			if ev.Invisible { 				// invisibility is stored in the evaluator and is set during assignment

@@ -8,6 +8,7 @@ import (
 	"roq/lib/token"
 )
 
+
 // TODO typeswitch should depend on Kind
 func PrintResult(r SEXPItf) {
 	if r == nil {
@@ -98,11 +99,18 @@ func PrintResultV(r *VSEXP) {
 	} else if r.Body != nil {
 		fmt.Printf("function(")
 		for n, field := range r.Fieldlist {
-			identifier := field.Type.(*ast.Ident)
 			if n > 0 {
 				fmt.Printf(",")
 			}
-			fmt.Printf(identifier.Name)
+			switch field.Type.(type){
+			case *ast.Ident:
+				identifier := field.Type.(*ast.Ident)
+				fmt.Printf(identifier.Name)
+			case *ast.Ellipsis:
+				fmt.Printf("...")
+			default:
+				panic("while printing function")
+			}
 		}
 		fmt.Printf(")\n")
 	} else {

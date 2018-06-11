@@ -100,6 +100,9 @@ func EvalInit(fset *token.FileSet, filename string, src interface{}, mode parser
 
 func EvalStmt(ev *Evaluator, s ast.Stmt) (r SEXPItf) {
 	DEBUG := ev.Debug
+	if DEBUG && r==nil {
+		println("EvalStmt: nil")
+	}
 	switch s.(type) {
 	case *ast.AssignStmt:
 		defer un(ev)
@@ -231,9 +234,13 @@ func EvalAssignment(ev *Evaluator, e *ast.AssignStmt) SEXPItf {
 }
 
 func EvalExprOrAssignment(ev *Evaluator, ex ast.Expr) SEXPItf {
+	DEBUG := ev.Debug
 	TRACE := ev.Trace
 	if TRACE {
 		println("Expr or assignment:")
+	}
+	if DEBUG && ex==nil {
+		println("EvalExprOrAssignment: nil")
 	}
 	switch ex.(type) {
 	case *ast.BinaryExpr:
@@ -254,7 +261,7 @@ func EvalExprOrAssignment(ev *Evaluator, ex ast.Expr) SEXPItf {
 	return EvalExpr(ev, ex)
 }
 
-func EvalBasicLiteral(ev *Evaluator, node *ast.BasicLit) SEXPItf {
+func EvalLiteral(ev *Evaluator, node *ast.BasicLit) SEXPItf {
 	DEBUG := ev.Debug
 	defer un(ev)
 	switch node.Kind {
@@ -312,10 +319,20 @@ func EvalBasicLiteral(ev *Evaluator, node *ast.BasicLit) SEXPItf {
 	}
 }
 
+func EvalExprMute(ev *Evaluator, ex ast.Expr) SEXPItf {
+	TRACE := ev.Trace
+	DEBUG := ev.Debug
+	ev.Trace = false
+	ev.Debug = false
+	r := EvalExpr(ev, ex)
+	ev.Trace = TRACE
+	ev.Debug = DEBUG
+	return r
+}
 
 func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 	DEBUG := ev.Debug
-
+	
 	//	defer un(ev)trace(ev, "EvalExpr"))
 	ev.Invisible = false
 	switch ex.(type) {
@@ -334,19 +351,15 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 		}
 		return &VSEXP{Fieldlist: node.Type.Params.List, Body: node.Body, ellipsis: withEllipsis}
 	case *ast.BasicLit:
-		return EvalBasicLiteral(ev, ex.(*ast.BasicLit))
+		return EvalLiteral(ev, ex.(*ast.BasicLit))
 	case *ast.BinaryExpr:
 		return evalBinary(ev, ex.(*ast.BinaryExpr))
 	case *ast.UnaryExpr:
-		node := ex.(*ast.UnaryExpr)
-		if node.Op==token.MINUS {
-			targetExpr := EvalExpr(ev,node.X).(*VSEXP)
-			return EvalVectorOp(&VSEXP{Immediate: 0},targetExpr,fMINUS)
-		} else {
-			panic("Unknown unary operator")
-		}
+		return evalUnary(ev, ex.(*ast.UnaryExpr))
 	case *ast.CallExpr:
 		return EvalCall(ev, ex.(*ast.CallExpr))
+	case *ast.TaggedExpr:
+		return EvalExpr(ev, ex.(*ast.TaggedExpr).Rhs)
 	case *ast.IndexExpr:
 		return EvalIndexExpr(ev, ex.(*ast.IndexExpr))
 	case *ast.ParenExpr:
@@ -362,6 +375,16 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 	}
 }
 
+func evalUnary(ev *Evaluator, node *ast.UnaryExpr) SEXPItf {
+	defer un(ev)
+	trace(ev, "UnaryExpr")
+		if node.Op==token.MINUS {
+			targetExpr := EvalExpr(ev,node.X).(*VSEXP)
+			return EvalOp(node.Op,&VSEXP{Immediate: 0},targetExpr)
+		} else {
+			panic("Unknown unary operator")
+		}
+}
 
 func evalBinary(ev *Evaluator, node *ast.BinaryExpr) SEXPItf {
 	defer un(ev)

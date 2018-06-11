@@ -3,7 +3,6 @@ package eval
 import (
 	"fmt"
 	"roq/lib/ast"
-	"roq/lib/token"
 	"strings"
 )
 
@@ -25,6 +24,19 @@ func EvalLength(ev *Evaluator, node *ast.CallExpr) (r *ISEXP) {
 		return &ISEXP{ValuePos: node.Fun.Pos(), Integer: val.Length()}
 	}
 }
+
+
+func EvalPrint(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
+	TRACE := ev.Trace
+	if TRACE {
+		println("PrintExpr")
+	}
+	value := EvalExpr(ev, node.Args[0])
+	PrintResult(value)
+	ev.Invisible = true
+	return nil
+}
+
 
 func EvalCat(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 	TRACE := ev.Trace
@@ -57,7 +69,7 @@ func EvalCat(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 		}
 	}
 	ev.Invisible = true
-	return
+	return nil
 }
 
 // strongly stripped down call of c()
@@ -126,40 +138,13 @@ func EvalList(ev *Evaluator, node *ast.CallExpr) (r *RSEXP) {
 	if TRACE {
 		println("list")
 	}
-	evaluatedArgs := make([]SEXPItf, 0, len(node.Args))
 	if DEBUG {
 		println("process given arguments for list function")
 	}
-	for _, arg := range node.Args { // TODO: strictly left to right
-		var val SEXPItf
-		switch arg.(type) {
-		case *ast.BasicLit:
-			if arg.(*ast.BasicLit).Kind==token.ELLIPSIS{
-				for key,obj := range ev.topFrame.Objects {
-					if strings.Contains("^"+key, "^.."){
-						if DEBUG {
-							print("appending to arguments for list function: ", key, "=")
-							PrintResult(obj)
-						}
-						evaluatedArgs=append(evaluatedArgs,obj)
-					}
-				}
-			} else {
-				val = EvalExprOrAssignment(ev, arg)
-				if DEBUG {
-					print("appending to arguments for list function: ")
-					PrintResult(val)
-				}
-				evaluatedArgs=append(evaluatedArgs,val)
-			}
-		default:
-			val = EvalExprOrAssignment(ev, arg)
-			if DEBUG {
-				print("appending expr to arguments for list function: ")
-				PrintResult(val)
-			}
-			evaluatedArgs=append(evaluatedArgs,val)
-		}
+	evaluatedArgs := EvalArgswithDotDotArguments(ev, "list", node.Args)
+	if DEBUG {
+		println("List of evaluated args for function: list")
+		PrintListofSExpressions(evaluatedArgs)
 	}
 	return &RSEXP{ValuePos: node.Fun.Pos(), Slice: evaluatedArgs}
 }

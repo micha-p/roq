@@ -13,6 +13,27 @@ type Frame struct {
 	Objects map[string]SEXPItf
 }
 
+
+func DumpFrames(ev *Evaluator) {
+	top := ev.topFrame
+	if top != nil {
+		top.Dump(ev, 0)
+	}
+}
+
+func (f *Frame) Dump(ev *Evaluator, level int) {
+	n := 1
+	for key,value := range f.Objects {
+		print("DUMP\t",level,"\t",n,":\t",key,"\t")
+		PrintResult(value)
+		n++
+	}
+	if f.Outer != nil {
+		f.Outer.Dump(ev, level -1)
+	}
+}
+
+
 // NewFrame creates a new scope nested in the outer scope.
 func NewFrame(outer *Frame) *Frame {
 	const n = 4 // initial frame capacity

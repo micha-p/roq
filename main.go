@@ -10,11 +10,11 @@ import (
 	//	"strings"
 	//	"os"
 	"roq/eval"
-	"roq/version"
 	"roq/lib/ast"
 	"roq/lib/parser"
 	"roq/lib/scanner"
 	"roq/lib/token"
+	"roq/version"
 )
 
 var TRACE bool
@@ -43,7 +43,7 @@ func mainScan(filePtr *string, srcString string, ECHO bool) {
 		if tok == token.EOF {
 			break
 		}
-		if lit =="" {
+		if lit == "" {
 			fmt.Printf("%s\t%s\t \n", fset.Position(pos), tok)
 		} else {
 			fmt.Printf("%s\t%s\t%q\n", fset.Position(pos), tok, lit)
@@ -147,4 +147,3 @@ func main() {
 		eval.EvalMain(filePtr, src, parserOpts, TRACE, DEBUG, PRINT)
 	}
 }
-
