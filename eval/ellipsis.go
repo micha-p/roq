@@ -42,16 +42,6 @@ func EvalArgswithDotDotArguments(ev *Evaluator, funcname string, arglist []ast.E
 						evaluatedArgs=append(evaluatedArgs,obj)
 					}
 				}
-				//for key,obj := range ev.topFrame.Objects {
-					//if key == ".." + strconv.Itoa(n){
-						//if DEBUG {
-							//print("\t\t\tappending dotdotvalues to arguments:\t", key, "=")
-							//PrintResult(obj)
-						//}
-						//n++
-						//evaluatedArgs=append(evaluatedArgs,obj)
-					//}
-				//}
 				if DEBUG {
 					DumpFrames(ev)
 				}
@@ -104,15 +94,9 @@ func CollectArgsIntoFrameWithVariableArity(ev *Evaluator, node *ast.CallExpr, ar
 		switch arg.(type) {
 		case *ast.TaggedExpr:
 			a := arg.(*ast.TaggedExpr)
-			if isValidArgName(argNames,a.Tag) {
-				taggedArgs[a.Tag] = n + 1 // one above default zero value
-				if DEBUG {
-					println("\t\ttagged argument collected:", a.Tag, "  pos: ",n+1)
-				}
-			} else {
-				if DEBUG {
-					println("\t\ttagged argument found:", a.Tag, "  pos: ",n+1, "BUT NOT IN LIST OF ARGUMENT NAMES")
-				}
+			taggedArgs[a.Tag] = n + 1 // one above default zero value
+			if DEBUG {
+				println("\t\ttagged argument collected:", a.Tag, "  pos: ",n+1)
 			}
 		}
 	}
@@ -143,21 +127,23 @@ func CollectArgsIntoFrameWithVariableArity(ev *Evaluator, node *ast.CallExpr, ar
 		}
 	}
 
-	// TODO variadic functions do not support partial matching
-	//// find partially matching tags in the remaining tagged args
-	//for fieldname, callindex := range taggedArgs {
-		//matches, fieldindex := tryPartialMatch(fieldname, argNames, collectedArgs, DEBUG)
-		//if matches > 1 {
-			//return nil, nil, errors.New("Error: argument matches multiple formal arguments" )
-		//} else if matches == 1 {
-			//if DEBUG {
-				//println("argument", fieldname, "matches one formal argument:", argNames[fieldindex])
-			//}
-			//frame.Insert(fieldname, EvalExpr(ev, node.Args[callindex-1].(*ast.TaggedExpr).Rhs))
-			//usedArgs[callindex-1] = true
-			//delete(taggedArgs, fieldname)
-		//}
-	//}
+	// find partially matching tags in the remaining tagged args
+	for fieldname, callindex := range taggedArgs {
+		if DEBUG {
+			println("\t\tsearching partial match for: ",fieldname)
+		}
+		matches, fieldindex := tryPartialMatch(fieldname, argNames, make([]ast.Expr,len(argNames)))
+		if matches > 1 {
+			panic("Error: argument matches multiple formal arguments:"+funcname+"(.."+fieldname+"..)" )
+		} else if matches == 1 && usedArgs[callindex-1] == false {
+			if DEBUG {
+				println("\t\targument '"+fieldname+"' matches one formal argument:", argNames[fieldindex])
+			}
+			frame.Insert(argNames[fieldindex], EvalExpr(ev, node.Args[callindex-1]))
+			usedArgs[callindex-1] = true
+			delete(taggedArgs, fieldname)
+		}
+	}
 
 	// match positional arguments up to ellipsis
 	j := 0
@@ -168,11 +154,17 @@ func CollectArgsIntoFrameWithVariableArity(ev *Evaluator, node *ast.CallExpr, ar
 		for usedArgs[j] == true {
 			j++
 		}
-		if DEBUG {
-			println("\t\tcollecting positional argument:   pos:", n+1, j, fieldname)
+		if frame.Lookup(fieldname) != nil {
+			if DEBUG {
+				println("\t\tpositional argument already satisfied:   pos:", n+1, j, fieldname)
+			}
+		} else {
+			if DEBUG {
+				println("\t\tcollecting positional argument:   pos:", n+1, j, fieldname)
+			}
+			frame.Insert(fieldname, EvalExpr(ev, node.Args[j]))
+			usedArgs[j] = true
 		}
-		frame.Insert(fieldname, EvalExpr(ev, node.Args[j]))
-		usedArgs[j] = true
 	}
 	
 	// collect ellipsis and remaining arguments

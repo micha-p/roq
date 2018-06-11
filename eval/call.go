@@ -21,17 +21,11 @@ import (
 	"errors"
 )
 
-func tryPartialMatch(partial string, argNames []string, collectedArgs []ast.Expr, DEBUG bool) (int,int) {
-	if DEBUG {
-		println("Search for partial match: " + partial)
-	}
+func tryPartialMatch(partial string, argNames []string, collectedArgs []ast.Expr) (int,int) {
 	i := 0
 	fieldindex := 0
 	for n, name := range argNames {
 		if strings.Contains("^"+name, "^"+partial) {
-			if DEBUG {
-				println("    found: ",name)
-			}
 			if collectedArgs[n] == nil { 
 				fieldindex = n
 				i += 1
@@ -126,19 +120,7 @@ func getArgNames(thefunction *VSEXP) (argnames []string) {
 	return argNames
 }
 
-func isValidArgName(argNames []string, member string) bool{
-	for _,v := range argNames {
-		if v == member {
-			return true
-		}
-	}
-	return false
-}
-
-
-
 func CollectArgs(ev *Evaluator, node *ast.CallExpr, funcname string, argNames []string) ([]ast.Expr, error) {
-	DEBUG := ev.Debug
 	TRACE := ev.Trace
 
 	// this map uses the same index as argNames (instead of using a structure)
@@ -161,7 +143,7 @@ func CollectArgs(ev *Evaluator, node *ast.CallExpr, funcname string, argNames []
 	}
 
 	// match tagged arguments
-	for n, v := range argNames { // order of n not fix
+	for n, v := range argNames { // TODO order of n not guaranteed
 		expr := taggedArgs[v]
 		if expr != nil {
 			collectedArgs[n] = expr
@@ -171,7 +153,7 @@ func CollectArgs(ev *Evaluator, node *ast.CallExpr, funcname string, argNames []
 
 	// find partially matching tags
 	for k, v := range taggedArgs {
-		matches, fieldindex := tryPartialMatch(k, argNames, collectedArgs, DEBUG)
+		matches, fieldindex := tryPartialMatch(k, argNames, collectedArgs)
 		if matches > 1 {
 			fmt.Printf("Error in %s() : ",funcname)
 			fmt.Printf("argument %s matches multiple formal arguments\n", k)
