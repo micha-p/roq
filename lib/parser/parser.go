@@ -460,7 +460,7 @@ func (p *Parser) parseTypeName() ast.Expr {
 
 func (p *Parser) parseFuncParameterList(scope *ast.Scope, ellipsisOk bool) (list []*ast.Field) {
 	if p.trace {
-		defer un(trace(p, "ParameterList: "+p.lit))
+		defer un(trace(p, "FuncParameterList: "+p.lit))
 	}
 
 	for {
@@ -494,7 +494,7 @@ func (p *Parser) parseFuncParameterList(scope *ast.Scope, ellipsisOk bool) (list
 func (p *Parser) parseFuncParameters(scope *ast.Scope, ellipsisOk bool) *ast.FieldList {
 
 	if p.trace {
-		defer un(trace(p, "Parameters: "+p.lit))
+		defer un(trace(p, "FuncParameters: "+p.lit))
 	}
 
 	var params []*ast.Field
@@ -593,6 +593,8 @@ func (p *Parser) parseOperand(lhs bool) ast.Expr {
 				p.resolve(x)
 			}
 			return x
+		case token.ELLIPSIS:
+			panic("ELLIPSIS parsed")
 		case token.LPAREN:
 			lparen := p.pos
 			p.next()
@@ -829,6 +831,8 @@ L:
 				sel := &ast.Ident{NamePos: pos, Name: "_"}
 				x = &ast.SelectorExpr{X: x, Sel: sel}
 			}
+		case token.ELLIPSIS:
+			panic("Ellipsis found as primary expression")
 		case token.LBRACK:
 			if lhs {
 				p.resolve(x)
@@ -869,9 +873,13 @@ func (p *Parser) parseUnaryExpr(lhs bool) ast.Expr {
 		p.next()
 		x := p.parseUnaryExpr(false)
 		return &ast.UnaryExpr{OpPos: pos, Op: op, X: x}
+	case token.ELLIPSIS:
+		pos := p.pos
+		p.next()
+		return &ast.Ellipsis{ValuePos: pos}
+	default:
+		return p.parsePrimaryExpr(lhs)
 	}
-
-	return p.parsePrimaryExpr(lhs)
 }
 
 func (p *Parser) tokPrec() (token.Token, int) {

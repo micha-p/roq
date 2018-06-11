@@ -93,11 +93,7 @@ func EvalColumn(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 	}
 
 	if len(node.Args) > 0 {
-		evaluatedArgs := make(map[int]SEXPItf)
-		for n, v := range node.Args { // TODO: strictly left to right
-			val := EvalExprOrAssignment(ev, v)
-			evaluatedArgs[n] = val
-		}
+		evaluatedArgs := EvalArgswithDotDotArguments(ev, "c", node.Args)
 		switch evaluatedArgs[0].(type) {
 		case *ISEXP:
 			c := make([]int, len(evaluatedArgs))

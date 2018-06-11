@@ -44,11 +44,44 @@ func EvalApply(ev *Evaluator, funcname string, f *VSEXP, argNames []string, eval
 			}
 		}
 	}
+	if DEBUG {
+		DumpFrames(ev)
+	}
 	if (TRACE || DEBUG) {
 		println("Eval body of function \"" + funcname + "\":")
 	}
 	if f.Body==nil{
 		panic("EvalCall: body==nil")
+	}
+	r=EvalStmt(ev, f.Body)
+	if r != nil {
+		if (TRACE || DEBUG) {
+			println("Return from function \"" + funcname + "\" with result: ")
+			PrintResult(r)
+			println("End of result")
+		}
+		return r
+	} else {
+		return &NSEXP{}
+	}
+}
+
+func EvalApplyFrameToBody(ev *Evaluator, funcname string, f *VSEXP, frame *Frame) (r SEXPItf) {
+	TRACE := ev.Trace
+	DEBUG := ev.Debug
+	if (TRACE || DEBUG) {
+		println("EvalApplyFrameToBody \"" + funcname + "\" ENTERING Frame")
+	}
+
+	frame.Outer = ev.topFrame
+	ev.topFrame = frame
+	defer ev.closeFrame()
+
+	if DEBUG {
+		DumpFrames(ev)
+	}
+	if f.Body==nil{
+		panic("EvalCall: function body==nil")
 	}
 	r=EvalStmt(ev, f.Body)
 	if r != nil {

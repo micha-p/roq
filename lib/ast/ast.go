@@ -151,7 +151,7 @@ type (
 	// parameter list or the "..." length in an array type.
 	//
 	Ellipsis struct {
-		Ellipsis token.Pos // position of "..."
+		ValuePos token.Pos // position of "..."
 		Elt      Expr      // ellipsis element type (parameter lists only); or nil
 	}
 
@@ -273,7 +273,7 @@ type (
 
 func (x *BadExpr) Pos() token.Pos  { return x.From }
 func (x *Ident) Pos() token.Pos    { return x.NamePos }
-func (x *Ellipsis) Pos() token.Pos { return x.Ellipsis }
+func (x *Ellipsis) Pos() token.Pos { return x.ValuePos }
 func (x *BasicLit) Pos() token.Pos { return x.ValuePos }
 func (x *FuncLit) Pos() token.Pos  { return x.Type.Pos() }
 func (x *CompositeLit) Pos() token.Pos {
@@ -298,14 +298,9 @@ func (x *FuncType) Pos() token.Pos {
 	}
 	return x.Params.Pos() // interface method declarations have no "func" keyword
 }
-func (x *BadExpr) End() token.Pos { return x.To }
-func (x *Ident) End() token.Pos   { return token.Pos(int(x.NamePos) + len(x.Name)) }
-func (x *Ellipsis) End() token.Pos {
-	if x.Elt != nil {
-		return x.Elt.End()
-	}
-	return x.Ellipsis + 3 // len("...")
-}
+func (x *BadExpr) End() token.Pos        { return x.To }
+func (x *Ident) End() token.Pos          { return token.Pos(int(x.NamePos) + len(x.Name)) }
+func (x *Ellipsis) End() token.Pos       { return x.ValuePos + 2 }
 func (x *BasicLit) End() token.Pos       { return token.Pos(int(x.ValuePos) + len(x.Value)) }
 func (x *FuncLit) End() token.Pos        { return x.Body.End() }
 func (x *CompositeLit) End() token.Pos   { return x.Rbrace + 1 }
