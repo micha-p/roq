@@ -5,11 +5,8 @@ import (
 	"roq/lib/token"
 )
 
-func EvalStringForValue(src string) SEXPItf{
+func EvalStringForValue(src string, TRACE bool, DEBUG bool, PRINT bool) SEXPItf{
 	filename:=""
-	TRACE := false
-	DEBUG := false
-	PRINT := false
 	return EvalMain(&filename, src, parser.AllErrors, TRACE, DEBUG, PRINT)
 }
 

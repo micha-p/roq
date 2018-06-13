@@ -189,11 +189,9 @@ func IndexDomainEval(ev *Evaluator, ex ast.Expr) IteratorItf {
 // TODO consistant naming for index, value and toplevel domain:
 // evalExprI -> ISEXPR
 func EvalIndexExpr(ev *Evaluator, node *ast.IndexExpr) SEXPItf {
-	arrayPart := node.Array.(*ast.Ident)
-	array := ev.topFrame.Recursive(arrayPart.Name)
+	array := EvalExpr(ev,node.Array)
 	if array == nil {
-		print("error: object '", arrayPart.Name, "' not found\n")
-		return &ESEXP{ValuePos: arrayPart.Pos(),Kind: token.ILLEGAL}
+		panic("array not found\n")
 	} else {
 		iterator := IndexDomainEval(ev, node.Index)
 		r := make([]float64,0,array.Length())
@@ -207,18 +205,16 @@ func EvalIndexExpr(ev *Evaluator, node *ast.IndexExpr) SEXPItf {
 				break
 			}
 		}  
-		return &VSEXP{ValuePos: arrayPart.Pos(), Slice:r}
+		return &VSEXP{ValuePos: array.Pos(), Slice:r}
 	}
 }
 
 func EvalListIndexExpr(ev *Evaluator, node *ast.ListIndexExpr) SEXPItf {
-	arrayPart := node.Array.(*ast.Ident)
-	array := ev.topFrame.Recursive(arrayPart.Name)
-	if array == nil {
-		print("error: object '", arrayPart.Name, "' not found\n")
-		return &ESEXP{ValuePos: arrayPart.Pos(),Kind: token.ILLEGAL}
+	list := EvalExpr(ev,node.Array)
+	if list == nil {
+		panic("list not found\n")
 	} else {
-		return array.(*RSEXP).Slice[IndexValueAsInt(node.Index.(*ast.BasicLit))-1]
+		return list.(*RSEXP).Slice[IndexValueAsInt(node.Index.(*ast.BasicLit))-1]
 	}
 }
 

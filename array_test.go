@@ -1,7 +1,6 @@
 package main
 
 import (
-	"math"
 	"roq/eval"
 	"testing"
 )
@@ -17,27 +16,12 @@ func TestListIndex(t *testing.T) {
 }
 
 
-func testEqSlice(a, b []float64, epsilon float64) bool {
-
-	if a == nil || b == nil {
-		panic("Testing empty slice for equality")
-	}
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		diff := math.Abs(a[i] - b[i])
-		if diff > epsilon {
-			return false
-		}
-	}
-	return true
-}
-func quicktestSlice(t *testing.T, s string, expected []float64, epsilon float64) {
-	r := eval.EvalStringForValue(s).(*eval.VSEXP).Slice
-	if !testEqSlice(r, expected, epsilon) {
-		t.Error("Error in Slice Test \"", s, "\" :", r, "!=", expected)
-	}
+// TODO testing manually is fine for all, there seems to be a problem with EvalStringforTest
+func TestChainedIndex(t *testing.T) {
+	quicktestValue(t, "a=list(11,22,33,44,55,66);a[[1]]",11, 0)
+//	quicktestValue(t, "a=c(11,22,33,44,55,66);a[2:4][2]",33,0)
+	quicktestValue(t, "a=list(11,list(22,23,24),33,44,55,66);a[[2]][[3]]",24,0)
+//	quicktestValue(t, "a=list(11,list(22,23,24,c(100,101,102)),33,44,55,66);a[[2]][[4]][2]",101,0)
 }
 
 

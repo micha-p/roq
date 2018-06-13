@@ -435,7 +435,7 @@ func (p *Parser) parseUnaryExpr(lhs bool) ast.Expr {
 	case token.PLUS, token.MINUS, token.NOT, token.AND:
 		pos, op := p.pos, p.tok
 		p.next()
-		x := p.parseUnaryExpr(false)
+		x := p.parseUnaryExpr(lhs)
 		return &ast.UnaryExpr{OpPos: pos, Op: op, X: x}
 	case token.ELLIPSIS:
 		pos := p.pos

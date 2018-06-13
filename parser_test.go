@@ -42,8 +42,12 @@ func ExampleVersionCall() {
 // Output:
 // Error in version(): could not find function "version"
 }
+
 func TestVersionOverwrite(t *testing.T) {
-  r := eval.EvalStringForValue("version<-1\nversion")
+	TRACE := false
+	DEBUG := false
+	PRINT := false
+  r := eval.EvalStringForValue("version<-1\nversion", TRACE, DEBUG, PRINT)
   if r.(*eval.VSEXP).Immediate != 1 {
     t.Error("Error in overwriting version")
   }

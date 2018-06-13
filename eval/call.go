@@ -273,7 +273,7 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 	funcname := funcobject.(*ast.Ident).Name
 	if funcname == "c" {
 		if TRACE {
-			println("Call to protected special: " + funcname)
+			println("Call to protected function: " + funcname)
 		}
 		return EvalColumn(ev, node)
 	}
