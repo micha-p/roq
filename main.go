@@ -5,10 +5,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"bufio"
+	"os"
+	"strconv"
 	"io/ioutil"
-	//	"log"
-	//	"strings"
-	//	"os"
 	"roq/eval"
 	"roq/lib/ast"
 	"roq/lib/parser"
@@ -74,8 +74,8 @@ func mainParse(filePtr *string, src interface{}, parserOpts parser.Mode) {
 
 func main() {
 
-	scanPtr := flag.Bool("scan", false, "scan")
-	parsePtr := flag.Bool("parse", false, "parse")
+	scanPtr := flag.Bool("scan", false, "scan (file only)") // TODO stdin
+	parsePtr := flag.Bool("parse", false, "parse (file only)") // TODO stdin
 	versionPtr := flag.Bool("version", false, "version")
 	traceLongPtr := flag.Bool("trace", false, "trace")
 	traceFlagPtr := flag.Bool("T", false, "trace")
@@ -83,7 +83,7 @@ func main() {
 	debugFlagPtr := flag.Bool("D", false, "debug")
 	echoLongPtr := flag.Bool("echo", false, "echo")
 	echoFlagPtr := flag.Bool("E", false, "echo")
-	filePtr := flag.String("file", "/dev/stdin", "filename to process")
+	filePtr := flag.String("file", "", "filename to process")
 	exprPtr := flag.String("expr", "", "expression to process")
 	flag.Parse()
 
@@ -92,7 +92,11 @@ func main() {
 	ECHO = *echoFlagPtr || *echoLongPtr
 	PRINT := true
 
-	if DEBUG == false {
+	if *versionPtr {
+		version.PrintVersion()
+	}
+
+	if DEBUG == false {  // FIXME
 		defer func() {
 			if x := recover(); x != nil && x != "quit" {
 				fmt.Printf("run time panic: %v", x)
@@ -109,8 +113,29 @@ func main() {
 		src = *exprPtr
 	}
 
-	if *versionPtr {
-		version.PrintVersion()
+	if *filePtr == "" && *exprPtr == "" {  // interactive
+		println("roq version", 
+			version.MAJOR+"."+version.MINOR, 
+			"(" +
+			strconv.Itoa(version.YEAR) + "-" +
+			strconv.Itoa(version.MONTH) + "-" + 
+			strconv.Itoa(version.DAY) + 
+			")")
+		reader := bufio.NewReader(os.Stdin)
+		//for s, _, err:= reader.ReadLine(); err==nil; {
+			//eval.EvalStringForTest(string(s))
+		//}
+		for true {
+			fmt.Print("> ")
+			s, _, err := reader.ReadLine()
+			if err != nil{
+				break
+			}
+			if ECHO {
+				println("> "+string(s))
+			}
+			eval.EvalStringForTest(string(s))
+		}
 	} else if *scanPtr {
 		mainScan(filePtr, *exprPtr, ECHO)
 	} else if *parsePtr {

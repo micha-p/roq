@@ -1,8 +1,8 @@
 Roq -- an implementation of R in Go
 
-https://blog.gopheracademy.com/advent-2014/parsers-lexers/
+*EXTREMELY ALPHA*
 
-https://cran.r-project.org/doc/manuals/R-lang.html
+This is an implementation of the core language of R. It is not a complete computing environment with base, stats and graphics libraries. So far, parser and scanner are taken from Go 1.7, but this might change.
 
 *EXTREMELY ALPHA*
 
@@ -24,7 +24,8 @@ go run main.go -E -file demo.r
 go test -v
 go build
 ./roq -file example.r
-rlwrap ./roq # for readline support
+./roq                  # interactive
+rlwrap ./roq           # with readline support
 ```
 
 # Short summary
@@ -42,6 +43,12 @@ rlwrap ./roq # for readline support
 
 ## Additional features (TODO)
 
-- restrictions on type occurance should improve performance
+- restrictions on types should improve performance
 - concurrency on the interpreter-level of course
+
+## links
+
+https://blog.gopheracademy.com/advent-2014/parsers-lexers/
+
+https://cran.r-project.org/doc/manuals/R-lang.html
 
