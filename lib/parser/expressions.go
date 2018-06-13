@@ -233,7 +233,7 @@ func (p *Parser) parseListIndex(x ast.Expr) ast.Expr {
 	p.exprLev--
 	drbrack := p.expect(token.DOUBLERBRACK)
 
-	return &ast.IndexExpr{Array: x, Left: dlbrack, Index: index, Right: drbrack}
+	return &ast.ListIndexExpr{Array: x, Left: dlbrack, Index: index, Right: drbrack}
 }
 func (p *Parser) parseCall(fun ast.Expr) *ast.CallExpr {
 	if p.trace {

@@ -378,6 +378,8 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 		return EvalExpr(ev, ex.(*ast.TaggedExpr).Rhs)
 	case *ast.IndexExpr:
 		return EvalIndexExpr(ev, ex.(*ast.IndexExpr))
+	case *ast.ListIndexExpr:
+		return EvalListIndexExpr(ev, ex.(*ast.ListIndexExpr))
 	case *ast.ParenExpr:
 		node := ex.(*ast.ParenExpr)
 		if DEBUG {

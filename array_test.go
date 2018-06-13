@@ -6,6 +6,17 @@ import (
 	"testing"
 )
 
+func TestIndex(t *testing.T) {
+	quicktestSlice(t, "a=c(11,22,33,44,55,66);a[1]", []float64{11}, 0)
+	quicktestSlice(t, "a=c(11,22,33,44,55,66);a[6.5]", []float64{66}, 0)
+	quicktestSlice(t, "a=c(11,22,33,44,55,66);a[2:4]", []float64{22,33,44}, 0)
+}
+
+func TestListIndex(t *testing.T) {
+	quicktestValue(t, "a=list(11,22,33,44,55,66);a[[1]]",11, 0)
+}
+
+
 func testEqSlice(a, b []float64, epsilon float64) bool {
 
 	if a == nil || b == nil {
@@ -28,6 +39,7 @@ func quicktestSlice(t *testing.T, s string, expected []float64, epsilon float64)
 		t.Error("Error in Slice Test \"", s, "\" :", r, "!=", expected)
 	}
 }
+
 
 func TestArrayArithmetic(t *testing.T) {
 	quicktestSlice(t, "c(1,2,3) + c(4,5,6)", []float64{5, 7, 9}, 0)

@@ -112,51 +112,55 @@ func IndexDomainEvalRange(ev *Evaluator, a SEXPItf, b SEXPItf) IteratorItf {
 	return r
 }
 
-func IndexDomainEval(ev *Evaluator, ex ast.Expr) IteratorItf {
+func IndexValueAsInt(node *ast.BasicLit) int{
+	switch node.Kind {
+	case token.FLOAT:
+		vfloat, err := strconv.ParseFloat(node.Value, 64) // TODO: support for all R formatted values
+		if err != nil {
+			print("ERROR:")
+			println(err)
+		}
+		return int(math.Floor(vfloat))
+	case token.INT:
+		vint, err := strconv.Atoi(node.Value)
+		if err != nil {
+			print("ERROR:")
+			println(err)
+		}
+		return vint
+	case token.NULL:
+		return 0
+	case token.IDENT:
+		return 0
+	default:
+		println("Unknown node.Kind for index")
+		return 0
+	}
+}
 
+func IndexDomainEval(ev *Evaluator, ex ast.Expr) IteratorItf {
 	defer un(trace(ev, "IndexDomainEval"))
 	switch ex.(type) {
 	case *ast.BasicLit:
 		ev.Invisible = false
 		node := ex.(*ast.BasicLit)
 		defer un(trace(ev, "BasicLit ", node.Kind.String()))
-		switch node.Kind {
-		case token.FLOAT:
-			vfloat, err := strconv.ParseFloat(node.Value, 64) // TODO: support for all R formatted values
-			if err != nil {
-				print("ERROR:")
-				println(err)
-			}
-			// TODO check conversion to integer
-			r := new(OnceIterator)
-			r.Offset=int(math.Floor(vfloat))
-			return r
-		case token.INT:
-			vint, err := strconv.Atoi(node.Value)
-			if err != nil {
-				print("ERROR:")
-				println(err)
-			}
-			r := new(OnceIterator)
-			r.Offset=vint
-			return r
-		case token.NULL:
-			r := new(EmptyIterator)
-			return r
-		case token.IDENT:
+		index := IndexValueAsInt(node)
+		if index == 0 {
 			obj := ev.topFrame.Recursive(node.Value)
 			if obj == nil {
 				print("error: object '", node.Value, "' not found\n")
-				r := new(EmptyIterator)
-				return r
+				return new(EmptyIterator)
 			} else {
 				r := new(ArrayIterator)
 				r.Slice = obj.(*VSEXP).Slice // TODO: check this
 				r.Len=r.Length()
 				return r
 			}
-		default:
-			println("Unknown node.Kind")
+		} else {
+			r := new(OnceIterator)
+			r.Offset=index
+			return r
 		}
     case *ast.BinaryExpr:
 		ev.Invisible = false
@@ -164,8 +168,7 @@ func IndexDomainEval(ev *Evaluator, ex ast.Expr) IteratorItf {
 		if node.Op == token.SEQUENCE {
 			return IndexDomainEvalRange(ev, EvalExpr(ev,node.X).(*VSEXP),EvalExpr(ev,node.Y).(*VSEXP))
 		} else {
-			r := new(EmptyIterator)
-			return r
+			return new(EmptyIterator)
 		}
 	default:
 		ev.Invisible = false
@@ -186,11 +189,11 @@ func IndexDomainEval(ev *Evaluator, ex ast.Expr) IteratorItf {
 // TODO consistant naming for index, value and toplevel domain:
 // evalExprI -> ISEXPR
 func EvalIndexExpr(ev *Evaluator, node *ast.IndexExpr) SEXPItf {
-	arrayPart := node.Array.(*ast.BasicLit)
-	array := ev.topFrame.Recursive(arrayPart.Value)
+	arrayPart := node.Array.(*ast.Ident)
+	array := ev.topFrame.Recursive(arrayPart.Name)
 	if array == nil {
-		print("error: object '", arrayPart.Value, "' not found\n")
-		return &ESEXP{ValuePos: arrayPart.ValuePos,Kind: token.ILLEGAL}
+		print("error: object '", arrayPart.Name, "' not found\n")
+		return &ESEXP{ValuePos: arrayPart.Pos(),Kind: token.ILLEGAL}
 	} else {
 		iterator := IndexDomainEval(ev, node.Index)
 		r := make([]float64,0,array.Length())
@@ -204,6 +207,19 @@ func EvalIndexExpr(ev *Evaluator, node *ast.IndexExpr) SEXPItf {
 				break
 			}
 		}  
-		return &VSEXP{ValuePos: arrayPart.ValuePos, Slice:r}
+		return &VSEXP{ValuePos: arrayPart.Pos(), Slice:r}
 	}
 }
+
+func EvalListIndexExpr(ev *Evaluator, node *ast.ListIndexExpr) SEXPItf {
+	arrayPart := node.Array.(*ast.Ident)
+	array := ev.topFrame.Recursive(arrayPart.Name)
+	if array == nil {
+		print("error: object '", arrayPart.Name, "' not found\n")
+		return &ESEXP{ValuePos: arrayPart.Pos(),Kind: token.ILLEGAL}
+	} else {
+		return array.(*RSEXP).Slice[IndexValueAsInt(node.Index.(*ast.BasicLit))-1]
+	}
+}
+
+
