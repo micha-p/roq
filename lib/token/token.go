@@ -104,11 +104,13 @@ const (
 
 	LPAREN // (
 	LBRACK // [
+	DOUBLELBRACK // [[
 	LBRACE // {
 	COMMA  // ,
 
 	RPAREN    // )
 	RBRACK    // ]
+	DOUBLERBRACK    // ]]
 	RBRACE    // }
 	SEMICOLON // ;
 
@@ -253,12 +255,14 @@ var tokenNames = [...]string{
 
 	LPAREN: "(",
 	LBRACK: "[",
+	DOUBLELBRACK: "[[",
 	LBRACE: "{",
 	COMMA:  ",",
 	//	PERIOD: ".",
 
 	RPAREN:    ")",
 	RBRACK:    "]",
+	DOUBLERBRACK:    "]]",
 	RBRACE:    "}",
 	SEMICOLON: ";",
 	//	COLON:     ":",

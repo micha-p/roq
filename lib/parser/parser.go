@@ -32,7 +32,7 @@ type Parser struct {
 
 	// Tracing/debugging
 	trace  bool // == (mode & Trace != 0)
-	debug  bool // == (mode & Trace != 0)
+	debug  bool // == (mode & Debug != 0)
 	echo   bool // == (mode & Echo  != 0)
 	indent int  // indentation used for tracing output
 
@@ -108,20 +108,20 @@ func (p *Parser) declare(decl, data interface{}, scope *ast.Scope, kind ast.ObjK
 // The unresolved object is a sentinel to mark identifiers that have been added
 // to the list of unresolved identifiers. The sentinel is only used for verifying
 // internal consistency.
-var unresolved = new(ast.Object)
+var unresolvedDummy = new(ast.Object)
 
 // If x is an identifier, tryResolve attempts to resolve x by looking up
 // the object it denotes. If no object is found and collectUnresolved is
 // set, x is marked as unresolved and collected in the list of unresolved
 // identifiers.
 //
-func (p *Parser) tryResolve(x ast.Expr, collectUnresolved bool) {
+func (p *Parser) resolve(x ast.Expr) {
 	// nothing to do if x is not an identifier or the blank identifier
 	ident, _ := x.(*ast.Ident)
 	if ident == nil {
 		return
 	}
-	assert(ident.Obj == nil, "identifier already declared or resolved")
+	assert(ident.Obj == nil, "Parser ERROR identifier already declared or resolved")
 	if ident.Name == "_" {
 		return
 	}
@@ -136,31 +136,22 @@ func (p *Parser) tryResolve(x ast.Expr, collectUnresolved bool) {
 	// must be found either in the file scope, package scope
 	// (perhaps in another file), or universe scope --- collect
 	// them so that they can be resolved later
-	if collectUnresolved {
-		ident.Obj = unresolved
-		p.unresolved = append(p.unresolved, ident)
-	}
+	ident.Obj = unresolvedDummy
+	p.unresolved = append(p.unresolved, ident)
 }
 
-func (p *Parser) resolve(x ast.Expr) {
-	p.tryResolve(x, true)
-}
 
 // ----------------------------------------------------------------------------
 // Parsing support
 
 func (p *Parser) printTrace(a ...interface{}) {
-	const dots = ". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . "
-	const n = len(dots)
 	pos := p.file.Position(p.pos)
 	fmt.Printf("%5d:%3d: ", pos.Line, pos.Column)
-	i := 2 * p.indent
-	for i > n {
-		fmt.Print(dots)
-		i -= n
+	i := p.indent
+	for i > 0 {
+		fmt.Print(". ")
+		i -= 1
 	}
-	// i <= n
-	fmt.Print(dots[0:i])
 	fmt.Println(a...)
 }
 
@@ -417,46 +408,6 @@ func (p *Parser) parseExprList(lhs bool) (list []ast.Expr) {
 	return
 }
 
-// ----------------------------------------------------------------------------
-// Types
-
-func (p *Parser) parseType() ast.Expr {
-	if p.trace {
-		defer un(trace(p, "Type"))
-	}
-
-	typ := p.tryType()
-
-	if typ == nil {
-		pos := p.pos
-		p.errorExpected(pos, "type")
-		p.next() // make progress
-		return &ast.BadExpr{From: pos, To: p.pos}
-	}
-
-	return typ
-}
-
-// If the result is an identifier, it is not resolved.
-func (p *Parser) parseTypeName() ast.Expr {
-	if p.trace {
-		defer un(trace(p, "TypeName"))
-	}
-
-	ident := p.parseIdent()
-	// don't resolve ident yet - it may be a parameter or field name
-
-	if p.tok == token.NA /*TODO: CHECK*/ {
-		// ident is a package name
-		p.next()
-		p.resolve(ident)
-		sel := p.parseIdent()
-		return &ast.SelectorExpr{X: ident, Sel: sel}
-	}
-
-	return ident
-}
-
 
 func (p *Parser) parseFuncParameterList(scope *ast.Scope, ellipsisOk bool) (list []*ast.Field) {
 	if p.trace {
@@ -520,36 +471,6 @@ func (p *Parser) parseFuncType() (*ast.FuncType, *ast.Scope) {
 	return &ast.FuncType{Func: pos, Params: params}, scope
 }
 
-// If the result is an identifier, it is not resolved.
-func (p *Parser) tryIdentOrType() ast.Expr {
-	switch p.tok {
-	case token.IDENT:
-		return p.parseTypeName()
-	case token.FUNCTION:
-		typ, _ := p.parseFuncType()
-		return typ
-		/*	case token.INTERFACE:
-			return p.parseInterfaceType()*/
-	case token.LPAREN:
-		lparen := p.pos
-		p.next()
-		typ := p.parseType()
-		rparen := p.expect(token.RPAREN)
-		return &ast.ParenExpr{Lparen: lparen, X: typ, Rparen: rparen}
-	}
-
-	// no type found
-	return nil
-}
-
-func (p *Parser) tryType() ast.Expr {
-	typ := p.tryIdentOrType()
-	if typ != nil {
-		p.resolve(typ)
-	}
-	return typ
-}
-
 
 // ----------------------------------------------------------------------------
 // Expressions
@@ -607,12 +528,6 @@ func (p *Parser) parseOperand(lhs bool) ast.Expr {
 			return p.parseFuncLit()
 		}
 	}
-	if typ := p.tryIdentOrType(); typ != nil {
-		// could be type for composite literal or conversion
-		_, isIdent := typ.(*ast.Ident)
-		assert(!isIdent, "type cannot be identifier")
-		return typ
-	}
 
 	// we have an error
 	pos := p.pos
@@ -644,9 +559,24 @@ func (p *Parser) parseIndex(x ast.Expr) ast.Expr {
 	p.exprLev--
 	rbrack := p.expect(token.RBRACK)
 
-	return &ast.IndexExpr{Array: x, Lbrack: lbrack, Index: index, Rbrack: rbrack}
+	return &ast.IndexExpr{Array: x, Left: lbrack, Index: index, Right: rbrack}
 }
 
+func (p *Parser) parseListIndex(x ast.Expr) ast.Expr {
+	if p.trace {
+		defer un(trace(p, "ListIndex"))
+	}
+
+	dlbrack := p.expect(token.DOUBLELBRACK)
+	var index ast.Expr
+	if p.tok != token.SEQUENCE {  // TODO comma for dims
+		index = p.parseRhs()
+	}
+	p.exprLev--
+	drbrack := p.expect(token.DOUBLERBRACK)
+
+	return &ast.IndexExpr{Array: x, Left: dlbrack, Index: index, Right: drbrack}
+}
 func (p *Parser) parseCall(fun ast.Expr) *ast.CallExpr {
 	if p.trace {
 		defer un(trace(p, "Call"))
@@ -696,7 +626,7 @@ func (p *Parser) parseCall(fun ast.Expr) *ast.CallExpr {
 
 func (p *Parser) parseValue(keyOk bool) ast.Expr {
 	if p.trace {
-		defer un(trace(p, "Element"))
+		defer un(trace(p, "Value"))
 	}
 
 	if p.tok == token.LBRACE {
@@ -809,7 +739,11 @@ func unparen(x ast.Expr) ast.Expr {
 // If lhs is set and the result is an identifier, it is not resolved.
 func (p *Parser) parsePrimaryExpr(lhs bool) ast.Expr {
 	if p.trace && p.debug {
-		defer un(trace(p, "PrimaryExpr"))
+		if lhs {
+			defer un(trace(p, "PrimaryExpr (LHS)"))
+		} else {
+			defer un(trace(p, "PrimaryExpr (RHS)"))
+		}
 	}
 	
 	x := p.parseOperand(lhs)
@@ -838,6 +772,11 @@ L:
 				p.resolve(x)
 			}
 			x = p.parseIndex(x)
+		case token.DOUBLELBRACK:
+			if lhs {
+				p.resolve(x)
+			}
+			x = p.parseListIndex(x)
 		case token.LPAREN:
 			if lhs {
 				p.resolve(x)
@@ -864,7 +803,11 @@ L:
 // If lhs is set and the result is an identifier, it is not resolved.
 func (p *Parser) parseUnaryExpr(lhs bool) ast.Expr {
 	if p.trace && p.debug {
-		defer un(trace(p, "UnaryExpr"))
+		if lhs {
+			defer un(trace(p, "UnaryExpr (LHS)"))
+		} else {
+			defer un(trace(p, "UnaryExpr (RHS)"))
+		}
 	}
 
 	switch p.tok {
@@ -890,25 +833,27 @@ func (p *Parser) tokPrec() (token.Token, int) {
 // If lhs is set and the result is an identifier, it is not resolved.
 func (p *Parser) parseBinaryExpr(lhs bool, prec1 int) ast.Expr {
 	if p.trace {
-		defer un(trace(p, "BinaryExpr "+strconv.Itoa(prec1)))
-
+		if lhs {
+			defer un(trace(p, "Binary or UnaryExpr (LHS)  precedence:"+strconv.Itoa(prec1)))
+		} else {
+			defer un(trace(p, "Binary or UnaryExpr (RHS) precedence:"+strconv.Itoa(prec1)))
+		}
 	}
-	x := p.parseUnaryExpr(lhs)
+	r := p.parseUnaryExpr(lhs)
 	//	for p.tok != token.RPAREN && p.tok != token.COMMA && p.tok != token.SEMICOLON && p.tok != token.ELSE{
 	for p.tok.IsOperator() {
 		operator, oprec := p.tokPrec()
 		if oprec < prec1 {
-			return x
+			return r
 		}
 		pos := p.expect(operator)
 		if lhs {
-			p.resolve(x)
-			lhs = false
+			p.resolve(r)
 		}
 		y := p.parseBinaryExpr(false, oprec+1)
-		x = &ast.BinaryExpr{X: x, OpPos: pos, Op: operator, Y: y}
+		r = &ast.BinaryExpr{X: r, OpPos: pos, Op: operator, Y: y}
 	}
-	return x
+	return r
 }
 
 func (p *Parser) parseParameter() ast.Expr {
@@ -933,22 +878,20 @@ func (p *Parser) parseParameter() ast.Expr {
 // The result may be a type or even a raw type ([...]int).
 func (p *Parser) parseExpr(lhs bool) ast.Expr {
 	if p.trace {
-		defer un(trace(p, "Parsing expression or shortassignment"))
+		if lhs {
+			defer un(trace(p, "Expr (LHS)"))
+		} else {
+			defer un(trace(p, "Expr (RHS)"))
+		}
 	}
 	return p.parseBinaryExpr(lhs, 3)
 }
 
-func (p *Parser) parseExprOrAssignment(lhs bool) ast.Expr {
-	if p.trace {
-		defer un(trace(p, "Parsing expression or assignment"))
-	}
-	return p.parseBinaryExpr(lhs, 1)
-}
 
 func (p *Parser) parseRhs() ast.Expr {
 	old := p.inRhs
 	p.inRhs = true
-	x := p.parseExprOrAssignment(false)
+	x := p.parseBinaryExpr(false, 3)
 	p.inRhs = old
 	return x
 }

@@ -127,7 +127,7 @@ type TSEXP struct {
 	ValuePos token.Pos
 	SEXP
 	String string
-	Slice  []string // "A slice is a reference to an array"
+	Slice  []string
 }
 
 // Errors and exceptions

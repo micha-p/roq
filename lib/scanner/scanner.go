@@ -678,10 +678,20 @@ scanAgain:
 			insertSemi = true
 			tok = token.RPAREN
 		case '[':
+			if s.ch == '[' {
+				s.next()
+				tok = token.DOUBLELBRACK
+			} else {
 			tok = token.LBRACK
+			}
 		case ']':
 			insertSemi = true
+			if s.ch == ']' {
+				s.next()
+				tok = token.DOUBLERBRACK
+			} else {
 			tok = token.RBRACK
+			}
 		case '{':
 			tok = token.LBRACE
 		case '}':
