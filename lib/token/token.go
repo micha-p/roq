@@ -24,10 +24,11 @@ const (
 	COMMENT
 	VERSION
 
+	IDENT // main
+
 	literal_beg
 	// Identifiers and basic type literals
 	// (these tokens stand for classes of literals)
-	IDENT // main
 	INT   // 12345
 	FLOAT // 123.45
 	IMAG  // 123.45i
@@ -403,7 +404,7 @@ func init() {
 
 // Lookup maps an identifier to its keyword token or IDENT (if not a keyword).
 //
-func Lookup(ident string) Token {
+func LookupKeyword(ident string) Token {
 	if tok, is_keyword := keywords[ident]; is_keyword {
 		return tok
 	}

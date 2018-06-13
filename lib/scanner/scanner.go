@@ -592,7 +592,7 @@ func (s *Scanner) switch4(tok0, tok1 token.Token, ch2 rune, tok2, tok3 token.Tok
 // set with Init. Token positions are relative to that file
 // and thus relative to the file set.
 //
-func (s *Scanner) Scan() (pos token.Pos, tok token.Token, lit string) {
+ func (s *Scanner) Scan() (pos token.Pos, tok token.Token, lit string) {
 scanAgain:
 	s.skipWhitespace()
 
@@ -606,8 +606,8 @@ scanAgain:
 		lit = s.scanIdentifier()
 		if len(lit) > 1 {
 			// keywords are longer than one letter - avoid lookup otherwise
-			tok = token.Lookup(lit)
-			if tok.IsLiteral(){
+			tok = token.LookupKeyword(lit)
+			if tok==token.IDENT || tok.IsLiteral(){
 				insertSemi = true
 				return pos, tok, lit
 			} else {

@@ -91,7 +91,7 @@ func EvalCallBuiltin(ev *Evaluator, node *ast.CallExpr, funcname string) (r SEXP
 		return EvalClass(ev, node)
 	case "remove":
 		for _, arg := range node.Args {
-			ev.topFrame.Delete(arg.(*ast.BasicLit).Value, DEBUG)
+			ev.topFrame.Delete(arg.(*ast.Ident).Name, DEBUG)
 		}
 	case "options":
 		return nil
@@ -270,7 +270,7 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 	TRACE := ev.Trace
 	DEBUG := ev.Debug
 	funcobject := node.Fun
-	funcname := funcobject.(*ast.BasicLit).Value
+	funcname := funcobject.(*ast.Ident).Name
 	if funcname == "c" {
 		if TRACE {
 			println("Call to protected special: " + funcname)

@@ -13,7 +13,7 @@ func doAttributeReplacement(ev *Evaluator,lhs *ast.CallExpr, rhs ast.Expr) SEXPI
 		println("attribute replacement:")
 	}
 	funcobject := lhs.Fun
-	attribute := funcobject.(*ast.BasicLit).Value
+	attribute := funcobject.(*ast.Ident).Name
 	defer un(trace(ev, attribute + "<-"))				// TODO len(lhs.Args) != 1
 	identifier := getIdent(ev, lhs.Args[0])
 	object := ev.topFrame.Lookup(identifier)

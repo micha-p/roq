@@ -77,8 +77,8 @@ func (f *Frame) Delete(name string, DEBUG bool) () {
 }
 
 func getIdent(ev *Evaluator, ex ast.Expr) string {
-	node := ex.(*ast.BasicLit)
-	return node.Value
+	node := ex.(*ast.Ident)
+	return node.Name
 }
 
 // Insert attempts to insert a named object obj into the frame s.

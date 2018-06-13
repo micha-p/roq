@@ -188,7 +188,7 @@ func doAssignment(ev *Evaluator, lhs ast.Expr, rhs ast.Expr) SEXPItf {
 	switch lhs.(type) {
 	case *ast.CallExpr:
 		doAttributeReplacement(ev, lhs.(*ast.CallExpr), rhs)
-	case *ast.BasicLit:
+	case *ast.Ident:
 		target := getIdent(ev, lhs)
 		defer un(ev)
 		trace(ev, "assignment: "+target+" <- ")
@@ -204,7 +204,7 @@ func doSuperAssignment(ev *Evaluator, lhs ast.Expr, rhs ast.Expr) SEXPItf {
 	switch lhs.(type) {
 	case *ast.CallExpr:
 		doAttributeReplacement(ev, lhs.(*ast.CallExpr), rhs)
-	case *ast.BasicLit:
+	case *ast.Ident:
 		target := getIdent(ev, lhs)
 		defer un(ev)
 		trace(ev, "superassignment: "+target+" <<- ")
@@ -336,6 +336,22 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 	//	defer un(ev)trace(ev, "EvalExpr"))
 	ev.Invisible = false
 	switch ex.(type) {
+	case *ast.Ident:
+		trace(ev, "Ident '"+ex.(*ast.Ident).Name+"'")
+		if DEBUG {
+			println("Retrieving identifier: " + ex.(*ast.Ident).Name)
+		}
+		r :=  ev.topFrame.Recursive(ex.(*ast.Ident).Name)
+		if r==nil {
+			if ex.(*ast.Ident).Name=="version" {
+				return &ESEXP{Kind: token.VERSION}
+			} else {
+				fmt.Printf("Error: object '%s' not found\n", ex.(*ast.Ident).Name)
+				return nil
+			}
+		} else {
+			return r
+		}
 	case *ast.FuncLit:
 		node := ex.(*ast.FuncLit)
 		defer un(ev)

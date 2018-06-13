@@ -45,6 +45,6 @@ func ExampleVersionCall() {
 func TestVersionOverwrite(t *testing.T) {
   r := eval.EvalStringForValue("version<-1\nversion")
   if r.(*eval.VSEXP).Immediate != 1 {
-    t.Error("Error in overwrituing version")
+    t.Error("Error in overwriting version")
   }
 }

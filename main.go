@@ -19,7 +19,7 @@ import (
 
 var TRACE bool
 var DEBUG bool
-var ECHO bool
+var ECHO  bool
 
 func myerrorhandler(pos token.Position, msg string) {
 	println("SCANNER ERROR", pos.Filename, pos.Line, pos.Column, msg)
@@ -134,12 +134,6 @@ func main() {
 		if TRACE {
 			parserOpts = parserOpts | parser.Trace
 		}
-
-		/*
-			if DEBUG {
-				parserOpts = parserOpts | parser.Debug
-			}
-		*/
 
 		if ECHO {
 			parserOpts = parserOpts | parser.Echo

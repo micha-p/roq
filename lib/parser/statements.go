@@ -39,19 +39,17 @@ func (p *Parser) parseStmtList() (list []ast.Stmt) {
 	return
 }
 
-func (p *Parser) parseBody(scope *ast.Scope) *ast.BlockStmt {
+func (p *Parser) parseBody() *ast.BlockStmt {
 	if p.trace {
 		defer un(trace(p, "Body"))
 	}
 
 	var r *ast.BlockStmt
-	p.topScope = scope
 	if p.tok == token.LBRACE {
 		r = p.parseBlockStmt()
 	} else {
 		r = p.parseBlockStmt1()
 	}
-	p.closeScope()
 	return r
 }
 
@@ -61,9 +59,7 @@ func (p *Parser) parseBlockStmt() *ast.BlockStmt {
 	}
 
 	lbrace := p.expect(token.LBRACE)
-	p.openScope()
 	list := p.parseStmtList()
-	p.closeScope()
 	rbrace := p.expect(token.RBRACE)
 
 	return &ast.BlockStmt{Lbrace: lbrace, List: list, Rbrace: rbrace}
@@ -75,11 +71,9 @@ func (p *Parser) parseBlockStmt1() *ast.BlockStmt {
 		defer un(trace(p, "BlockStmt1"))
 	}
 
-	p.openScope()
 	var list []ast.Stmt
 	stmt := p.parseStmt()
 	list = append(list, stmt)
-	p.closeScope()
 
 	return &ast.BlockStmt{List: list}
 }
@@ -159,8 +153,6 @@ func (p *Parser) parseIfStmt() *ast.IfStmt {
 	}
 
 	pos := p.expect(token.IF)
-	p.openScope()
-	defer p.closeScope()
 
 	var x ast.Expr // TODO strict flag to insist on parentheses
 	x = p.parseRhs()
@@ -204,8 +196,6 @@ func (p *Parser) parseWhileStmt() *ast.WhileStmt {
 	}
 
 	pos := p.expect(token.WHILE)
-	p.openScope()
-	defer p.closeScope()
 
 	var x ast.Expr // TODO strict flag to insist on parentheses
 	x = p.parseRhs()
@@ -249,8 +239,6 @@ func (p *Parser) parseForStmt() ast.Stmt {
 	}
 
 	pos := p.expect(token.FOR)
-	p.openScope()
-	defer p.closeScope()
 
 	// TODO this is quick and dirty
 	p.expect(token.LPAREN)
