@@ -25,6 +25,8 @@ func PrintResult(r SEXPItf) {
 			PrintResultT(r.(*TSEXP))
 		case *ESEXP:
 			PrintResultE(r.(*ESEXP))
+		case *QSEXP:
+			ast.FilteredPrint(nil,r.(*QSEXP).X,ast.QuotedExprFilter, true)
 		case *NSEXP:
 			println("NULL")
 		default:

@@ -47,4 +47,8 @@ Therefore input is restricted to files, unbuffered stdin and single expressions,
 
 # Output
 
-For printing, output for arrays is withoul linebreaks, so linecount is always [1] 
+For printing, output for arrays is without linebreaks, so linecount is always [1] 
+
+# Quote and Eval
+
+Quoted expressions will be stored as ast-structures, so they can be evaluated wit the same eval-functions. However, they can't be printed easily, 

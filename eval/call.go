@@ -54,8 +54,6 @@ func EvalCallBuiltin(ev *Evaluator, node *ast.CallExpr, funcname string) (r SEXP
 		} else {
 			return &ESEXP{Kind: token.ILLEGAL}
 		}
-	case "list":
-		return EvalList(ev, node)
 	case "pairlist":
 		return EvalPairlist(ev, node)
 	case "cat":
@@ -276,7 +274,13 @@ func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 			println("Call to protected function: " + funcname)
 		}
 		return EvalColumn(ev, node)
+	} else if funcname == "list" {
+		if TRACE {
+			println("Call to protected function: " + funcname)
+		}
+		return EvalList(ev, node)
 	}
+	
 	thefunction := ev.topFrame.Recursive(funcname)
 	if thefunction == nil {
 		if TRACE || DEBUG{

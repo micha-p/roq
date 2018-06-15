@@ -170,16 +170,26 @@ type (
 	// A CompositeLit node represents a composite literal.
 	CompositeLit struct {
 		Type   Expr      // literal type; or nil
-		Lbrace token.Pos // position of "{"
+		Left   token.Pos // position of "{"
 		Elts   []Expr    // list of composite elements; or nil
-		Rbrace token.Pos // position of "}"
+		Right  token.Pos // position of "}"
 	}
 
 	// A ParenExpr node represents a parenthesized expression.
 	ParenExpr struct {
-		Lparen token.Pos // position of "("
+		Left   token.Pos // position of "("
 		X      Expr      // parenthesized expression
-		Rparen token.Pos // position of ")"
+		Right  token.Pos // position of ")"
+	}
+	QuoteExpr struct {
+		Left  token.Pos
+		X     Expr
+		Right token.Pos // position of ")"
+	}
+	EvalExpr struct {
+		Left  token.Pos
+		X     Expr
+		Right token.Pos // position of ")"
 	}
 
 	// A SelectorExpr node represents an expression followed by a selector.
@@ -204,23 +214,13 @@ type (
 		Right  token.Pos // position of "]"
 	}
 
-	// A TypeAssertExpr node represents an expression followed by a
-	// type assertion.
-	//
-	TypeAssertExpr struct {
-		X      Expr      // expression
-		Lparen token.Pos // position of "("
-		Type   Expr      // asserted type; nil means type switch X.(type)
-		Rparen token.Pos // position of ")"
-	}
-
 	// A CallExpr node represents an expression followed by an argument list.
 	CallExpr struct {
 		Fun      Expr      // function expression
-		Lparen   token.Pos // position of "("
+		Left     token.Pos // position of "("
 		Args     []Expr    // function arguments; or nil
 		Ellipsis token.Pos // position of "...", if any
-		Rparen   token.Pos // position of ")"
+		Right    token.Pos // position of ")"
 	}
 
 	// A UnaryExpr node represents a unary expression.
@@ -242,7 +242,7 @@ type (
 	TaggedExpr struct {
 		X     Expr // left operand
 		Tag   string
-		EqPos token.Pos // position of "="
+		OpPos token.Pos // position of "="
 		Rhs   Expr
 	}
 
@@ -251,7 +251,7 @@ type (
 	//
 	KeyValueExpr struct {
 		Key   Expr
-		Colon token.Pos // position of ":"
+		OpPos token.Pos // position of ":"
 		Value Expr
 	}
 )
@@ -287,13 +287,14 @@ func (x *CompositeLit) Pos() token.Pos {
 	if x.Type != nil {
 		return x.Type.Pos()
 	}
-	return x.Lbrace
+	return x.Left
 }
-func (x *ParenExpr) Pos() token.Pos      { return x.Lparen }
+func (x *ParenExpr) Pos() token.Pos      { return x.Left }
+func (x *QuoteExpr) Pos() token.Pos      { return x.Left }
+func (x *EvalExpr) Pos() token.Pos       { return x.Left }
 func (x *SelectorExpr) Pos() token.Pos   { return x.X.Pos() }
 func (x *IndexExpr) Pos() token.Pos      { return x.Array.Pos() }
 func (x *ListIndexExpr) Pos() token.Pos  { return x.Array.Pos() }
-func (x *TypeAssertExpr) Pos() token.Pos { return x.X.Pos() }
 func (x *CallExpr) Pos() token.Pos       { return x.Fun.Pos() }
 func (x *UnaryExpr) Pos() token.Pos      { return x.OpPos }
 func (x *BinaryExpr) Pos() token.Pos     { return x.X.Pos() }
@@ -311,13 +312,14 @@ func (x *Ident) End() token.Pos          { return token.Pos(int(x.NamePos) + len
 func (x *Ellipsis) End() token.Pos       { return x.ValuePos + 2 }
 func (x *BasicLit) End() token.Pos       { return token.Pos(int(x.ValuePos) + len(x.Value)) }
 func (x *FuncLit) End() token.Pos        { return x.Body.End() }
-func (x *CompositeLit) End() token.Pos   { return x.Rbrace + 1 }
-func (x *ParenExpr) End() token.Pos      { return x.Rparen + 1 }
+func (x *CompositeLit) End() token.Pos   { return x.Right + 1 }
+func (x *ParenExpr) End() token.Pos      { return x.Right + 1 }
+func (x *QuoteExpr) End() token.Pos      { return x.Right + 1 }
+func (x *EvalExpr) End() token.Pos       { return x.Right + 1 }
 func (x *SelectorExpr) End() token.Pos   { return x.Sel.End() }
 func (x *IndexExpr) End() token.Pos      { return x.Right + 1 }
 func (x *ListIndexExpr) End() token.Pos  { return x.Right + 1 }
-func (x *TypeAssertExpr) End() token.Pos { return x.Rparen + 1 }
-func (x *CallExpr) End() token.Pos       { return x.Rparen + 1 }
+func (x *CallExpr) End() token.Pos       { return x.Right + 1 }
 func (x *UnaryExpr) End() token.Pos      { return x.X.End() }
 func (x *BinaryExpr) End() token.Pos     { return x.Y.End() }
 func (x *TaggedExpr) End() token.Pos     { return x.Rhs.End() }
@@ -340,10 +342,11 @@ func (*BasicLit) exprNode()       {}
 func (*FuncLit) exprNode()        {}
 func (*CompositeLit) exprNode()   {}
 func (*ParenExpr) exprNode()      {}
+func (*QuoteExpr) exprNode()      {}
+func (*EvalExpr) exprNode()       {}
 func (*SelectorExpr) exprNode()   {}
 func (*IndexExpr) exprNode()      {}
 func (*ListIndexExpr) exprNode()  {}
-func (*TypeAssertExpr) exprNode() {}
 func (*CallExpr) exprNode()       {}
 func (*UnaryExpr) exprNode()      {}
 func (*BinaryExpr) exprNode()     {}

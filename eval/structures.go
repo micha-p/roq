@@ -66,6 +66,7 @@ type SEXPItf interface {
 	DimSet([]int)
 	Dimnames() *RSEXP
 	DimnamesSet(*RSEXP)
+//	Names([]string)
 	Class() *string
 	ClassSet(*string)
 	//	Atom()		interface{} // TODO Length=1 => Atom(), is this dispatching really faster?
@@ -128,6 +129,13 @@ type TSEXP struct {
 	SEXP
 	String string
 	Slice  []string
+}
+
+// Symbol domain: symbols and quoted expressions
+type QSEXP struct {
+	ValuePos token.Pos
+	SEXP
+	X        ast.Expr 
 }
 
 // Errors and exceptions
@@ -227,6 +235,13 @@ func (x *TSEXP) Length() int {
 	} else {
 		return len(x.Slice)
 	}
+}
+
+func (x *QSEXP) Pos() token.Pos {
+	return x.ValuePos
+}
+func (x *QSEXP) Length() int {
+	return 1
 }
 
 func (x *NSEXP) Pos() token.Pos {

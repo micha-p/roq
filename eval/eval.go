@@ -372,6 +372,8 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 		return evalBinary(ev, ex.(*ast.BinaryExpr))
 	case *ast.UnaryExpr:
 		return evalUnary(ev, ex.(*ast.UnaryExpr))
+	case *ast.QuoteExpr:
+		return &QSEXP{X: ex.(*ast.QuoteExpr).X}
 	case *ast.CallExpr:
 		return EvalCall(ev, ex.(*ast.CallExpr))
 	case *ast.TaggedExpr:
@@ -388,7 +390,7 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 		return EvalExpr(ev, node.X)
 	default:
 		givenType := reflect.TypeOf(ex)
-		println("?Expr:", givenType.String())
+		println("?EvalExpr:", givenType.String())
 		return &ESEXP{Kind: token.ILLEGAL}
 	}
 }

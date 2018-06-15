@@ -164,35 +164,21 @@ const (
 
 	keyword_beg
 	// Keywords
-	//	BREAK
-	CASE
-	CHAN
-	CONST
-
-	IMPORT
-
-	INTERFACE
-	MAP
-	PACKAGE
-	RANGE
-	RETURN // not well covered in R language definition
-
-	SELECT
-	STRUCT
-	SWITCH
-	TYPE
-	VAR
-
 	// 10.3.3 Reserved words
 	IF
 	ELSE
-	REPEAT
-	WHILE
-	FUNCTION
+	SWITCH
 	FOR
 	IN
+	WHILE
+	REPEAT
+	FUNCTION
+	RETURN // not well covered in R language definition
 	NEXT
 	BREAK
+
+	QUOTE
+	EVAL
 
 	keyword_end
 )
@@ -268,34 +254,20 @@ var tokenNames = [...]string{
 	SEMICOLON: ";",
 	//	COLON:     ":",
 
-	CASE:     "case",
-	CHAN:     "chan",
-	CONST:    "const",
-
-	IMPORT: "import",
-
-	INTERFACE: "interface",
-	MAP:       "map",
-	PACKAGE:   "package",
-	RANGE:     "range",
-	RETURN:    "return",
-
-	SELECT: "select",
-	STRUCT: "struct",
-	SWITCH: "switch",
-	TYPE:   "type",
-	VAR:    "var",
-
-	//R keywords
+	//	KEYWORDS
 	IF:       "if",
 	ELSE:     "else",
-	REPEAT:   "repeat",
-	WHILE:    "while",
-	FUNCTION: "function",
+	SWITCH:   "switch",
 	FOR:      "for",
 	IN:       "in",
+	WHILE:    "while",
+	REPEAT:   "repeat",
+	FUNCTION: "function",
+	RETURN:    "return",
 	NEXT:     "next",
 	BREAK:    "break",
+	QUOTE:    "quote",
+	EVAL:     "eval",
 }
 
 // String returns the string corresponding to the token tok.

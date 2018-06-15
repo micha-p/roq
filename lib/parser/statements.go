@@ -32,7 +32,7 @@ func (p *Parser) parseStmtList() (list []ast.Stmt) {
 		defer un(trace(p, "StatementList"))
 	}
 
-	for p.tok != token.CASE && p.tok != token.RBRACE && p.tok != token.EOF {
+	for p.tok != token.RBRACE && p.tok != token.EOF {
 		list = append(list, p.parseStmt())
 	}
 
@@ -135,6 +135,7 @@ func (p *Parser) parseReturnStmt() *ast.ReturnStmt {
 
 	return &ast.ReturnStmt{Return: pos, Result: x}
 }
+
 
 func (p *Parser) makeExpr(s ast.Stmt, kind string) ast.Expr {
 	if s == nil {
@@ -273,21 +274,21 @@ func (p *Parser) parseStmt() (s ast.Stmt) {
 		// tokens that may start an expression
 		token.IDENT, token.INT, token.FLOAT, token.IMAG, token.STRING, token.FUNCTION, token.LPAREN, // operands
 		token.NULL, token.NA, token.INF, token.NAN, token.TRUE, token.FALSE, // constants
-		token.LBRACK, token.STRUCT, token.MAP, token.CHAN, token.INTERFACE, // composite types
-		token.PLUS, token.MINUS, token.MULTIPLICATION, token.AND, token.NOT: // unary operators
-		s = p.parseAssignment() // this parses an assignment!
+		token.PLUS, token.MINUS, token.NOT, // unary operators
+		token.LBRACK,
+		token.QUOTE, token.EVAL:
+		s = p.parseAssignment() // this parses an assignment or an expression!
 
-	case token.RETURN:
-		s = p.parseReturnStmt()
-	case token.LBRACE:
-		s = p.parseBlockStmt()
-		p.expectSemi()
 	case token.IF:
 		s = p.parseIfStmt()
+	case token.FOR:
+		s = p.parseForStmt()
 	case token.WHILE:
 		s = p.parseWhileStmt()
 	case token.REPEAT:
 		s = p.parseRepeatStmt()
+	case token.RETURN:
+		s = p.parseReturnStmt()
 	case token.BREAK:
 		s = &ast.BreakStmt{Keyword: p.pos}
 		p.next()
@@ -297,8 +298,9 @@ func (p *Parser) parseStmt() (s ast.Stmt) {
 	case token.VERSION:
 		s = &ast.VersionStmt{Keyword: p.pos}
 		p.next()
-	case token.FOR:
-		s = p.parseForStmt()
+	case token.LBRACE:
+		s = p.parseBlockStmt()
+		p.expectSemi()
 	case token.SEMICOLON:
 		// Is it ever possible to have an implicit semicolon
 		// producing an empty statement in a valid program?
@@ -315,7 +317,6 @@ func (p *Parser) parseStmt() (s ast.Stmt) {
 		// no statement found
 		pos := p.pos
 		p.errorExpected(pos, "statement")
-		syncStmt(p)
 		s = &ast.BadStmt{From: pos, To: p.pos}
 	}
 	return

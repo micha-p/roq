@@ -181,7 +181,7 @@ func (p *Parser) parseOperand(lhs bool) ast.Expr {
 			x := p.parseRhs()
 			p.exprLev--
 			rparen := p.expect(token.RPAREN)
-			return &ast.ParenExpr{Lparen: lparen, X: x, Rparen: rparen}
+			return &ast.ParenExpr{Left: lparen, X: x, Right: rparen}
 		case token.FUNCTION:
 			return p.parseFuncLit()
 		}
@@ -190,9 +190,47 @@ func (p *Parser) parseOperand(lhs bool) ast.Expr {
 	// we have an error
 	pos := p.pos
 	p.errorExpected(pos, "operand")
-	syncStmt(p)
 	return &ast.BadExpr{From: pos, To: p.pos}
 }
+
+//   Quote eval
+func (p *Parser) parseQuoteExpr() *ast.QuoteExpr {
+	if p.trace {
+		defer un(trace(p, "QuoteExpr"))
+	}
+	pos := p.pos
+	p.expect(token.QUOTE)
+	p.expect(token.LPAREN)
+
+	var x ast.Expr
+	if p.tok != token.RPAREN {
+		x = p.parseRhs()
+	} else {
+		x = nil
+	}
+	rparen := p.expect(token.RPAREN)
+	return &ast.QuoteExpr{Left: pos, X: x, Right: rparen}
+}
+
+func (p *Parser) parseEvalExpr() *ast.EvalExpr {
+	if p.trace {
+		defer un(trace(p, "EvalExpr"))
+	}
+	pos := p.pos
+	p.expect(token.EVAL)
+	p.expect(token.LPAREN)
+
+	var x ast.Expr
+	if p.tok != token.RPAREN {
+		x = p.parseRhs()
+	} else {
+		x = nil
+	}
+	rparen := p.expect(token.RPAREN)
+	return &ast.EvalExpr{Left: pos, X: x, Right: rparen}
+}
+
+
 
 func (p *Parser) parseSelector(x ast.Expr) ast.Expr {
 	if p.trace {
@@ -258,7 +296,7 @@ func (p *Parser) parseCall(fun ast.Expr) *ast.CallExpr {
 	p.exprLev--
 	rparen := p.expectClosing(token.RPAREN, "argument list")
 
-	return &ast.CallExpr{Fun: fun, Lparen: lparen, Args: list, Ellipsis: ellipsis, Rparen: rparen}
+	return &ast.CallExpr{Fun: fun, Left: lparen, Args: list, Ellipsis: ellipsis, Right: rparen}
 }
 
 // TODO vector literals consisting just of floats
@@ -338,7 +376,7 @@ func (p *Parser) parseLiteralValue(typ ast.Expr) ast.Expr {
 	}
 	p.exprLev--
 	rbrace := p.expectClosing(token.RBRACE, "composite literal")
-	return &ast.CompositeLit{Type: typ, Lbrace: lbrace, Elts: elts, Rbrace: rbrace}
+	return &ast.CompositeLit{Type: typ, Left: lbrace, Elts: elts, Right: rbrace}
 }
 
 // isLiteralType reports whether x is a legal composite literal type.
@@ -388,7 +426,7 @@ func (p *Parser) parsePrimaryExpr(lhs bool) ast.Expr {
 L:
 	for {
 		switch p.tok {
-		case token.NA: //TODO
+		case token.NA: //TODO test for method selectors
 			p.next()
 			switch p.tok {
 			case token.IDENT:
@@ -432,7 +470,7 @@ func (p *Parser) parseUnaryExpr(lhs bool) ast.Expr {
 	}
 
 	switch p.tok {
-	case token.PLUS, token.MINUS, token.NOT, token.AND:
+	case token.PLUS, token.MINUS, token.NOT:
 		pos, op := p.pos, p.tok
 		p.next()
 		x := p.parseUnaryExpr(lhs)
@@ -441,10 +479,17 @@ func (p *Parser) parseUnaryExpr(lhs bool) ast.Expr {
 		pos := p.pos
 		p.next()
 		return &ast.Ellipsis{ValuePos: pos}
+	case token.QUOTE:
+		return p.parseQuoteExpr()
+	case token.EVAL:
+		return p.parseEvalExpr()
 	default:
 		return p.parsePrimaryExpr(lhs)
 	}
 }
+
+
+
 
 func (p *Parser) tokPrec() (token.Token, int) {
 	tok := p.tok
@@ -486,7 +531,7 @@ func (p *Parser) parseParameter() ast.Expr {
 		e := x.(*ast.BinaryExpr)
 		if e.Op == token.SHORTASSIGNMENT {
 			lhs := e.X.(*ast.Ident) // TODO check for ident
-			return &ast.TaggedExpr{X: lhs, Tag: lhs.Name, EqPos: e.OpPos, Rhs: e.Y}
+			return &ast.TaggedExpr{X: lhs, Tag: lhs.Name, OpPos: e.OpPos, Rhs: e.Y}
 		} else {
 			return x
 		}
@@ -515,4 +560,5 @@ func (p *Parser) parseRhs() ast.Expr {
 	p.inRhs = old
 	return x
 }
+
 

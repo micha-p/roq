@@ -157,7 +157,7 @@ func (p *Parser) expect(tok token.Token) token.Pos {
 
 	pos := p.pos
 	if p.tok != tok {
-		p.errorExpected(pos, "'"+tok.String()+"'")
+		panic("ERROR IN PARSER:  EXPECT: "+tok.String()+"  GIVEN: "+p.tok.String())
 	}
 	p.next() // make progress
 	return pos
@@ -186,7 +186,6 @@ func (p *Parser) expectSemi() {
 			p.next()
 		default:
 			p.errorExpected(p.pos, "';'")
-			syncStmt(p)
 		}
 	}
 }
@@ -212,66 +211,7 @@ func assert(cond bool, msg string) {
 	}
 }
 
-// syncStmt advances to the next statement.
-// Used for synchronization after an error.
-//
-func syncStmt(p *Parser) {
-	for {
-		switch p.tok {
-		case token.BREAK, token.CONST, token.NEXT, token.FOR,
-			token.IF, token.RETURN, token.SELECT, token.SWITCH,
-			token.TYPE, token.VAR:
-			// Return only if parser made some progress since last
-			// sync or if it has not reached 10 sync calls without
-			// progress. Otherwise consume at least one token to
-			// avoid an endless parser loop (it is possible that
-			// both parseOperand and parseStmt call syncStmt and
-			// correctly do not advance, thus the need for the
-			// invocation limit p.syncCnt).
-			if p.pos == p.syncPos && p.syncCnt < 10 {
-				p.syncCnt++
-				return
-			}
-			if p.pos > p.syncPos {
-				p.syncPos = p.pos
-				p.syncCnt = 0
-				return
-			}
-			// Reaching here indicates a parser bug, likely an
-			// incorrect token list in this function, but it only
-			// leads to skipping of possibly correct code if a
-			// previous error is present, and thus is preferred
-			// over a non-terminating parse.
-		case token.EOF:
-			return
-		}
-		p.next()
-	}
-}
 
-// syncDecl advances to the next declaration.
-// Used for synchronization after an error.
-//
-func syncDecl(p *Parser) {
-	for {
-		switch p.tok {
-		case token.CONST, token.TYPE, token.VAR:
-			// see comments in syncStmt
-			if p.pos == p.syncPos && p.syncCnt < 10 {
-				p.syncCnt++
-				return
-			}
-			if p.pos > p.syncPos {
-				p.syncPos = p.pos
-				p.syncCnt = 0
-				return
-			}
-		case token.EOF:
-			return
-		}
-		p.next()
-	}
-}
 
 // safePos returns a valid file position for a given position: If pos
 // is valid to begin with, safePos returns pos. If pos is out-of-range,

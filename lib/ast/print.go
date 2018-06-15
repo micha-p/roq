@@ -12,6 +12,7 @@ import (
 	"roq/lib/token"
 	"os"
 	"reflect"
+	"strings"
 )
 
 // A FieldFilter may be provided to Fprint to control the output.
@@ -27,6 +28,19 @@ func NotNilFilter(_ string, v reflect.Value) bool {
 	return true
 }
 
+
+
+func QuotedExprFilter(name string, v reflect.Value) bool {
+	switch v.Kind() {
+	case /*reflect.Chan, reflect.Func, reflect.Interface, reflect.Map,*/ reflect.Ptr, reflect.Slice:
+		return !v.IsNil()
+	}
+	switch name {
+		case "Ellipsis", "Kind", "OpPos","NamePos","ValuePos","Left","Right": return false
+		default: return true
+	}
+}
+
 // Fprint prints the (sub-)tree starting at AST node x to w.
 // If fset != nil, position information is interpreted relative
 // to that file set. Otherwise positions are printed as integer
@@ -36,11 +50,11 @@ func NotNilFilter(_ string, v reflect.Value) bool {
 // struct fields for which f(fieldname, fieldvalue) is true are
 // printed; all others are filtered from the output. Unexported
 // struct fields are never printed.
-func Fprint(w io.Writer, fset *token.FileSet, x interface{}, f FieldFilter) error {
-	return fprint(w, fset, x, f)
+func FilteredPrint(fset *token.FileSet, x interface{}, f FieldFilter, dense bool) error {
+	return fprint(os.Stdout, fset, x, f, dense)
 }
 
-func fprint(w io.Writer, fset *token.FileSet, x interface{}, f FieldFilter) (err error) {
+func fprint(w io.Writer, fset *token.FileSet, x interface{}, f FieldFilter, dense bool) (err error) {
 	// setup printer
 	p := printer{
 		output: w,
@@ -62,7 +76,11 @@ func fprint(w io.Writer, fset *token.FileSet, x interface{}, f FieldFilter) (err
 		p.printf("nil\n")
 		return
 	}
-	p.print(reflect.ValueOf(x))
+	if dense {
+		p.denseprint(reflect.ValueOf(x))
+	} else {
+		p.print(reflect.ValueOf(x))
+	}
 	p.printf("\n")
 
 	return
@@ -71,7 +89,7 @@ func fprint(w io.Writer, fset *token.FileSet, x interface{}, f FieldFilter) (err
 // Print prints x to standard output, skipping nil fields.
 // Print(fset, x) is the same as Fprint(os.Stdout, fset, x, NotNilFilter).
 func Print(fset *token.FileSet, x interface{}) error {
-	return Fprint(os.Stdout, fset, x, NotNilFilter)
+	return FilteredPrint(fset, x, NotNilFilter, false)
 }
 
 type printer struct {
@@ -212,7 +230,8 @@ func (p *printer) print(x reflect.Value) {
 
 	case reflect.Struct:
 		t := x.Type()
-		p.printf("%s {", t)
+//		p.printf("%s {", t)
+		p.printf("%s {", strings.TrimPrefix(fmt.Sprintf("%s",t),"ast."))
 		p.indent++
 		first := true
 		for i, n := 0, t.NumField(); i < n; i++ {
@@ -250,5 +269,96 @@ func (p *printer) print(x reflect.Value) {
 		}
 		// default
 		p.printf("%v", v)
+	}
+}
+
+func (p *printer) denseprint(x reflect.Value) {
+	if !NotNilFilter("", x) {
+		p.printf("nil")
+		return
+	}
+
+	switch x.Kind() {
+
+	case reflect.Interface:
+		p.denseprint(x.Elem())
+
+	case reflect.Ptr:
+		p.denseprint(x.Elem())
+
+	case reflect.Slice:
+		if s, ok := x.Interface().([]byte); ok {
+			p.printf("%#q", s)
+			return
+		}
+		p.printf("[")
+		if x.Len() > 0 {
+			p.indent++
+			p.printf("\n")
+			for i, n := 0, x.Len(); i < n; i++ {
+				p.printf("%d: ", i)
+				p.denseprint(x.Index(i))
+				p.printf("\n")
+			}
+			p.indent--
+		}
+		p.printf("]")
+
+	case reflect.Struct:
+		t := x.Type()
+		typestring := fmt.Sprintf("%s",t)
+
+		if typestring == "ast.BasicLit" || typestring == "ast.Ident" {
+			first := true
+			str := false
+			for i, n := 0, t.NumField(); i < n; i++ {
+				// exclude non-exported fields because their
+				// values cannot be accessed via reflection
+				if name := t.Field(i).Name; IsExported(name) {
+					value := x.Field(i)
+					valuestring := fmt.Sprintf("%s", value.Interface())
+					if name=="Kind" && valuestring=="STRING"{
+						str=true
+					}
+					if p.filter(name, value) {
+						if !first {
+							p.printf(" ")
+							first = false
+						}
+						if str{
+							p.printf("%q", valuestring)
+						} else {
+							p.denseprint(value)
+						}
+					}
+				}
+			}
+		} else {
+			p.printf("%s{", strings.TrimPrefix(typestring,"ast."))
+			p.indent++
+			first := true
+			for i, n := 0, t.NumField(); i < n; i++ {
+				// exclude non-exported fields because their
+				// values cannot be accessed via reflection
+				if name := t.Field(i).Name; IsExported(name) {
+					value := x.Field(i)
+					if p.filter(name, value) {
+						if first {
+							p.printf("\n")
+							first = false
+						}
+						//p.printf("%s: ", name)
+						p.denseprint(value)
+						p.printf("\n")
+					}
+				}
+			}
+			p.indent--
+			p.printf("}")
+		}
+
+	default:
+		v := x.Interface()
+		p.printf("%s", v)
 	}
 }

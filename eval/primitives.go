@@ -110,7 +110,7 @@ func EvalColumn(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
 				case *ISEXP:
 					c[n] = v.(*ISEXP).Immediate
 				default:
-					panic("Error in c")
+					panic("Error in function c")
 				}
 			}
 			return &VSEXP{ValuePos: node.Fun.Pos(), Slice: c}
