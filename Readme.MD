@@ -39,6 +39,7 @@ rlwrap ./roq           # with readline support
 - simplified trueness for less decisions: NULL and NaN are false, all values including 0 are true (TODO: evaluation of performance)
 - very limited access to filesystem (like chroot) and environment
 - simplified output with arrays in one line
+- errors do not mention the original character sequence
 
 
 ## Additional features (TODO)

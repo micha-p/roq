@@ -202,9 +202,9 @@ func (p *Parser) parseQuoteExpr() *ast.QuoteExpr {
 	p.expect(token.QUOTE)
 	p.expect(token.LPAREN)
 
-	var x ast.Expr
+	var x ast.Stmt
 	if p.tok != token.RPAREN {
-		x = p.parseRhs()
+		x = p.parseAssignment()
 	} else {
 		x = nil
 	}

@@ -48,11 +48,6 @@ type Stmt interface {
 	stmtNode()
 }
 
-// All declaration nodes implement the Decl interface.
-type Decl interface {
-	Node
-	declNode()
-}
 
 // ----------------------------------------------------------------------------
 // Expressions and types
@@ -183,7 +178,7 @@ type (
 	}
 	QuoteExpr struct {
 		Left  token.Pos
-		X     Expr
+		X     Stmt
 		Right token.Pos // position of ")"
 	}
 	EvalExpr struct {
@@ -600,15 +595,9 @@ func (*ImportSpec) specNode() {}
 type File struct {
 	Package    token.Pos     // position of "package" keyword
 	Name       *Ident        // package name
-	Decls      []Decl        // top-level declarations; or nil
 	Imports    []*ImportSpec // imports in this file
 	Unresolved []*Ident      // unresolved identifiers in this file
 }
 
 func (f *File) Pos() token.Pos { return f.Package }
-func (f *File) End() token.Pos {
-	if n := len(f.Decls); n > 0 {
-		return f.Decls[n-1].End()
-	}
-	return f.Name.End()
-}
+func (f *File) End() token.Pos { return f.Name.End() }

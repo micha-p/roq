@@ -330,6 +330,35 @@ func EvalExprMute(ev *Evaluator, ex ast.Expr) SEXPItf {
 	return r
 }
 
+func EvalExprUnquote(ev *Evaluator, ex ast.Expr) SEXPItf {
+	DEBUG := ev.Debug
+	defer un(ev)
+	trace(ev, "EvalExprUnquote")
+
+	ev.Invisible = false
+	switch ex.(type) {
+	case *ast.Ident:
+		trace(ev, "Ident '"+ex.(*ast.Ident).Name+"'")
+		if DEBUG {
+			println("Retrieving identifier for unquoting: " + ex.(*ast.Ident).Name)
+		}
+		r :=  ev.topFrame.Recursive(ex.(*ast.Ident).Name)
+		if r==nil {
+			fmt.Printf("Error: object '%s' not found\n", ex.(*ast.Ident).Name)
+			return nil
+		} else {
+			switch r.(type) {
+			case *QSEXP:
+				return EvalStmt(ev, r.(*QSEXP).X)
+			default:
+				return r
+			}
+		}
+	default:
+		return EvalExpr(ev, ex)
+	}
+}
+
 func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 	DEBUG := ev.Debug
 	
@@ -374,6 +403,8 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 		return evalUnary(ev, ex.(*ast.UnaryExpr))
 	case *ast.QuoteExpr:
 		return &QSEXP{X: ex.(*ast.QuoteExpr).X}
+	case *ast.EvalExpr:
+		return EvalExprUnquote(ev,ex.(*ast.EvalExpr).X)
 	case *ast.CallExpr:
 		return EvalCall(ev, ex.(*ast.CallExpr))
 	case *ast.TaggedExpr:
@@ -449,15 +480,36 @@ func evalBinary(ev *Evaluator, node *ast.BinaryExpr) SEXPItf {
 		y := EvalExpr(ev, node.Y)
 		if x == nil || y == nil {
 			return nil
-		} else {
+		} else if assertVSEXPVSEXP(x,y) {
 			return EvalComp(node.Op, x.(*VSEXP), y.(*VSEXP))
+		} else {
+			return &ESEXP{Kind: token.ILLEGAL}
 		}
 	default:
 		y := EvalExpr(ev, node.Y)
 		if x == nil || y == nil {
 			return nil
-		} else {
+		} else if assertVSEXPVSEXP(x,y) {
 			return EvalOp(node.Op, x.(*VSEXP), y.(*VSEXP))
+		} else {
+			return &ESEXP{Kind: token.ILLEGAL}
 		}
 	}
 }
+
+func assertVSEXPVSEXP(x SEXPItf,y SEXPItf) bool{
+	switch x.(type) {
+	case *VSEXP:
+		switch y.(type) {
+		case *VSEXP:
+			return true
+		default: 
+			fmt.Printf("Error: non-numeric argument to binary operator\n")
+			return false
+		}
+	default:
+		fmt.Printf("Error: non-numeric argument to binary operator\n")
+		return false
+	}
+}
+	
