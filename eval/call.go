@@ -264,11 +264,9 @@ func PrintArgNames(namelist []string){
 
 
 
-func EvalCall(ev *Evaluator, node *ast.CallExpr) (r SEXPItf) {
+func EvalCall(ev *Evaluator, funcname string, node *ast.CallExpr) (r SEXPItf) {
 	TRACE := ev.Trace
 	DEBUG := ev.Debug
-	funcobject := node.Fun
-	funcname := funcobject.(*ast.Ident).Name
 	if funcname == "c" {
 		if TRACE {
 			println("Call to protected function: " + funcname)

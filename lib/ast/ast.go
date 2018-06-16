@@ -218,6 +218,15 @@ type (
 		Right    token.Pos // position of ")"
 	}
 
+	// Same as above, but expecting string literal as function identifier
+	CallStringExpr struct {
+		Fun      Expr      // function expression
+		Left     token.Pos // position of "("
+		Args     []Expr    // function arguments; or nil
+		Ellipsis token.Pos // position of "...", if any
+		Right    token.Pos // position of ")"
+	}
+
 	// A UnaryExpr node represents a unary expression.
 	//
 	UnaryExpr struct {
@@ -291,6 +300,7 @@ func (x *SelectorExpr) Pos() token.Pos   { return x.X.Pos() }
 func (x *IndexExpr) Pos() token.Pos      { return x.Array.Pos() }
 func (x *ListIndexExpr) Pos() token.Pos  { return x.Array.Pos() }
 func (x *CallExpr) Pos() token.Pos       { return x.Fun.Pos() }
+func (x *CallStringExpr) Pos() token.Pos { return x.Fun.Pos() }
 func (x *UnaryExpr) Pos() token.Pos      { return x.OpPos }
 func (x *BinaryExpr) Pos() token.Pos     { return x.X.Pos() }
 func (x *TaggedExpr) Pos() token.Pos     { return x.X.Pos() }
@@ -315,6 +325,7 @@ func (x *SelectorExpr) End() token.Pos   { return x.Sel.End() }
 func (x *IndexExpr) End() token.Pos      { return x.Right + 1 }
 func (x *ListIndexExpr) End() token.Pos  { return x.Right + 1 }
 func (x *CallExpr) End() token.Pos       { return x.Right + 1 }
+func (x *CallStringExpr) End() token.Pos { return x.Right + 1 }
 func (x *UnaryExpr) End() token.Pos      { return x.X.End() }
 func (x *BinaryExpr) End() token.Pos     { return x.Y.End() }
 func (x *TaggedExpr) End() token.Pos     { return x.Rhs.End() }
@@ -343,6 +354,7 @@ func (*SelectorExpr) exprNode()   {}
 func (*IndexExpr) exprNode()      {}
 func (*ListIndexExpr) exprNode()  {}
 func (*CallExpr) exprNode()       {}
+func (*CallStringExpr) exprNode() {}
 func (*UnaryExpr) exprNode()      {}
 func (*BinaryExpr) exprNode()     {}
 func (*TaggedExpr) exprNode()     {}

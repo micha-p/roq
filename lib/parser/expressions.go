@@ -483,6 +483,10 @@ func (p *Parser) parseUnaryExpr(lhs bool) ast.Expr {
 		return p.parseQuoteExpr()
 	case token.EVAL:
 		return p.parseEvalExpr()
+	case token.CALL:
+		p.next()
+		c := p.parseCall(nil)
+		return &ast.CallStringExpr{Left: c.Left, Fun: c.Args[0], Args: c.Args[1:], Right: c.Right}
 	default:
 		return p.parsePrimaryExpr(lhs)
 	}

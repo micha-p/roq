@@ -406,7 +406,14 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 	case *ast.EvalExpr:
 		return EvalExprUnquote(ev,ex.(*ast.EvalExpr).X)
 	case *ast.CallExpr:
-		return EvalCall(ev, ex.(*ast.CallExpr))
+		funcobject := ex.(*ast.CallExpr).Fun
+		funcname := funcobject.(*ast.Ident).Name
+		return EvalCall(ev, funcname, ex.(*ast.CallExpr))
+	case *ast.CallStringExpr:
+		c := ex.(*ast.CallStringExpr)
+		f := EvalExpr(ev,c.Fun)
+		fname := f.(*TSEXP).String
+		return EvalCall(ev, fname, &ast.CallExpr{Left: c.Left, Right:c.Right, Args: c.Args})
 	case *ast.TaggedExpr:
 		return EvalExpr(ev, ex.(*ast.TaggedExpr).Rhs)
 	case *ast.IndexExpr:

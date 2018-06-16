@@ -276,7 +276,7 @@ func (p *Parser) parseStmt() (s ast.Stmt) {
 		token.NULL, token.NA, token.INF, token.NAN, token.TRUE, token.FALSE, // constants
 		token.PLUS, token.MINUS, token.NOT, // unary operators
 		token.LBRACK,
-		token.QUOTE, token.EVAL:
+		token.QUOTE, token.EVAL, token.CALL:
 		s = p.parseAssignment() // this parses an assignment or an expression!
 
 	case token.IF:

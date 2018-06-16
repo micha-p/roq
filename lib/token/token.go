@@ -179,6 +179,7 @@ const (
 
 	QUOTE
 	EVAL
+	CALL
 
 	keyword_end
 )
@@ -268,6 +269,7 @@ var tokenNames = [...]string{
 	BREAK:    "break",
 	QUOTE:    "quote",
 	EVAL:     "eval",
+	CALL:     "call",
 }
 
 // String returns the string corresponding to the token tok.

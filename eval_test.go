@@ -17,3 +17,9 @@ func ExampleWrongQuoteLevel() {
 // Output:
 // Error: non-numeric argument to binary operator
 }
+
+// eval unquotes only directly given identifers but evaluates normal expressions
+func TestArbitraryCall(t *testing.T) {
+	quicktestValue(t, "f<-function(a){a*2};call(\"f\",3)",6, 0)
+	quicktestValue(t, "f<-function(a){a*2};b=\"f\";call(b,3)",6, 0)
+}
