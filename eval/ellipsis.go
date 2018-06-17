@@ -63,7 +63,7 @@ func EvalCallwithEllipsis(ev *Evaluator, node *ast.CallExpr, thefunction SEXPItf
 	TRACE := ev.Trace
 	DEBUG := ev.Debug
 	funcobject := node.Fun
-	funcname := funcobject.(*ast.BasicLit).Value
+	funcname := funcobject.(*ast.Ident).Name
 	if TRACE || DEBUG {
 		println("EvalCallwithEllipsis: " + funcname)
 	}
@@ -81,7 +81,7 @@ func EvalCallwithEllipsis(ev *Evaluator, node *ast.CallExpr, thefunction SEXPItf
 func CollectArgsIntoFrameWithVariableArity(ev *Evaluator, node *ast.CallExpr, argNames []string) *Frame {
 	DEBUG := ev.Debug
 	funcobject := node.Fun
-	funcname := funcobject.(*ast.BasicLit).Value
+	funcname := funcobject.(*ast.Ident).Name
 	frame := NewFrame(nil)
 
 	if DEBUG {
