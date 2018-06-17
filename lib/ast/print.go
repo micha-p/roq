@@ -116,7 +116,7 @@ func (p *printer) Write(data []byte) (n int, err error) {
 			}
 			p.line++
 		} else if p.last == '\n' {
-			_, err = fmt.Fprintf(p.output, "%6d  ", p.line)
+			_, err = fmt.Fprintf(p.output, "%d  ", p.line+1)
 			if err != nil {
 				return
 			}
@@ -220,7 +220,7 @@ func (p *printer) print(x reflect.Value) {
 			p.indent++
 			p.printf("\n")
 			for i, n := 0, x.Len(); i < n; i++ {
-				p.printf("%d: ", i)
+				p.printf("%d: ", i+1)
 				p.print(x.Index(i))
 				p.printf("\n")
 			}
@@ -296,7 +296,7 @@ func (p *printer) denseprint(x reflect.Value) {
 			p.indent++
 			p.printf("\n")
 			for i, n := 0, x.Len(); i < n; i++ {
-				p.printf("%d: ", i)
+				p.printf("%d: ", i+1)
 				p.denseprint(x.Index(i))
 				p.printf("\n")
 			}

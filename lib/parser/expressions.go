@@ -51,6 +51,27 @@ func (p *Parser) parseIdentList() (list []*ast.Ident) {
 
 	return
 }
+func (p *Parser) parseAssignment() ast.Expr {
+	if p.trace {
+		defer un(trace(p, "Assignment (or expr)"))
+	}
+
+	x := p.parseExpr(true)
+	var y ast.Expr
+	pos, tok := p.pos, p.tok
+
+	switch p.tok {
+	case token.RPAREN:
+		return x
+	case token.SHORTASSIGNMENT, token.LEFTASSIGNMENT, token.RIGHTASSIGNMENT, 
+		 token.SUPERLEFTASSIGNMENT, token.SUPERRIGHTASSIGNMENT:
+		p.next()
+		y = p.parseRhs()
+		return &ast.BinaryExpr{X: x, OpPos: pos, Op: tok, Y: y}
+	default:
+		return x
+	}
+}
 
 // ----------------------------------------------------------------------------
 // Common productions
@@ -194,7 +215,7 @@ func (p *Parser) parseOperand(lhs bool) ast.Expr {
 }
 
 //   Quote eval
-func (p *Parser) parseQuoteExpr() *ast.QuoteExpr {
+func (p *Parser) parseQuoted() ast.Expr {
 	if p.trace {
 		defer un(trace(p, "QuoteExpr"))
 	}
@@ -202,14 +223,14 @@ func (p *Parser) parseQuoteExpr() *ast.QuoteExpr {
 	p.expect(token.QUOTE)
 	p.expect(token.LPAREN)
 
-	var x ast.Stmt
+	var x ast.Expr
 	if p.tok != token.RPAREN {
 		x = p.parseAssignment()
 	} else {
-		x = nil
+		return nil
 	}
 	rparen := p.expect(token.RPAREN)
-	return &ast.QuoteExpr{Left: pos, X: x, Right: rparen}
+	return &ast.QuotedExpr{Left: pos, X: x, Right: rparen}
 }
 
 func (p *Parser) parseEvalExpr() *ast.EvalExpr {
@@ -480,13 +501,15 @@ func (p *Parser) parseUnaryExpr(lhs bool) ast.Expr {
 		p.next()
 		return &ast.Ellipsis{ValuePos: pos}
 	case token.QUOTE:
-		return p.parseQuoteExpr()
+		r := p.parseQuoted()
+		return r.(ast.Expr)
 	case token.EVAL:
 		return p.parseEvalExpr()
 	case token.CALL:
 		p.next()
 		c := p.parseCall(nil)
-		return &ast.CallStringExpr{Left: c.Left, Fun: c.Args[0], Args: c.Args[1:], Right: c.Right}
+		e := ast.ArbitraryCallExpr{Left: c.Left, Fun: c.Args[0], Args: c.Args[1:], Right: c.Right}
+		return &ast.QuotedExpr{X: &e}
 	default:
 		return p.parsePrimaryExpr(lhs)
 	}

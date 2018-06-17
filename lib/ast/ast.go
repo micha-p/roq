@@ -176,11 +176,6 @@ type (
 		X      Expr      // parenthesized expression
 		Right  token.Pos // position of ")"
 	}
-	QuoteExpr struct {
-		Left  token.Pos
-		X     Stmt
-		Right token.Pos // position of ")"
-	}
 	EvalExpr struct {
 		Left  token.Pos
 		X     Expr
@@ -219,8 +214,8 @@ type (
 	}
 
 	// Same as above, but expecting string literal as function identifier
-	CallStringExpr struct {
-		Fun      Expr      // function expression
+	ArbitraryCallExpr struct {
+		Fun      Expr      // expression for function name should result in TSEXP
 		Left     token.Pos // position of "("
 		Args     []Expr    // function arguments; or nil
 		Ellipsis token.Pos // position of "...", if any
@@ -241,6 +236,12 @@ type (
 		OpPos token.Pos   // position of Op
 		Op    token.Token // operator
 		Y     Expr        // right operand
+	}
+
+	QuotedExpr struct {
+		Left  token.Pos
+		X     Expr
+		Right token.Pos // position of ")"
 	}
 
 	TaggedExpr struct {
@@ -282,11 +283,11 @@ type (
 
 // Pos and End implementations for expression/type nodes.
 
-func (x *BadExpr) Pos() token.Pos  { return x.From }
-func (x *Ident) Pos() token.Pos    { return x.NamePos }
-func (x *Ellipsis) Pos() token.Pos { return x.ValuePos }
-func (x *BasicLit) Pos() token.Pos { return x.ValuePos }
-func (x *FuncLit) Pos() token.Pos  { return x.Type.Pos() }
+func (x *BadExpr) Pos() token.Pos    { return x.From }
+func (x *Ident) Pos() token.Pos      { return x.NamePos }
+func (x *Ellipsis) Pos() token.Pos   { return x.ValuePos }
+func (x *BasicLit) Pos() token.Pos   { return x.ValuePos }
+func (x *FuncLit) Pos() token.Pos    { return x.Type.Pos() }
 func (x *CompositeLit) Pos() token.Pos {
 	if x.Type != nil {
 		return x.Type.Pos()
@@ -294,13 +295,13 @@ func (x *CompositeLit) Pos() token.Pos {
 	return x.Left
 }
 func (x *ParenExpr) Pos() token.Pos      { return x.Left }
-func (x *QuoteExpr) Pos() token.Pos      { return x.Left }
+func (x *QuotedExpr) Pos() token.Pos     { return x.Left }
 func (x *EvalExpr) Pos() token.Pos       { return x.Left }
 func (x *SelectorExpr) Pos() token.Pos   { return x.X.Pos() }
 func (x *IndexExpr) Pos() token.Pos      { return x.Array.Pos() }
 func (x *ListIndexExpr) Pos() token.Pos  { return x.Array.Pos() }
 func (x *CallExpr) Pos() token.Pos       { return x.Fun.Pos() }
-func (x *CallStringExpr) Pos() token.Pos { return x.Fun.Pos() }
+func (x *ArbitraryCallExpr) Pos() token.Pos { return x.Fun.Pos() }
 func (x *UnaryExpr) Pos() token.Pos      { return x.OpPos }
 func (x *BinaryExpr) Pos() token.Pos     { return x.X.Pos() }
 func (x *TaggedExpr) Pos() token.Pos     { return x.X.Pos() }
@@ -319,13 +320,13 @@ func (x *BasicLit) End() token.Pos       { return token.Pos(int(x.ValuePos) + le
 func (x *FuncLit) End() token.Pos        { return x.Body.End() }
 func (x *CompositeLit) End() token.Pos   { return x.Right + 1 }
 func (x *ParenExpr) End() token.Pos      { return x.Right + 1 }
-func (x *QuoteExpr) End() token.Pos      { return x.Right + 1 }
+func (x *QuotedExpr) End() token.Pos     { return x.Right + 1 }
 func (x *EvalExpr) End() token.Pos       { return x.Right + 1 }
 func (x *SelectorExpr) End() token.Pos   { return x.Sel.End() }
 func (x *IndexExpr) End() token.Pos      { return x.Right + 1 }
 func (x *ListIndexExpr) End() token.Pos  { return x.Right + 1 }
 func (x *CallExpr) End() token.Pos       { return x.Right + 1 }
-func (x *CallStringExpr) End() token.Pos { return x.Right + 1 }
+func (x *ArbitraryCallExpr) End() token.Pos { return x.Right + 1 }
 func (x *UnaryExpr) End() token.Pos      { return x.X.End() }
 func (x *BinaryExpr) End() token.Pos     { return x.Y.End() }
 func (x *TaggedExpr) End() token.Pos     { return x.Rhs.End() }
@@ -348,13 +349,13 @@ func (*BasicLit) exprNode()       {}
 func (*FuncLit) exprNode()        {}
 func (*CompositeLit) exprNode()   {}
 func (*ParenExpr) exprNode()      {}
-func (*QuoteExpr) exprNode()      {}
+func (*QuotedExpr) exprNode()     {}
 func (*EvalExpr) exprNode()       {}
 func (*SelectorExpr) exprNode()   {}
 func (*IndexExpr) exprNode()      {}
 func (*ListIndexExpr) exprNode()  {}
 func (*CallExpr) exprNode()       {}
-func (*CallStringExpr) exprNode() {}
+func (*ArbitraryCallExpr) exprNode() {}
 func (*UnaryExpr) exprNode()      {}
 func (*BinaryExpr) exprNode()     {}
 func (*TaggedExpr) exprNode()     {}
@@ -426,18 +427,10 @@ type (
 		X Expr // expression
 	}
 
-	// An AssignStmt node represents an assignment or
-	AssignStmt struct {
-		Lhs    Expr
-		TokPos token.Pos   // position of Tok
-		Tok    token.Token // assignment token, DEFINE
-		Rhs    Expr
-	}
-
-	// A DeferStmt node represents a defer statement.
-	DeferStmt struct {
-		Defer token.Pos // position of "defer" keyword
-		Call  *CallExpr
+	QuotedStmt struct {
+		Left  token.Pos
+		X     Stmt
+		Right token.Pos // position of ")"
 	}
 
 	// A ReturnStmt node represents a return statement.
@@ -491,8 +484,7 @@ func (s *BadStmt) Pos() token.Pos     { return s.From }
 func (s *EOFStmt) Pos() token.Pos     { return s.EOF }
 func (s *EmptyStmt) Pos() token.Pos   { return s.Semicolon }
 func (s *ExprStmt) Pos() token.Pos    { return s.X.Pos() }
-func (s *AssignStmt) Pos() token.Pos  { return s.Lhs.Pos() }
-func (s *DeferStmt) Pos() token.Pos   { return s.Defer }
+func (s *QuotedStmt) Pos() token.Pos  { return s.Left }
 func (s *ReturnStmt) Pos() token.Pos  { return s.Return }
 func (s *BlockStmt) Pos() token.Pos   { return s.Lbrace }
 func (s *IfStmt) Pos() token.Pos      { return s.Keyword }
@@ -512,8 +504,7 @@ func (s *EmptyStmt) End() token.Pos {
 	return s.Semicolon + 1 /* len(";") */
 }
 func (s *ExprStmt) End() token.Pos   { return s.X.End() }
-func (s *AssignStmt) End() token.Pos { return s.Rhs.End() }
-func (s *DeferStmt) End() token.Pos  { return s.Call.End() }
+func (s *QuotedStmt) End() token.Pos { return s.Right }
 func (s *ReturnStmt) End() token.Pos {
 	if s.Result != nil {
 		return s.Result.End()
@@ -542,8 +533,7 @@ func (*BadStmt) stmtNode()     {}
 func (*EOFStmt) stmtNode()     {}
 func (*EmptyStmt) stmtNode()   {}
 func (*ExprStmt) stmtNode()    {}
-func (*AssignStmt) stmtNode()  {}
-func (*DeferStmt) stmtNode()   {}
+func (*QuotedStmt) stmtNode()  {}
 func (*ReturnStmt) stmtNode()  {}
 func (*BlockStmt) stmtNode()   {}
 func (*IfStmt) stmtNode()      {}

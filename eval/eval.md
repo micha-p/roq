@@ -1,7 +1,7 @@
 # Notes on evaluation
 
 This is, where the real work is done.
-The Evaluator takes an ast-node and returns a s-expressions depending on type
+The Evaluator takes an ast-node and returns a s-expressions depending on type.
 Besides this, the evaluator holds a state, if it is inside a loop and a flag for invisible output.
 
 
@@ -17,6 +17,9 @@ ast->SEXP   SEXP<->SEXP     SEXP<->float    float
             primitive.go    index.go        integer.go
             SEXP<->SEXP     SEXP<->int      int
 
-            
+
+## Quote and evaluation
+
+Quoted expressions carry ast-nodes into s-expressions. TODO
 
 

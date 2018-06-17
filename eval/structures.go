@@ -135,7 +135,7 @@ type TSEXP struct {
 type QSEXP struct {
 	ValuePos token.Pos
 	SEXP
-	X        ast.Stmt 
+	X        interface{} // quoted expresion or stmt
 }
 
 // Errors and exceptions

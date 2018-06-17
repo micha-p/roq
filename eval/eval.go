@@ -104,10 +104,6 @@ func EvalStmt(ev *Evaluator, s ast.Stmt) (r SEXPItf) {
 		println("EvalStmt: nil")
 	}
 	switch s.(type) {
-	case *ast.AssignStmt:
-		defer un(ev)
-		trace(ev, "assignStmt")
-		return EvalAssignment(ev, s.(*ast.AssignStmt))
 	case *ast.ExprStmt:
 		defer un(ev)
 		trace(ev, "exprStmt")
@@ -215,23 +211,7 @@ func doSuperAssignment(ev *Evaluator, lhs ast.Expr, rhs ast.Expr) SEXPItf {
 	return value
 }
 
-// Assignments might be Expressions or Stmts, the first return a SEXP during evaluation,
-// the latter an invisible object
-
-func EvalAssignment(ev *Evaluator, e *ast.AssignStmt) SEXPItf {
-	switch e.Tok {
-	case token.LEFTASSIGNMENT:
-		return doAssignment(ev, e.Lhs, e.Rhs)
-	case token.RIGHTASSIGNMENT:
-		return doAssignment(ev, e.Rhs, e.Lhs)
-	case token.SUPERLEFTASSIGNMENT:
-		return doSuperAssignment(ev, e.Lhs, e.Rhs)
-	case token.SUPERRIGHTASSIGNMENT:
-		return doSuperAssignment(ev, e.Rhs, e.Lhs)
-	default:
-		panic("panic during assignment")
-	}
-}
+// Assignments are Expressions which return an invisible object
 
 func EvalExprOrAssignment(ev *Evaluator, ex ast.Expr) SEXPItf {
 	DEBUG := ev.Debug
@@ -251,7 +231,7 @@ func EvalExprOrAssignment(ev *Evaluator, ex ast.Expr) SEXPItf {
 		case token.LEFTASSIGNMENT:
 			return doAssignment(ev, node.X, node.Y)
 		case token.RIGHTASSIGNMENT:
-			return doAssignment(ev, node.X, node.Y)
+			return doAssignment(ev, node.Y, node.X)
 		case token.SUPERLEFTASSIGNMENT:
 			return doSuperAssignment(ev, node.X, node.Y)
 		case token.SUPERRIGHTASSIGNMENT:
@@ -330,11 +310,10 @@ func EvalExprMute(ev *Evaluator, ex ast.Expr) SEXPItf {
 	return r
 }
 
-func EvalExprUnquote(ev *Evaluator, ex ast.Expr) SEXPItf {
+func EvalQuotedExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 	DEBUG := ev.Debug
 	defer un(ev)
-	trace(ev, "EvalExprUnquote")
-
+	trace(ev, "EvalQuotedExpr")
 	ev.Invisible = false
 	switch ex.(type) {
 	case *ast.Ident:
@@ -349,15 +328,19 @@ func EvalExprUnquote(ev *Evaluator, ex ast.Expr) SEXPItf {
 		} else {
 			switch r.(type) {
 			case *QSEXP:
-				return EvalStmt(ev, r.(*QSEXP).X)
+				return EvalExprOrAssignment(ev, r.(*QSEXP).X.(ast.Expr))
 			default:
 				return r
 			}
 		}
+	case *ast.QuotedExpr:
+		return EvalExpr(ev, ex.(*ast.QuotedExpr).X)
 	default:
-		return EvalExpr(ev, ex)
+		return EvalExprOrAssignment(ev, ex)
 	}
 }
+
+
 
 func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 	DEBUG := ev.Debug
@@ -401,19 +384,22 @@ func EvalExpr(ev *Evaluator, ex ast.Expr) SEXPItf {
 		return evalBinary(ev, ex.(*ast.BinaryExpr))
 	case *ast.UnaryExpr:
 		return evalUnary(ev, ex.(*ast.UnaryExpr))
-	case *ast.QuoteExpr:
-		return &QSEXP{X: ex.(*ast.QuoteExpr).X}
-	case *ast.EvalExpr:
-		return EvalExprUnquote(ev,ex.(*ast.EvalExpr).X)
 	case *ast.CallExpr:
 		funcobject := ex.(*ast.CallExpr).Fun
-		funcname := funcobject.(*ast.Ident).Name
-		return EvalCall(ev, funcname, ex.(*ast.CallExpr))
-	case *ast.CallStringExpr:
-		c := ex.(*ast.CallStringExpr)
-		f := EvalExpr(ev,c.Fun)
-		fname := f.(*TSEXP).String
-		return EvalCall(ev, fname, &ast.CallExpr{Left: c.Left, Right:c.Right, Args: c.Args})
+		return EvalCall(ev, funcobject.(*ast.Ident).Name, ex.(*ast.CallExpr))
+	case *ast.QuotedExpr:
+		return &QSEXP{X: ex.(*ast.QuotedExpr).X}
+	case *ast.EvalExpr:
+		return EvalQuotedExpr(ev,ex.(*ast.EvalExpr).X)
+	case *ast.ArbitraryCallExpr:
+		defer un(ev)
+		trace(ev, "ArbitraryCallExpr")
+		c := ex.(*ast.ArbitraryCallExpr)
+		fname := EvalExpr(ev,c.Fun)
+		fnamestring := fname.(*TSEXP).String
+		fi := ast.Ident{Name: fnamestring}
+		ce := ast.CallExpr{Left: c.Left, Fun: &fi, Right:c.Right, Args: c.Args}
+		return EvalCall(ev,fnamestring,&ce)
 	case *ast.TaggedExpr:
 		return EvalExpr(ev, ex.(*ast.TaggedExpr).Rhs)
 	case *ast.IndexExpr:

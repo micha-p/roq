@@ -18,7 +18,6 @@
 package parser
 
 import (
-	"fmt"
 	"roq/lib/ast"
 	"roq/lib/token"
 )
@@ -89,32 +88,7 @@ const (
 	rangeOk
 )
 
-// parseAssignment returns true as 2nd result if it parsed the assignment
-// of a range clause (with mode == rangeOk). The returned statement is an
-// assignment with a right-hand side that is a single unary expression of
-// the form "range x". No guarantees are given for the left-hand side.
-func (p *Parser) parseAssignment() ast.Stmt {
-	if p.trace {
-		defer un(trace(p, "Assignment (or expr)"))
-	}
 
-	x := p.parseExpr(true)
-	var y ast.Expr
-	pos, tok := p.pos, p.tok
-	var s *ast.AssignStmt
-
-	switch p.tok {
-	case token.SHORTASSIGNMENT, token.LEFTASSIGNMENT, token.RIGHTASSIGNMENT, 
-		 token.SUPERLEFTASSIGNMENT, token.SUPERRIGHTASSIGNMENT:
-		p.next()
-		y = p.parseRhs()
-		s = &ast.AssignStmt{Lhs: x, TokPos: pos, Tok: tok, Rhs: y}
-		return s
-	default:
-		e := &ast.ExprStmt{X: x}
-		return e
-	}
-}
 
 func (p *Parser) parseReturnStmt() *ast.ReturnStmt {
 	if p.trace {
@@ -136,17 +110,6 @@ func (p *Parser) parseReturnStmt() *ast.ReturnStmt {
 	return &ast.ReturnStmt{Return: pos, Result: x}
 }
 
-
-func (p *Parser) makeExpr(s ast.Stmt, kind string) ast.Expr {
-	if s == nil {
-		return nil
-	}
-	if es, isExpr := s.(*ast.ExprStmt); isExpr {
-		return es.X
-	}
-	p.error(s.Pos(), fmt.Sprintf("expected %s, found simple statement (missing parentheses around composite literal?)", kind))
-	return &ast.BadExpr{From: s.Pos(), To: p.safePos(s.End())}
-}
 
 func (p *Parser) parseIfStmt() *ast.IfStmt {
 	if p.trace {
@@ -277,8 +240,8 @@ func (p *Parser) parseStmt() (s ast.Stmt) {
 		token.PLUS, token.MINUS, token.NOT, // unary operators
 		token.LBRACK,
 		token.QUOTE, token.EVAL, token.CALL:
-		s = p.parseAssignment() // this parses an assignment or an expression!
-
+		a := p.parseAssignment() // this parses an assignment or an expression stmt!
+		s = &ast.ExprStmt{X:a}
 	case token.IF:
 		s = p.parseIfStmt()
 	case token.FOR:
