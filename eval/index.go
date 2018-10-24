@@ -104,7 +104,7 @@ func (x *EmptyIterator) Next() int {
 
 
 
-func IndexDomainEvalRange(ev *Evaluator, a SEXPItf, b SEXPItf) IteratorItf {
+func EvalRangeExpressionToIterator(ev *Evaluator, a SEXPItf, b SEXPItf) IteratorItf {
 	r := new(RangeIterator)
 	r.Start = a.IntegerGet() - 2
 	r.Counter = r.Start
@@ -138,9 +138,36 @@ func IndexValueAsInt(node *ast.BasicLit) int{
 	}
 }
 
-func IndexDomainEval(ev *Evaluator, ex ast.Expr) IteratorItf {
-	defer un(trace(ev, "IndexDomainEval"))
+func EvalSexpressionToIterator(sexp SEXPItf) IteratorItf {
+	switch sexp.(type) {
+	case *ISEXP:
+		r := new(OnceIterator)
+		r.Offset=int(math.Floor(sexp.(*ISEXP).Immediate))
+		return r
+	case *VSEXP:
+		if sexp.(*VSEXP).Slice == nil {
+			r := new(OnceIterator)
+			r.Offset=int(math.Floor(sexp.(*VSEXP).Immediate))
+			return r
+		} else {
+			r := new(ArrayIterator)
+			r.Slice=sexp.(*VSEXP).Slice
+			return r
+		}
+	default:
+		givenType := reflect.TypeOf(sexp)
+		println("?IndexSExpr:", givenType.String())
+		r := new(EmptyIterator)
+		return r
+	}
+}
+
+func EvalIndexExpressionToIterator(ev *Evaluator, ex ast.Expr) IteratorItf {
+	defer un(trace(ev, "EvalIndexExpressionToIterator"))
 	switch ex.(type) {
+	case *ast.Ident:
+		sexp:=EvalExpr(ev,ex)
+		return EvalSexpressionToIterator(sexp)
 	case *ast.BasicLit:
 		ev.Invisible = false
 		node := ex.(*ast.BasicLit)
@@ -162,13 +189,14 @@ func IndexDomainEval(ev *Evaluator, ex ast.Expr) IteratorItf {
 			r.Offset=index
 			return r
 		}
-    case *ast.BinaryExpr:
+	case *ast.BinaryExpr:
 		ev.Invisible = false
 		node := ex.(*ast.BinaryExpr)
 		if node.Op == token.SEQUENCE {
-			return IndexDomainEvalRange(ev, EvalExpr(ev,node.X).(*VSEXP),EvalExpr(ev,node.Y).(*VSEXP))
+			return EvalRangeExpressionToIterator(ev, EvalExpr(ev,node.X).(*VSEXP),EvalExpr(ev,node.Y).(*VSEXP))
 		} else {
-			return new(EmptyIterator)
+			sexp:=evalBinary(ev,node)
+			return EvalSexpressionToIterator(sexp)
 		}
 	default:
 		ev.Invisible = false
@@ -188,12 +216,12 @@ func IndexDomainEval(ev *Evaluator, ex ast.Expr) IteratorItf {
 
 // TODO consistant naming for index, value and toplevel domain:
 // evalExprI -> ISEXPR
-func EvalIndexExpr(ev *Evaluator, node *ast.IndexExpr) SEXPItf {
+func EvalIndexedArray(ev *Evaluator, node *ast.IndexExpr) SEXPItf {
 	array := EvalExpr(ev,node.Array)
 	if array == nil {
 		panic("array not found\n")
 	} else {
-		iterator := IndexDomainEval(ev, node.Index)
+		iterator := EvalIndexExpressionToIterator(ev, node.Index)
 		r := make([]float64,0,array.Length())
 		var n int
 		for true {
@@ -209,7 +237,7 @@ func EvalIndexExpr(ev *Evaluator, node *ast.IndexExpr) SEXPItf {
 	}
 }
 
-func EvalListIndexExpr(ev *Evaluator, node *ast.ListIndexExpr) SEXPItf {
+func EvalIndexedList(ev *Evaluator, node *ast.ListIndexExpr) SEXPItf {
 	list := EvalExpr(ev,node.Array)
 	if list == nil {
 		panic("list not found\n")

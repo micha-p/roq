@@ -17,7 +17,7 @@ func EvalLength(ev *Evaluator, node *ast.CallExpr) (r *ISEXP) {
 	ex := node.Args[0]
 	switch ex.(type) {
 	case *ast.IndexExpr:
-		iterator := IndexDomainEval(ev, ex.(*ast.IndexExpr).Index)
+		iterator := EvalIndexExpressionToIterator(ev, ex.(*ast.IndexExpr).Index)
 		return &ISEXP{ValuePos: node.Fun.Pos(), Integer: iterator.Length()}
 	default:
 		val := EvalExpr(ev, node.Args[0])
